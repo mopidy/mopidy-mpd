@@ -8,10 +8,17 @@ import threading
 
 import pykka
 
-from mopidy.internal import path, validation
+from mopidy.internal import validation
 from mopidy.internal.gi import GLib
 
 logger = logging.getLogger(__name__)
+
+
+def get_unix_socket_path(socket_path):
+    match = re.search("^unix:(.*)", socket_path)
+    if not match:
+        return None
+    return match.group(1)
 
 
 def is_unix_socket(sock):
@@ -22,7 +29,7 @@ def is_unix_socket(sock):
 
 
 def get_socket_address(host, port):
-    unix_socket_path = path.get_unix_socket_path(host)
+    unix_socket_path = get_unix_socket_path(host)
     if unix_socket_path is not None:
         return (unix_socket_path, None)
     else:
@@ -114,7 +121,7 @@ class Server:
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
     def create_server_socket(self, host, port):
-        socket_path = path.get_unix_socket_path(host)
+        socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
             sock.bind(socket_path)
