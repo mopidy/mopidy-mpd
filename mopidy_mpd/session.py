@@ -1,7 +1,7 @@
 import logging
 
-from mopidy.internal import formatting, network
-from mopidy_mpd import dispatcher, protocol
+from mopidy.internal import formatting
+from mopidy_mpd import dispatcher, network, protocol
 
 logger = logging.getLogger(__name__)
 

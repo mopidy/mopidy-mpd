@@ -1,8 +1,7 @@
 import logging
 from unittest.mock import Mock, sentinel
 
-from mopidy.internal import network
-from mopidy_mpd import dispatcher, session
+from mopidy_mpd import dispatcher, network, session
 
 
 def test_on_start_logged(caplog):
