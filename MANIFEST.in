@@ -1,0 +1,15 @@
+include *.py
+include *.rst
+include .mailmap
+include LICENSE
+include MANIFEST.in
+include pyproject.toml
+include tox.ini
+
+recursive-include .circleci *
+recursive-include .github *
+
+include mopidy_*/ext.conf
+
+recursive-include tests *.py
+recursive-include tests/data *
