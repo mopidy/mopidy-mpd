@@ -1,6 +1,5 @@
 import urllib
 
-from mopidy.internal import deprecation
 from mopidy_mpd import exceptions, protocol, translator
 
 
@@ -172,7 +171,6 @@ def playlist(context):
 
             Do not use this, instead use ``playlistinfo``.
     """
-    deprecation.warn("mpd.protocol.current_playlist.playlist")
     return playlistinfo(context)
 
 

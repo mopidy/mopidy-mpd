@@ -4,8 +4,7 @@ import pykka
 
 from mopidy import exceptions, listener, zeroconf
 from mopidy.core import CoreListener
-from mopidy.internal import network, process
-from mopidy_mpd import session, uri_mapper
+from mopidy_mpd import network, session, uri_mapper
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +75,10 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
         if self.zeroconf_service:
             self.zeroconf_service.unpublish()
 
-        process.stop_actors_by_class(session.MpdSession)
+        session_actors = pykka.ActorRegistry.get_by_class(session.MpdSession)
+        for session_actor in session_actors:
+            session_actor.stop()
+
         self.server.stop()
 
     def on_event(self, event, **kwargs):

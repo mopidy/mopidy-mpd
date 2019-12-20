@@ -1,4 +1,3 @@
-from mopidy.internal import deprecation
 from mopidy.models import Ref, Track
 
 from tests import protocol
@@ -245,8 +244,7 @@ class PlaylistIdCommandTest(BasePopulatedTracklistTestCase):
 
 class PlaylistInfoCommandTest(BasePopulatedTracklistTestCase):
     def test_playlist_returns_same_as_playlistinfo(self):
-        with deprecation.ignore("mpd.protocol.current_playlist.playlist"):
-            playlist_response = self.send_request("playlist")
+        playlist_response = self.send_request("playlist")
 
         playlistinfo_response = self.send_request("playlistinfo")
         assert playlist_response == playlistinfo_response

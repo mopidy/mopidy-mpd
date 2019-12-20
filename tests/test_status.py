@@ -4,7 +4,6 @@ import pykka
 
 from mopidy import core
 from mopidy.core import PlaybackState
-from mopidy.internal import deprecation
 from mopidy.models import Track
 from mopidy_mpd import dispatcher
 from mopidy_mpd.protocol import status
@@ -27,13 +26,9 @@ class StatusHandlerTest(unittest.TestCase):
         self.mixer = dummy_mixer.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        with deprecation.ignore():
-            self.core = core.Core.start(
-                config,
-                audio=self.audio,
-                mixer=self.mixer,
-                backends=[self.backend],
-            ).proxy()
+        self.core = core.Core.start(
+            config, audio=self.audio, mixer=self.mixer, backends=[self.backend],
+        ).proxy()
 
         self.dispatcher = dispatcher.MpdDispatcher(core=self.core)
         self.context = self.dispatcher.context

@@ -1,7 +1,6 @@
 import unittest
 
 from mopidy.core import PlaybackState
-from mopidy.internal import deprecation
 from mopidy.models import Track
 
 from tests import protocol
@@ -167,14 +166,13 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         assert PLAYING == self.core.playback.get_state().get()
         self.assertInResponse("OK")
 
-        with deprecation.ignore("mpd.protocol.playback.pause:state_arg"):
-            self.send_request("pause")
-            assert PAUSED == self.core.playback.get_state().get()
-            self.assertInResponse("OK")
-
-            self.send_request("pause")
-            assert PLAYING == self.core.playback.get_state().get()
-            self.assertInResponse("OK")
+        # Deprecated version
+        self.send_request("pause")
+        assert PAUSED == self.core.playback.get_state().get()
+        self.assertInResponse("OK")
+        self.send_request("pause")
+        assert PLAYING == self.core.playback.get_state().get()
+        self.assertInResponse("OK")
 
     def test_play_without_pos(self):
         self.send_request("play")
