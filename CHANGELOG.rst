@@ -3,7 +3,7 @@ Changelog
 *********
 
 
-v3.0.0rc1 (UNRELEASED)
+v3.0.0rc1 (2019-12-21)
 ======================
 
 Initial release which extracts the Mopidy-MPD extension from Mopidy core.
