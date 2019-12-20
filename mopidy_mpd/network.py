@@ -7,8 +7,7 @@ import sys
 import threading
 
 import pykka
-
-from mopidy.internal.gi import GLib
+from gi.repository import GLib
 
 logger = logging.getLogger(__name__)
 

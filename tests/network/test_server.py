@@ -4,7 +4,8 @@ import socket
 import unittest
 from unittest.mock import Mock, patch, sentinel
 
-from mopidy.internal.gi import GLib
+from gi.repository import GLib
+
 from mopidy_mpd import network
 
 from tests import any_int

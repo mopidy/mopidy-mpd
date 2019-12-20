@@ -5,8 +5,8 @@ import unittest
 from unittest.mock import Mock, call, patch, sentinel
 
 import pykka
+from gi.repository import GLib
 
-from mopidy.internal.gi import GLib
 from mopidy_mpd import network
 
 from tests import any_int, any_unicode
