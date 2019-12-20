@@ -1,5 +1,4 @@
 from mopidy_mpd import Extension
-from mopidy_mpd import frontend as frontend_lib
 
 
 def test_get_default_config():
@@ -16,9 +15,11 @@ def test_get_config_schema():
 
     schema = ext.get_config_schema()
 
-    # TODO Test the content of your config schema
-    # assert "username" in schema
-    # assert "password" in schema
-
-
-# TODO Write more tests
+    assert "hostname" in schema
+    assert "port" in schema
+    assert "password" in schema
+    assert "max_connections" in schema
+    assert "connection_timeout" in schema
+    assert "zeroconf" in schema
+    assert "command_blacklist" in schema
+    assert "default_playlist_scheme" in schema
