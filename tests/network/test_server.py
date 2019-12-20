@@ -4,7 +4,6 @@ import socket
 import unittest
 from unittest.mock import Mock, patch, sentinel
 
-from mopidy import exceptions
 from mopidy.internal.gi import GLib
 from mopidy_mpd import network
 
@@ -80,13 +79,13 @@ class ServerTest(unittest.TestCase):
         assert (str(sentinel.host), sentinel.port) == self.mock.address
 
     def test_create_server_socket_no_port(self):
-        with self.assertRaises(exceptions.ValidationError):
+        with self.assertRaises(TypeError):
             network.Server.create_server_socket(
                 self.mock, str(sentinel.host), None
             )
 
     def test_create_server_socket_invalid_port(self):
-        with self.assertRaises(exceptions.ValidationError):
+        with self.assertRaises(TypeError):
             network.Server.create_server_socket(
                 self.mock, str(sentinel.host), str(sentinel.port)
             )

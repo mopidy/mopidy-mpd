@@ -8,7 +8,6 @@ import threading
 
 import pykka
 
-from mopidy.internal import validation
 from mopidy.internal.gi import GLib
 
 logger = logging.getLogger(__name__)
@@ -127,7 +126,8 @@ class Server:
             sock.bind(socket_path)
         else:
             # ensure the port is supplied
-            validation.check_integer(port)
+            if not isinstance(port, int):
+                raise TypeError(f"Expected an integer, not {port!r}")
             sock = create_tcp_socket()
             sock.bind((host, port))
 
