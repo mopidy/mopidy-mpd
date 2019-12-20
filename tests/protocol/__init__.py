@@ -4,7 +4,6 @@ from unittest import mock
 import pykka
 
 from mopidy import core
-from mopidy.internal import deprecation
 from mopidy_mpd import session, uri_mapper
 
 from tests import dummy_audio, dummy_backend, dummy_mixer
@@ -40,13 +39,12 @@ class BaseTestCase(unittest.TestCase):
         self.audio = dummy_audio.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        with deprecation.ignore():
-            self.core = core.Core.start(
-                self.get_config(),
-                audio=self.audio,
-                mixer=self.mixer,
-                backends=[self.backend],
-            ).proxy()
+        self.core = core.Core.start(
+            self.get_config(),
+            audio=self.audio,
+            mixer=self.mixer,
+            backends=[self.backend],
+        ).proxy()
 
         self.uri_map = uri_mapper.MpdUriMapper(self.core)
         self.connection = MockConnection()
