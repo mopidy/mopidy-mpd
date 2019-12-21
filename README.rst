@@ -130,23 +130,18 @@ The following configuration values are available:
 Limitations
 ===========
 
-This is a non exhaustive list of MPD features that Mopidy doesn't support.
-Items on this list will probably not be supported in the near future.
+This is a non-exhaustive list of MPD features that Mopidy doesn't support.
 
 - Only a single password is supported. It gives all-or-nothing access.
-- Toggling of audio outputs is not supported
-- Channels for client-to-client communication are not supported
-- Stickers are not supported
-- Crossfade is not supported
-- Replay gain is not supported
-- ``stats`` does not provide any statistics
-- ``decoders`` does not provide information about available decoders
-
-The following items are currently not supported, but should be added in the
-near future:
-
-- ``tagtypes`` is not supported
-- Live update of the music database is not supported
+- Toggling of audio outputs is not supported.
+- Channels for client-to-client communication are not supported.
+- Stickers are not supported.
+- Crossfade is not supported.
+- Replay gain is not supported.
+- ``stats`` does not provide any statistics.
+- ``decoders`` does not provide information about available decoders.
+- ``tagtypes`` is not supported.
+- Live update of the music database is not supported.
 
 
 Project resources
