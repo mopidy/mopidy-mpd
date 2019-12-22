@@ -144,6 +144,22 @@ This is a non-exhaustive list of MPD features that Mopidy doesn't support.
 - Live update of the music database is not supported.
 
 
+Clients
+=======
+
+Over the years, a huge number of MPD clients have been built for every thinkable
+platform. As always, the quality and state of maintenance varies between clients,
+so you might have to try a couple before you find one you like for your purpose.
+In general, they should all work with Mopidy-MPD.
+
+The `Wikipedia article on MPD <https://en.wikipedia.org/wiki/Music_Player_Daemon#Clients>`_
+has a short list of well-known clients.
+In the MPD wiki there is a
+`more complete list <https://mpd.fandom.com/wiki/Clients>`_
+of the available MPD clients.
+Both lists are grouped by user interface, e.g. terminal, graphical, or web-based.
+
+
 Project resources
 =================
 
