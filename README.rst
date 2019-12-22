@@ -50,7 +50,7 @@ Installation
 
 Install by running::
 
-    python3 -m pip install Mopidy-MPD
+    sudo python3 -m pip install Mopidy-MPD
 
 See https://mopidy.com/ext/mpd/ for alternative installation methods.
 
