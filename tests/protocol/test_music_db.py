@@ -747,6 +747,10 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.send_request('list "title"')
         self.assertInResponse("OK")
 
+    def test_list_title_by_title(self):
+        self.send_request('list "title" "title" "atitle"')
+        self.assertInResponse("OK")
+
     # Artist
 
     def test_list_artist_with_quotes(self):

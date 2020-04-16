@@ -274,7 +274,7 @@ def list_(context, *args):
             query = {"artist": params}
     else:
         try:
-            query = _query_from_mpd_search_parameters(params, _LIST_MAPPING)
+            query = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
         except exceptions.MpdArgError as exc:
             exc.message = "Unknown filter type"  # noqa B306: Our own exception
             raise
