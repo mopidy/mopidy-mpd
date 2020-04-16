@@ -259,12 +259,12 @@ def list_(context, *args):
     """
     params = list(args)
     if not params:
-        raise exceptions.MpdArgError("incorrect arguments")
+        raise exceptions.MpdArgError('too few arguments for "list"')
 
-    field = params.pop(0).lower()
-    field = _LIST_MAPPING.get(field)
+    field_arg = params.pop(0).lower()
+    field = _LIST_MAPPING.get(field_arg)
     if field is None:
-        raise exceptions.MpdArgError("incorrect arguments")
+        raise exceptions.MpdArgError(f"Unknown tag type: {field_arg}")
 
     query = None
     if len(params) == 1:
@@ -276,9 +276,7 @@ def list_(context, *args):
         try:
             query = _query_from_mpd_search_parameters(params, _LIST_MAPPING)
         except exceptions.MpdArgError as exc:
-            exc.message = (  # noqa B306: Our own exception
-                "not able to parse args"
-            )
+            exc.message = "Unknown filter type"  # noqa B306: Our own exception
             raise
         except ValueError:
             return
