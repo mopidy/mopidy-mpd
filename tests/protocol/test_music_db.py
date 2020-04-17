@@ -733,12 +733,22 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_foo_returns_ack(self):
         self.send_request('list "foo"')
-        self.assertEqualResponse("ACK [2@0] {list} incorrect arguments")
+        self.assertEqualResponse("ACK [2@0] {list} Unknown tag type: foo")
+
+    def test_list_without_type_returns_ack(self):
+        self.send_request("list")
+        self.assertEqualResponse(
+            'ACK [2@0] {list} too few arguments for "list"'
+        )
 
     # Track title
 
     def test_list_title(self):
         self.send_request('list "title"')
+        self.assertInResponse("OK")
+
+    def test_list_title_by_title(self):
+        self.send_request('list "title" "title" "atitle"')
         self.assertInResponse("OK")
 
     # Artist
@@ -763,7 +773,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_artist_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "artist" "foo" "bar"')
-        self.assertEqualResponse("ACK [2@0] {list} not able to parse args")
+        self.assertEqualResponse("ACK [2@0] {list} Unknown filter type")
 
     def test_list_artist_by_artist(self):
         self.send_request('list "artist" "artist" "anartist"')
@@ -824,7 +834,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_albumartist_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "albumartist" "foo" "bar"')
-        self.assertEqualResponse("ACK [2@0] {list} not able to parse args")
+        self.assertEqualResponse("ACK [2@0] {list} Unknown filter type")
 
     def test_list_albumartist_by_artist(self):
         self.send_request('list "albumartist" "artist" "anartist"')
@@ -890,7 +900,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_composer_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "composer" "foo" "bar"')
-        self.assertEqualResponse("ACK [2@0] {list} not able to parse args")
+        self.assertEqualResponse("ACK [2@0] {list} Unknown filter type")
 
     def test_list_composer_by_artist(self):
         self.send_request('list "composer" "artist" "anartist"')
@@ -956,7 +966,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_performer_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "performer" "foo" "bar"')
-        self.assertEqualResponse("ACK [2@0] {list} not able to parse args")
+        self.assertEqualResponse("ACK [2@0] {list} Unknown filter type")
 
     def test_list_performer_by_artist(self):
         self.send_request('list "performer" "artist" "anartist"')
