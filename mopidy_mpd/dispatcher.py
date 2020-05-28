@@ -305,6 +305,9 @@ class MpdContext:
         while path_and_futures:
             base_path, future = path_and_futures.pop()
             for ref in future.get():
+                if ref.name is None or ref.uri is None:
+                    continue
+
                 path = "/".join([base_path, ref.name.replace("/", "")])
                 path = self._uri_map.insert(path, ref.uri)
 
