@@ -27,7 +27,10 @@ class StatusHandlerTest(unittest.TestCase):
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
         self.core = core.Core.start(
-            config, audio=self.audio, mixer=self.mixer, backends=[self.backend],
+            config,
+            audio=self.audio,
+            mixer=self.mixer,
+            backends=[self.backend],
         ).proxy()
 
         self.dispatcher = dispatcher.MpdDispatcher(core=self.core)

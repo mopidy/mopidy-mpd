@@ -305,7 +305,7 @@ def listall(context, uri=None):
     result = []
     for path, track_ref in context.browse(uri, lookup=False):
         if not track_ref:
-            result.append(("directory", path))
+            result.append(("directory", path.lstrip("/")))
         else:
             result.append(("file", track_ref.uri))
 
@@ -334,7 +334,7 @@ def listallinfo(context, uri=None):
     result = []
     for path, lookup_future in context.browse(uri):
         if not lookup_future:
-            result.append(("directory", path))
+            result.append(("directory", path.lstrip("/")))
         else:
             for tracks in lookup_future.get().values():
                 for track in tracks:

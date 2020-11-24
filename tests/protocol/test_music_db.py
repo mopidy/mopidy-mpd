@@ -179,10 +179,10 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         self.send_request("listall")
 
         self.assertInResponse("file: dummy:/a")
-        self.assertInResponse("directory: /dummy/foo")
-        self.assertInResponse("directory: /dummy/album")
-        self.assertInResponse("directory: /dummy/artist")
-        self.assertInResponse("directory: /dummy/pl")
+        self.assertInResponse("directory: dummy/foo")
+        self.assertInResponse("directory: dummy/album")
+        self.assertInResponse("directory: dummy/artist")
+        self.assertInResponse("directory: dummy/pl")
         self.assertInResponse("file: dummy:/foo/b")
         self.assertInResponse("OK")
 
@@ -203,7 +203,7 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         self.send_request('listall "/dummy/foo"')
 
         self.assertNotInResponse("file: dummy:/a")
-        self.assertInResponse("directory: /dummy/foo")
+        self.assertInResponse("directory: dummy/foo")
         self.assertInResponse("file: dummy:/foo/b")
         self.assertInResponse("OK")
 
@@ -245,8 +245,8 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         }
 
         self.send_request("listall")
-        self.assertInResponse("directory: /dummy/a")
-        self.assertInResponse("directory: /dummy/a [2]")
+        self.assertInResponse("directory: dummy/a")
+        self.assertInResponse("directory: dummy/a [2]")
 
     def test_listallinfo_without_uri(self):
         tracks = [
@@ -269,10 +269,10 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("file: dummy:/a")
         self.assertInResponse("Title: a")
-        self.assertInResponse("directory: /dummy/foo")
-        self.assertInResponse("directory: /dummy/album")
-        self.assertInResponse("directory: /dummy/artist")
-        self.assertInResponse("directory: /dummy/pl")
+        self.assertInResponse("directory: dummy/foo")
+        self.assertInResponse("directory: dummy/album")
+        self.assertInResponse("directory: dummy/artist")
+        self.assertInResponse("directory: dummy/pl")
         self.assertInResponse("file: dummy:/foo/b")
         self.assertInResponse("Title: b")
         self.assertInResponse("OK")
@@ -295,7 +295,7 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
 
         self.assertNotInResponse("file: dummy:/a")
         self.assertNotInResponse("Title: a")
-        self.assertInResponse("directory: /dummy/foo")
+        self.assertInResponse("directory: dummy/foo")
         self.assertInResponse("file: dummy:/foo/b")
         self.assertInResponse("Title: b")
         self.assertInResponse("OK")
@@ -338,8 +338,8 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         }
 
         self.send_request("listallinfo")
-        self.assertInResponse("directory: /dummy/a")
-        self.assertInResponse("directory: /dummy/a [2]")
+        self.assertInResponse("directory: dummy/a")
+        self.assertInResponse("directory: dummy/a [2]")
 
     def test_listfiles(self):
         self.send_request("listfiles")
