@@ -165,7 +165,7 @@ Project resources
 
 - `Source code <https://github.com/mopidy/mopidy-mpd>`_
 - `Issue tracker <https://github.com/mopidy/mopidy-mpd/issues>`_
-- `Changelog <https://github.com/mopidy/mopidy-mpd/blob/master/CHANGELOG.rst>`_
+- `Changelog <https://github.com/mopidy/mopidy-mpd/releases>`_
 
 
 Credits
