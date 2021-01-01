@@ -6,9 +6,9 @@ Mopidy-MPD
     :target: https://pypi.org/project/Mopidy-MPD/
     :alt: Latest PyPI version
 
-.. image:: https://img.shields.io/circleci/build/gh/mopidy/mopidy-mpd
-    :target: https://circleci.com/gh/mopidy/mopidy-mpd
-    :alt: CircleCI build status
+.. image:: https://img.shields.io/github/workflow/status/mopidy/mopidy-mpd/CI
+    :target: https://github.com/mopidy/mopidy-mpd/actions
+    :alt: CI build status
 
 .. image:: https://img.shields.io/codecov/c/gh/mopidy/mopidy-mpd
     :target: https://codecov.io/gh/mopidy/mopidy-mpd
@@ -30,7 +30,7 @@ Maintainer wanted
 Mopidy-MPD is currently kept on life support by the Mopidy core
 developers. It is in need of a more dedicated maintainer.
 
-If you want to be the maintainer of Mopidy-Local, please:
+If you want to be the maintainer of Mopidy-MPD, please:
 
 1. Make 2-3 good pull requests improving any part of the project.
 
