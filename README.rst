@@ -119,7 +119,7 @@ The following configuration values are available:
   List of MPD commands which are disabled by the server.
   By default this blacklists ``listall`` and ``listallinfo``.
   These commands don't fit well with many of Mopidy's backends and are better
-  left disabled unless you know what youare doing.
+  left disabled unless you know what you are doing.
 
 - ``mpd/default_playlist_scheme``:
   The URI scheme used if the server cannot find a backend appropriate for
