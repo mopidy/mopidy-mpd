@@ -64,7 +64,7 @@ class TestCommands(unittest.TestCase):
             pass
 
         self.commands.add("foo")(func)
-        with self.assertRaises(Exception):
+        with self.assertRaises(ValueError):
             self.commands.add("foo")(func)
 
     def test_function_only_takes_context_succeeds(self):
