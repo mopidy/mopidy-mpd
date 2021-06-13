@@ -42,9 +42,10 @@ def track_to_mpd_format(track, position=None, stream_title=None):
     result = [
         ("file", track.uri),
         ("Time", track.length and (track.length // 1000) or 0),
-        ("Artist", concat_multi_values(track.artists, "name")),
         ("Album", track.album and track.album.name or ""),
     ]
+
+    result += multi_tag_list(track.artists, "name", "Artist")
 
     if stream_title is not None:
         result.append(("Title", stream_title))
@@ -69,9 +70,8 @@ def track_to_mpd_format(track, position=None, stream_title=None):
         result.append(("MUSICBRAINZ_ALBUMID", track.album.musicbrainz_id))
 
     if track.album is not None and track.album.artists:
-        result.append(
-            ("AlbumArtist", concat_multi_values(track.album.artists, "name"))
-        )
+        result += multi_tag_list(track.album.artists, "name", "AlbumArtist")
+
         musicbrainz_ids = concat_multi_values(
             track.album.artists, "musicbrainz_id"
         )
@@ -84,14 +84,10 @@ def track_to_mpd_format(track, position=None, stream_title=None):
             result.append(("MUSICBRAINZ_ARTISTID", musicbrainz_ids))
 
     if track.composers:
-        result.append(
-            ("Composer", concat_multi_values(track.composers, "name"))
-        )
+        result += multi_tag_list(track.composers, "name", "Composer")
 
     if track.performers:
-        result.append(
-            ("Performer", concat_multi_values(track.performers, "name"))
-        )
+        result += multi_tag_list(track.performers, "name", "Performer")
 
     if track.genre:
         result.append(("Genre", track.genre))
@@ -149,6 +145,28 @@ def concat_multi_values(models, attribute):
         for m in models
         if getattr(m, attribute, None) is not None
     )
+
+
+def multi_tag_list(models, attribute, tag):
+    """
+    Format Mopidy model values for output to MPD client in a list with one tag
+    per value.
+
+    :param models: the models
+    :type models: array of :class:`mopidy.models.Artist`,
+        :class:`mopidy.models.Album` or :class:`mopidy.models.Track`
+    :param attribute: the attribute to use
+    :type attribute: string
+    :param tag: the name of the tag
+    :type tag: string
+    :rtype: list of tuples of string and attribute value
+    """
+
+    return [
+        (tag, getattr(m, attribute))
+        for m in models
+        if getattr(m, attribute, None) is not None
+    ]
 
 
 def tracks_to_mpd_format(tracks, start=0, end=None):
