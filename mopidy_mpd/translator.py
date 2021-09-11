@@ -42,10 +42,9 @@ def track_to_mpd_format(track, position=None, stream_title=None):
     result = [
         ("file", track.uri),
         ("Time", track.length and (track.length // 1000) or 0),
+        *multi_tag_list(track.artists, "name", "Artist"),
         ("Album", track.album and track.album.name or ""),
     ]
-
-    result += multi_tag_list(track.artists, "name", "Artist")
 
     if stream_title is not None:
         result.append(("Title", stream_title))
@@ -147,14 +146,14 @@ def concat_multi_values(models, attribute):
     )
 
 
-def multi_tag_list(models, attribute, tag):
+def multi_tag_list(objects, attribute, tag):
     """
-    Format Mopidy model values for output to MPD client in a list with one tag
-    per value.
+    Format multiple objects for output to MPD client in a list with one tag per
+    value.
 
-    :param models: the models
-    :type models: array of :class:`mopidy.models.Artist`,
-        :class:`mopidy.models.Album` or :class:`mopidy.models.Track`
+    :param objects: the model objects
+    :type objects: array of :class:`mopidy.models.Artist`,
+        :class:`mopidy.models.Album`, or :class:`mopidy.models.Track`
     :param attribute: the attribute to use
     :type attribute: string
     :param tag: the name of the tag
@@ -163,9 +162,9 @@ def multi_tag_list(models, attribute, tag):
     """
 
     return [
-        (tag, getattr(m, attribute))
-        for m in models
-        if getattr(m, attribute, None) is not None
+        (tag, getattr(obj, attribute))
+        for obj in objects
+        if getattr(obj, attribute, None) is not None
     ]
 
 
