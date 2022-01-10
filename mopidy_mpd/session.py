@@ -1,6 +1,7 @@
 import logging
 
 from mopidy_mpd import dispatcher, formatting, network, protocol
+from mopidy_mpd.protocol import tagtype_list
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +16,7 @@ class MpdSession(network.LineProtocol):
     terminator = protocol.LINE_TERMINATOR
     encoding = protocol.ENCODING
     delimiter = br"\r?\n"
+    tagtypes = tagtype_list.TAGTYPE_LIST[:]
 
     def __init__(self, connection, config=None, core=None, uri_map=None):
         super().__init__(connection)
