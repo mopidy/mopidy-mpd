@@ -58,6 +58,26 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("tagtype: MUSICBRAINZ_TRACKID")
         self.assertInResponse("OK")
 
+    def test_tagtypes_clear(self):
+        self.send_request("tagtypes clear")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_all(self):
+        self.send_request("tagtypes all")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_disable(self):
+        self.send_request("tagtypes disable x")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_enable(self):
+        self.send_request("tagtypes enable x")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_bogus(self):
+        self.send_request("tagtypes bogus")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown sub command")
+
     def test_urlhandlers(self):
         self.send_request("urlhandlers")
         self.assertInResponse("OK")
