@@ -494,8 +494,7 @@ class LineProtocol(pykka.ThreadingActor):
     def join_lines(self, lines):
         if not lines:
             return ""
-        line_terminator = self.decode(self.terminator)
-        return line_terminator.join(lines) + line_terminator
+        return self.terminator.join(lines) + self.terminator
 
     def send_lines(self, lines):
         """
@@ -507,5 +506,11 @@ class LineProtocol(pykka.ThreadingActor):
         if not lines:
             return
 
-        data = self.join_lines(lines)
-        self.connection.queue_send(self.encode(data))
+        encoded_lines = []
+        for line in lines:
+            if not isinstance(line, bytes):
+                encoded_lines.append(self.encode(line))
+            else:
+                encoded_lines.append(line)
+
+        self.connection.queue_send(self.join_lines(encoded_lines))

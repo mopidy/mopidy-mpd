@@ -1,5 +1,7 @@
 import functools
 import itertools
+import os.path
+import requests
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
@@ -82,6 +84,51 @@ def _artist_as_track(artist):
     return Track(
         uri=artist.uri, name="Artist: " + artist.name, artists=[artist]
     )
+
+
+@protocol.commands.add("albumart")
+def albumart(context, uri=None, offset=0):
+    """
+        `albumart {URI} {OFFSET}`
+
+        Locate album art for the given song and return a chunk of an album art image file at offset OFFSET.
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.debug(f"requested {uri}, offset {offset}")
+
+    # TODO work out how validators work and move these there
+    if uri is None:
+        raise exceptions.MpdArgError("Need to specify uri")
+    offset = protocol.INT(offset)
+
+    images = context.core.library.get_images([uri]).get()[uri]
+
+    if len(images) == 0:
+        raise exceptions.MpdNoExistError("No file exists")
+
+    image_uri = images[0].uri
+
+    # TODO cache
+    if image_uri.startswith("/"):
+        MOPIDY_DATA_PATH = os.path.expanduser("~/.local/share/mopidy/")  # TODO unhardcode
+        _, extension, file = image_uri.split("/")
+        with open(os.path.join(MOPIDY_DATA_PATH, extension, "images", file), "rb") as image_file:
+            bytes = image_file.read()
+    elif image_uri.startswith("https://"):
+        image_request = requests.get(image_uri)
+        bytes = image_request.content
+    else:
+        raise exceptions.MpdNotImplemented(f"cannot make sense of the uri {image_uri}")
+
+    if offset > len(bytes):
+        raise exceptions.MpdArgError("Offset too large")
+
+    return [
+        ("size", len(bytes)),
+        ("binary", len(bytes[offset:offset + context.binary_limit])),
+        bytes[offset:offset + context.binary_limit],
+    ]
 
 
 @protocol.commands.add("count")

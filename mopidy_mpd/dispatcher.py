@@ -155,7 +155,7 @@ class MpdDispatcher:
         return response
 
     def _has_error(self, response):
-        return response and response[-1].startswith("ACK")
+        return response and isinstance(response[-1], str) and response[-1].startswith("ACK")
 
     # Filter: call handler
 
@@ -238,6 +238,9 @@ class MpdContext:
 
     #: The subsytems that we want to be notified about in idle mode.
     subscriptions = None
+
+    #: The maximum binary chunk size
+    binary_limit = 1024 * 1024
 
     _uri_map = None
 
