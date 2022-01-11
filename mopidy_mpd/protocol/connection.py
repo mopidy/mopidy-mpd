@@ -51,3 +51,11 @@ def ping(context):
         Does nothing but return ``OK``.
     """
     pass
+
+
+@protocol.commands.add("binarylimit")
+def binarylimit(context, size):
+    """
+        Set the maximum binary response size for the current connection to the specified number of bytes.
+    """
+    context.binary_limit = size
