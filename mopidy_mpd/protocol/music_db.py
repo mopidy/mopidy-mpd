@@ -86,17 +86,7 @@ def _artist_as_track(artist):
     )
 
 
-@protocol.commands.add("albumart")
-def albumart(context, uri=None, offset=0):
-    """
-        `albumart {URI} {OFFSET}`
-
-        Locate album art for the given song and return a chunk of an album art image file at offset OFFSET.
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    logger.debug(f"requested {uri}, offset {offset}")
-
+def _get_art(context, uri=None, offset=0):
     # TODO work out how validators work and move these there
     if uri is None:
         raise exceptions.MpdArgError("Need to specify uri")
@@ -129,6 +119,18 @@ def albumart(context, uri=None, offset=0):
         ("binary", len(bytes[offset:offset + context.binary_limit])),
         bytes[offset:offset + context.binary_limit],
     ]
+    pass
+
+
+@protocol.commands.add("albumart")
+def albumart(context, uri=None, offset=0):
+    """
+        `albumart {URI} {OFFSET}`
+
+        Locate album art for the given song and return a chunk of an album art image file at offset OFFSET.
+    """
+    track = context.core.library.lookup([uri]).get()[uri]
+    return _get_art(context, track[0].album.uri, offset)
 
 
 @protocol.commands.add("count")
@@ -595,3 +597,13 @@ def readcomments(context, uri):
         support it. For example, on Ogg files, this lists the Vorbis comments.
     """
     pass
+
+
+@protocol.commands.add("readpicture")
+def readpicture(context, uri=None, offset=0):
+    """
+        `readpicture {URI} {OFFSET}`
+
+        Locate a picture for the given song and return a chunk of the image file at offset OFFSET.
+    """
+    return _get_art(context, uri, offset)
