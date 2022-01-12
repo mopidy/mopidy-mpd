@@ -12,6 +12,7 @@ TAGTYPE_LIST = [
     "Composer",
     "Performer",
     "Disc",
+    "Comment",
     "MUSICBRAINZ_ARTISTID",
     "MUSICBRAINZ_ALBUMID",
     "MUSICBRAINZ_ALBUMARTISTID",

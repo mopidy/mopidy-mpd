@@ -188,7 +188,9 @@ def playlistfind(context, tag, needle):
         if not tl_tracks:
             return None
         position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(tl_tracks[0], position=position)
+        return translator.track_to_mpd_format(
+            tl_tracks[0], position=position, tagtypes=context.session.tagtypes
+        )
     raise exceptions.MpdNotImplemented  # TODO
 
 
@@ -207,7 +209,9 @@ def playlistid(context, tlid=None):
         if not tl_tracks:
             raise exceptions.MpdNoExistError("No such song")
         position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(tl_tracks[0], position=position)
+        return translator.track_to_mpd_format(
+            tl_tracks[0], position=position, tagtypes=context.session.tagtypes
+        )
     else:
         return translator.tracks_to_mpd_format(
             context.core.tracklist.get_tl_tracks().get()
@@ -293,7 +297,10 @@ def plchanges(context, version):
         tl_track = context.core.playback.get_current_tl_track().get()
         position = context.core.tracklist.index(tl_track).get()
         return translator.track_to_mpd_format(
-            tl_track, position=position, stream_title=stream_title
+            tl_track,
+            position=position,
+            stream_title=stream_title,
+            tagtypes=context.session.tagtypes,
         )
 
 

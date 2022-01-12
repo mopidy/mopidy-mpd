@@ -18,7 +18,7 @@ def normalize_path(path, relative=False):
     return "/".join(parts)
 
 
-def track_to_mpd_format(track, position=None, stream_title=None):
+def track_to_mpd_format(track, position=None, stream_title=None, tagtypes=None):
     """
     Format track for output to MPD client.
 
@@ -106,22 +106,36 @@ def track_to_mpd_format(track, position=None, stream_title=None):
     if track.album and track.album.uri:
         result.append(("X-AlbumUri", track.album.uri))
 
-    result = [element for element in result if _has_value(*element)]
+    if tagtypes is not None:
+        result = [
+            element for element in result if _has_value(tagtypes, *element)
+        ]
+    else:
+        result = [
+            element
+            for element in result
+            if _has_value(tagtype_list.TAGTYPE_LIST, *element)
+        ]
 
     return result
 
 
-def _has_value(tagtype, value):
+def _has_value(tagtypes, tagtype, value):
     """
-    Determine whether to add the tagtype to the output or not.
+    Determine whether to add the tagtype to the output or not. The tagtype must
+    be in the list of tagtypes configured for the client.
 
+    :param tagtypes: the MPD tagtypes configured for the client
     :param tagtype: the MPD tagtype
     :type tagtype: string
     :param value: the tag value
     :rtype: bool
     """
     if tagtype in tagtype_list.TAGTYPE_LIST:
-        return bool(value)
+        if tagtype in tagtypes:
+            return bool(value)
+        else:
+            return False
     return True
 
 

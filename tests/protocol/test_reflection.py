@@ -37,47 +37,6 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("command: kill")
         self.assertInResponse("OK")
 
-    def test_tagtypes(self):
-        self.send_request("tagtypes")
-        self.assertInResponse("tagtype: Artist")
-        self.assertInResponse("tagtype: ArtistSort")
-        self.assertInResponse("tagtype: Album")
-        self.assertInResponse("tagtype: AlbumArtist")
-        self.assertInResponse("tagtype: AlbumArtistSort")
-        self.assertInResponse("tagtype: Title")
-        self.assertInResponse("tagtype: Track")
-        self.assertInResponse("tagtype: Name")
-        self.assertInResponse("tagtype: Genre")
-        self.assertInResponse("tagtype: Date")
-        self.assertInResponse("tagtype: Composer")
-        self.assertInResponse("tagtype: Performer")
-        self.assertInResponse("tagtype: Disc")
-        self.assertInResponse("tagtype: MUSICBRAINZ_ARTISTID")
-        self.assertInResponse("tagtype: MUSICBRAINZ_ALBUMID")
-        self.assertInResponse("tagtype: MUSICBRAINZ_ALBUMARTISTID")
-        self.assertInResponse("tagtype: MUSICBRAINZ_TRACKID")
-        self.assertInResponse("OK")
-
-    def test_tagtypes_clear(self):
-        self.send_request("tagtypes clear")
-        self.assertInResponse("OK")
-
-    def test_tagtypes_all(self):
-        self.send_request("tagtypes all")
-        self.assertInResponse("OK")
-
-    def test_tagtypes_disable(self):
-        self.send_request("tagtypes disable x")
-        self.assertInResponse("OK")
-
-    def test_tagtypes_enable(self):
-        self.send_request("tagtypes enable x")
-        self.assertInResponse("OK")
-
-    def test_tagtypes_bogus(self):
-        self.send_request("tagtypes bogus")
-        self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown sub command")
-
     def test_urlhandlers(self):
         self.send_request("urlhandlers")
         self.assertInResponse("OK")

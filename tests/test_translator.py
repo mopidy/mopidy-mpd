@@ -160,6 +160,30 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert ("Name", "") not in result
         assert ("Title", "foo") in result
 
+    def test_track_to_mpd_client_filtered(self):
+        configured_tagtypes = [
+            "Artist",
+            "Album",
+            "Title",
+            "Track",
+            "Name",
+            "Genre",
+        ]
+        result = translator.track_to_mpd_format(
+            TlTrack(122, self.track), position=9, tagtypes=configured_tagtypes
+        )
+        assert ("file", "à uri") in result
+        assert ("Time", 137) in result
+        assert ("Artist", "an artist") in result
+        assert ("Artist", "yet another artist") in result
+        assert ("Title", "a nàme") in result
+        assert ("Album", "an album") in result
+        assert ("Genre", "a genre") in result
+        assert ("Track", "7/13") in result
+        assert ("Pos", 9) in result
+        assert ("Id", 122) in result
+        assert len(result) == 10
+
 
 class PlaylistMpdFormatTest(unittest.TestCase):
     def test_mpd_format(self):

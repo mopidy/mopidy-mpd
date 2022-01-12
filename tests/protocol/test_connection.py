@@ -104,3 +104,15 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("tagtype: Name")
         self.assertInResponse("tagtype: Genre")
         self.assertInResponse("OK")
+
+    def test_tagtypes_disable_x(self):
+        self.send_request("tagtypes disable x")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_enable_x(self):
+        self.send_request("tagtypes enable x")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_bogus(self):
+        self.send_request("tagtypes bogus")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown sub command")

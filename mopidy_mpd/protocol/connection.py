@@ -95,7 +95,7 @@ def tagtypes(context, *args):
         ]
         context.session.tagtypes.extend(enabled_types)
     else:
-        raise exceptions.MpdArgError("invalid arguments for tagtypes command")
+        raise exceptions.MpdArgError("Unknown sub command")
 
     tagtypes = [
         value
