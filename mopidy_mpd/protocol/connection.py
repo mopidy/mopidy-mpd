@@ -55,7 +55,7 @@ def ping(context):
 
 
 @protocol.commands.add("tagtypes")
-def tagtypes(context, *args):
+def tagtypes(context, *parameters):
     """
     *mpd.readthedocs.io, connection settings section:*
 
@@ -79,27 +79,23 @@ def tagtypes(context, *args):
 
         Announce that this client is interested in all tag types.
     """
-    if not args:
-        pass
-    elif args[0] == "all":
-        context.session.tagtypes = tagtype_list.TAGTYPE_LIST[:]
-    elif args[0] == "clear":
-        context.session.tagtypes.clear()
-    elif args[0] == "disable":
-        context.session.tagtypes = [
-            value for value in context.session.tagtypes if value not in args[1:]
-        ]
-    elif args[0] == "enable":
-        enabled_types = [
-            value for value in args[1:] if value not in context.session.tagtypes
-        ]
-        context.session.tagtypes.extend(enabled_types)
-    else:
-        raise exceptions.MpdArgError("Unknown sub command")
-
-    tagtypes = [
-        value
-        for value in context.session.tagtypes
-        if value in tagtype_list.TAGTYPE_LIST
-    ]
-    return [("tagtype", tagtype) for tagtype in tagtypes]
+    parameters = list(parameters)
+    if parameters:
+        subcommand = parameters.pop(0).lower()
+        if subcommand not in ("all", "clear", "disable", "enable"):
+            raise exceptions.MpdArgError("Unknown sub command")
+        elif subcommand == "all":
+            context.session.tagtypes.update(tagtype_list.TAGTYPE_LIST)
+        elif subcommand == "clear":
+            context.session.tagtypes.clear()
+        elif subcommand == "disable":
+            context.session.tagtypes.difference_update(parameters)
+        elif subcommand == "enable":
+            enabled_types = [
+                value
+                for value in parameters
+                if value in tagtype_list.TAGTYPE_LIST
+            ]
+            context.session.tagtypes.update(enabled_types)
+        return
+    return [("tagtype", tagtype) for tagtype in context.session.tagtypes]

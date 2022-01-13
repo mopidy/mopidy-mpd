@@ -21,7 +21,7 @@ ENCODING = "UTF-8"
 LINE_TERMINATOR = b"\n"
 
 #: The MPD protocol version is 0.21.0.
-VERSION = "0.21.0"
+VERSION = "0.19.0"
 
 
 def load_protocol_modules():

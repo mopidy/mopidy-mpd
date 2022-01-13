@@ -51,9 +51,13 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
     def test_tagtypes_clear(self):
         self.send_request("tagtypes clear")
         self.assertEqualResponse("OK")
+        self.send_request("tagtypes")
+        self.assertEqualResponse("OK")
 
     def test_tagtypes_all(self):
         self.send_request("tagtypes all")
+        self.assertEqualResponse("OK")
+        self.send_request("tagtypes")
         self.assertInResponse("tagtype: Artist")
         self.assertInResponse("tagtype: ArtistSort")
         self.assertInResponse("tagtype: Album")
@@ -79,6 +83,8 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
             "tagtypes disable MUSICBRAINZ_ARTISTID MUSICBRAINZ_ALBUMID "
             "MUSICBRAINZ_ALBUMARTISTID MUSICBRAINZ_TRACKID"
         )
+        self.assertEqualResponse("OK")
+        self.send_request("tagtypes")
         self.assertInResponse("tagtype: Artist")
         self.assertInResponse("tagtype: ArtistSort")
         self.assertInResponse("tagtype: Album")
@@ -92,17 +98,34 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("tagtype: Composer")
         self.assertInResponse("tagtype: Performer")
         self.assertInResponse("tagtype: Disc")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ARTISTID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ALBUMID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ALBUMARTISTID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_TRACKID")
         self.assertInResponse("OK")
 
     def test_tagtypes_enable(self):
         self.send_request("tagtypes clear")
         self.send_request("tagtypes enable Artist Album Title Track Name Genre")
+        self.assertEqualResponse("OK")
+        self.send_request("tagtypes")
         self.assertInResponse("tagtype: Artist")
         self.assertInResponse("tagtype: Album")
         self.assertInResponse("tagtype: Title")
         self.assertInResponse("tagtype: Track")
         self.assertInResponse("tagtype: Name")
         self.assertInResponse("tagtype: Genre")
+        self.assertNotInResponse("tagtype: ArtistSort")
+        self.assertNotInResponse("tagtype: AlbumArtist")
+        self.assertNotInResponse("tagtype: AlbumArtistSort")
+        self.assertNotInResponse("tagtype: Date")
+        self.assertNotInResponse("tagtype: Composer")
+        self.assertNotInResponse("tagtype: Performer")
+        self.assertNotInResponse("tagtype: Disc")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ARTISTID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ALBUMID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_ALBUMARTISTID")
+        self.assertNotInResponse("tagtype: MUSICBRAINZ_TRACKID")
         self.assertInResponse("OK")
 
     def test_tagtypes_disable_x(self):
@@ -111,6 +134,14 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
 
     def test_tagtypes_enable_x(self):
         self.send_request("tagtypes enable x")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_disable_empty(self):
+        self.send_request("tagtypes disable")
+        self.assertInResponse("OK")
+
+    def test_tagtypes_enable_empty(self):
+        self.send_request("tagtypes enable")
         self.assertInResponse("OK")
 
     def test_tagtypes_bogus(self):

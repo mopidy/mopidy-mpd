@@ -126,6 +126,7 @@ def _has_value(tagtypes, tagtype, value):
     be in the list of tagtypes configured for the client.
 
     :param tagtypes: the MPD tagtypes configured for the client
+    :type tagtypes: set of strings
     :param tagtype: the MPD tagtype
     :type tagtype: string
     :param value: the tag value
