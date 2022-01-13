@@ -88,3 +88,6 @@ class BaseTestCase(unittest.TestCase):
     def assertEqualResponse(self, value):  # noqa: N802
         assert 1 == len(self.connection.response)
         assert value == self.connection.response[0]
+
+    def assertResponseLength(self, value):
+        assert value == len(self.connection.response)

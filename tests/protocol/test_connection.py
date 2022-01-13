@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from tests import protocol
+from mopidy_mpd.protocol import tagtype_list
 
 
 class ConnectionHandlerTest(protocol.BaseTestCase):
@@ -76,6 +77,7 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("tagtype: MUSICBRAINZ_ALBUMARTISTID")
         self.assertInResponse("tagtype: MUSICBRAINZ_TRACKID")
         self.assertInResponse("OK")
+        self.assertResponseLength(len(tagtype_list.TAGTYPE_LIST) + 1)
 
     def test_tagtypes_disable(self):
         self.send_request("tagtypes all")
@@ -130,11 +132,11 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
 
     def test_tagtypes_disable_x(self):
         self.send_request("tagtypes disable x")
-        self.assertInResponse("OK")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown tag type")
 
     def test_tagtypes_enable_x(self):
         self.send_request("tagtypes enable x")
-        self.assertInResponse("OK")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown tag type")
 
     def test_tagtypes_disable_empty(self):
         self.send_request("tagtypes disable")
