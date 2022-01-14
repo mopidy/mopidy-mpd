@@ -94,6 +94,12 @@ def count(context, *args):
         Counts the number of songs and their total playtime in the db
         matching ``TAG`` exactly.
 
+        ``count {FILTER} [group {GROUPTYPE}]``
+
+        Count the number of songs and their total playtime in the database
+        matching ``FILTER``. The group keyword may be used to group the results
+        by a tag.
+
     *GMPC:*
 
     - use multiple tag-needle pairs to make more specific searches.
@@ -122,6 +128,14 @@ def find(context, *args):
         tag supported by MPD, or one of the two special parameters - ``file``
         to search by full path (relative to database root), and ``any`` to
         match against all available tags. ``WHAT`` is what to find.
+
+        ``find {FILTER} [sort {TYPE}] [window {START:END}]``
+
+        Search the database for songs matching ``FILTER``. ``sort`` sorts the
+        result by the specified tag. The sort is descending if the tag is
+        prefixed with a minus (``-``). ``window`` can be used to query only a
+        portion of the real response. The parameter is two zero-based record
+        numbers; a start number and an end number.
 
     *GMPC:*
 
@@ -166,6 +180,11 @@ def findadd(context, *args):
 
         Finds songs in the db that are exactly ``WHAT`` and adds them to
         current playlist. Parameters have the same meaning as for ``find``.
+
+        ``findadd {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        queue. Parameters have the same meaning as for ``find``.
     """
     try:
         query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
@@ -191,6 +210,12 @@ def list_(context, *args):
 
         ``ARTIST`` is an optional parameter when type is ``album``,
         ``date``, or ``genre``. This filters the result list by an artist.
+
+        ``list {TYPE} {FILTER} [group {GROUPTYPE}]``
+
+        Lists unique tags values of the specified type. Additional arguments
+        may specify a filter. The group keyword may be used (repeatedly) to
+        group the results by one or more tags.
 
     *Clarifications:*
 
@@ -420,6 +445,11 @@ def search(context, *args):
         Searches for any song that contains ``WHAT``. Parameters have the same
         meaning as for ``find``, except that search is not case sensitive.
 
+        ``search {FILTER} [sort {TYPE}] [window {START:END}]``
+
+        Search the database for songs matching ``FILTER``. Parameters have the
+        same meaning as for ``find``, except that search is not case sensitive.
+
     *GMPC:*
 
     - uses the undocumented field ``any``.
@@ -459,6 +489,11 @@ def searchadd(context, *args):
 
         Parameters have the same meaning as for ``find``, except that search is
         not case sensitive.
+
+        ``searchadd {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        queue. Parameters have the same meaning as for ``search``.
     """
     try:
         query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
@@ -486,6 +521,11 @@ def searchaddpl(context, *args):
 
         Parameters have the same meaning as for ``find``, except that search is
         not case sensitive.
+
+        ``searchaddpl {NAME} {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        playlist named ``NAME``.
     """
     parameters = list(args)
     if not parameters:
