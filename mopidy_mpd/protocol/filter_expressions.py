@@ -83,28 +83,11 @@ class parenthesis:
             c = takeChar(self.it)
             Assert(c == ')', "')' expected")
 
-operators_inverted = {
-    '==': '!=',
-    '!=': '==',
-    '=~': '!~',
-    '!~': '=~',
-    'contains': '!contains',
-    '!contains': 'contains',
-}
-
 def parse_subexpression(it):
     with parenthesis(it):
         if it.peek() == '!':  # (!EXPRESSION)
-            takeChar(it)  # consume '!'
-            subexpression = parse_subexpression(it)
-            Assert(
-                # Mopidy doesn't support either-this-or-that style queries.
-                len(subexpression) == 1,
-                "inverting (AND) not supported"
-            )
-            filter_type, operator, value = subexpression[0]
-            inverted_operator = operators_inverted[operator]
-            return [(filter_type, inverted_operator, value)]
+            # Mopidy cannot handle '!=', so there's no point in handling this
+            raise exceptions.MpdArgError('non-matching not supported in Mopidy')
 
         elif it.peek() == '(':  # (EXPRESSION1 AND EXPRESSION2 ...)
             subexpressions = [parse_subexpression(it)]
@@ -125,7 +108,11 @@ def parse_subexpression(it):
             else:  # TAG, 'any', 'file', 'filename', 'AudioFormat'
                 operator = takeWord(it, is_operator).lower()
                 Assert(
-                    operator in operators_inverted.keys(),
+                    operator not in ('!=', '!~', '!contains'),
+                    "non-matching not supported in Mopidy"
+                )
+                Assert(
+                    operator in ('==', '=~', 'contains'),
                     'invalid operator'
                 )
                 value = takeQuoted(it)
