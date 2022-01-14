@@ -86,7 +86,11 @@ def _artist_as_track(artist):
     )
 
 
+_art_cache = ("", bytes())
+
+
 def _get_art(context, uri=None, offset=0):
+    global _art_cache
     # TODO work out how validators work and move these there
     if uri is None:
         raise exceptions.MpdArgError("Need to specify uri")
@@ -99,17 +103,21 @@ def _get_art(context, uri=None, offset=0):
 
     image_uri = images[0].uri
 
-    # TODO cache
-    if image_uri.startswith("/"):
-        MOPIDY_DATA_PATH = os.path.expanduser("~/.local/share/mopidy/")  # TODO unhardcode
-        _, extension, file = image_uri.split("/")
-        with open(os.path.join(MOPIDY_DATA_PATH, extension, "images", file), "rb") as image_file:
-            bytes = image_file.read()
-    elif image_uri.startswith("https://"):
-        image_request = requests.get(image_uri)
-        bytes = image_request.content
+    if image_uri == _art_cache[0]:
+        bytes = _art_cache[1]
     else:
-        raise exceptions.MpdNotImplemented(f"cannot make sense of the uri {image_uri}")
+        if image_uri.startswith("/"):
+            MOPIDY_DATA_PATH = os.path.expanduser("~/.local/share/mopidy/")  # TODO unhardcode
+            _, extension, file = image_uri.split("/")
+            with open(os.path.join(MOPIDY_DATA_PATH, extension, "images", file), "rb") as image_file:
+                bytes = image_file.read()
+        elif image_uri.startswith("https://"):
+            image_request = requests.get(image_uri)
+            bytes = image_request.content
+        else:
+            raise exceptions.MpdNotImplemented(f"cannot make sense of the uri {image_uri}")
+
+        _art_cache = (image_uri, bytes)
 
     if offset > len(bytes):
         raise exceptions.MpdArgError("Offset too large")
