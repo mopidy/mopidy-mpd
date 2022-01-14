@@ -3,6 +3,7 @@ import itertools
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
+from mopidy_mpd.protocol.filter_expressions import parse_filter_expression
 
 _SEARCH_MAPPING = {
     "album": "album",
@@ -47,15 +48,20 @@ def _query_from_mpd_search_parameters(parameters, mapping):
     query = {}
     parameters = list(parameters)
     while parameters:
-        # TODO: does it matter that this is now case insensitive
-        field = mapping.get(parameters.pop(0).lower())
-        if not field:
-            raise exceptions.MpdArgError("incorrect arguments")
-        if not parameters:
-            raise ValueError
-        value = parameters.pop(0)
-        if value.strip():
-            query.setdefault(field, []).append(value)
+        parameter = parameters.pop(0)
+        if parameter.startswith('('):  # Filter Expression
+            expression = parse_filter_expression(parameter)
+            for field, operator, value in expression:
+                query.setdefault(field.lower(), []).append(value)
+        else:  # Type and What pair
+            field = mapping.get(parameter.lower())
+            if not field:
+                raise exceptions.MpdArgError("incorrect arguments")
+            if not parameters:
+                raise ValueError
+            value = parameters.pop(0)
+            if value.strip():
+                query.setdefault(field, []).append(value)
     return query
 
 
