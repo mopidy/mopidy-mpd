@@ -107,15 +107,21 @@ def _get_art(context, uri=None, offset=0):
         bytes = _art_cache[1]
     else:
         if image_uri.startswith("/"):
-            MOPIDY_DATA_PATH = os.path.expanduser("~/.local/share/mopidy/")  # TODO unhardcode
+            MOPIDY_DATA_PATH = os.path.expanduser(
+                "~/.local/share/mopidy/"
+            )  # TODO unhardcode
             _, extension, file = image_uri.split("/")
-            with open(os.path.join(MOPIDY_DATA_PATH, extension, "images", file), "rb") as image_file:
+            with open(
+                os.path.join(MOPIDY_DATA_PATH, extension, "images", file), "rb"
+            ) as image_file:
                 bytes = image_file.read()
         elif image_uri.startswith("https://"):
             image_request = requests.get(image_uri)
             bytes = image_request.content
         else:
-            raise exceptions.MpdNotImplemented(f"cannot make sense of the uri {image_uri}")
+            raise exceptions.MpdNotImplemented(
+                f"cannot make sense of the uri {image_uri}"
+            )
 
         _art_cache = (image_uri, bytes)
 
@@ -124,8 +130,8 @@ def _get_art(context, uri=None, offset=0):
 
     return [
         ("size", len(bytes)),
-        ("binary", len(bytes[offset:offset + context.binary_limit])),
-        bytes[offset:offset + context.binary_limit],
+        ("binary", len(bytes[offset : offset + context.binary_limit])),
+        bytes[offset : offset + context.binary_limit],
     ]
     pass
 
@@ -133,9 +139,10 @@ def _get_art(context, uri=None, offset=0):
 @protocol.commands.add("albumart")
 def albumart(context, uri=None, offset=0):
     """
-        `albumart {URI} {OFFSET}`
+    `albumart {URI} {OFFSET}`
 
-        Locate album art for the given song and return a chunk of an album art image file at offset OFFSET.
+    Locate album art for the given song and return a chunk of an album art
+    image file at offset OFFSET.
     """
     track = context.core.library.lookup([uri]).get()[uri]
     return _get_art(context, track[0].album.uri, offset)
@@ -610,8 +617,9 @@ def readcomments(context, uri):
 @protocol.commands.add("readpicture")
 def readpicture(context, uri=None, offset=0):
     """
-        `readpicture {URI} {OFFSET}`
+    `readpicture {URI} {OFFSET}`
 
-        Locate a picture for the given song and return a chunk of the image file at offset OFFSET.
+    Locate a picture for the given song and return a chunk of the image file at
+    offset OFFSET.
     """
     return _get_art(context, uri, offset)

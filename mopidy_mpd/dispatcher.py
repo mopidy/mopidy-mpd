@@ -155,7 +155,11 @@ class MpdDispatcher:
         return response
 
     def _has_error(self, response):
-        return response and isinstance(response[-1], str) and response[-1].startswith("ACK")
+        return (
+            response
+            and isinstance(response[-1], str)
+            and response[-1].startswith("ACK")
+        )
 
     # Filter: call handler
 

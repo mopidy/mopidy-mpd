@@ -56,6 +56,7 @@ def ping(context):
 @protocol.commands.add("binarylimit")
 def binarylimit(context, size):
     """
-        Set the maximum binary response size for the current connection to the specified number of bytes.
+    Set the maximum binary response size for the current connection to the
+    specified number of bytes.
     """
     context.binary_limit = size

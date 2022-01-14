@@ -36,7 +36,11 @@ class MpdSession(network.LineProtocol):
         logger.debug(
             "Response to %s: %s",
             self.connection,
-            formatting.indent(self.decode(self.terminator).join([r for r in response if not isinstance(r, bytes)])),
+            formatting.indent(
+                self.decode(self.terminator).join(
+                    [r for r in response if not isinstance(r, bytes)]
+                )
+            ),
         )
 
         self.send_lines(response)
