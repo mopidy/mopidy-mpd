@@ -140,11 +140,11 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
 
     def test_tagtypes_disable_empty(self):
         self.send_request("tagtypes disable")
-        self.assertInResponse("OK")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Not enough arguments")
 
     def test_tagtypes_enable_empty(self):
         self.send_request("tagtypes enable")
-        self.assertInResponse("OK")
+        self.assertEqualResponse("ACK [2@0] {tagtypes} Not enough arguments")
 
     def test_tagtypes_bogus(self):
         self.send_request("tagtypes bogus")

@@ -89,16 +89,17 @@ def tagtypes(context, *parameters):
         elif subcommand == "clear":
             context.session.tagtypes.clear()
         elif subcommand == "disable":
-            if not all(
-                (value in tagtype_list.TAGTYPE_LIST for value in parameters)
-            ):
-                raise exceptions.MpdArgError("Unknown tag type")
+            _validate_tagtypes(parameters)
             context.session.tagtypes.difference_update(parameters)
         elif subcommand == "enable":
-            if not all(
-                (value in tagtype_list.TAGTYPE_LIST for value in parameters)
-            ):
-                raise exceptions.MpdArgError("Unknown tag type")
+            _validate_tagtypes(parameters)
             context.session.tagtypes.update(parameters)
         return
     return [("tagtype", tagtype) for tagtype in context.session.tagtypes]
+
+
+def _validate_tagtypes(parameters):
+    if not parameters:
+        raise exceptions.MpdArgError("Not enough arguments")
+    if not all((value in tagtype_list.TAGTYPE_LIST for value in parameters)):
+        raise exceptions.MpdArgError("Unknown tag type")
