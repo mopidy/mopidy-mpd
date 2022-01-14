@@ -82,14 +82,21 @@ def notcommands(context):
 
 
 @protocol.commands.add("tagtypes")
-def tagtypes(context):
+def tagtypes(context, *parameters):
     """
     *musicpd.org, reflection section:*
 
-        ``tagtypes``
+        ``tagtypes [ALL | CLEAR | DISABLE {NAME...] | ENABLE {NAME...]]``
 
         Shows a list of available song metadata.
     """
+    parameters = list(parameters)
+    if parameters:
+        subcommand = parameters.pop(0).lower()
+        if subcommand not in ("all", "clear", "disable", "enable"):
+            raise exceptions.MpdArgError("Unknown sub command")
+        # TODO: this is only a stub; we always return all tags anyhow.
+        return
     return [("tagtype", tagtype) for tagtype in tagtype_list.TAGTYPE_LIST]
 
 
