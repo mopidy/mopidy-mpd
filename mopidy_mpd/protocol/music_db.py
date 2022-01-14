@@ -46,13 +46,17 @@ _LIST_NAME_MAPPING = {
 
 def _query_from_mpd_search_parameters(parameters, mapping):
     query = {}
+    uris = []
     parameters = list(parameters)
     while parameters:
         parameter = parameters.pop(0)
         if parameter.startswith('('):  # Filter Expression
             expression = parse_filter_expression(parameter)
-            for field, operator, value in expression:
-                query.setdefault(field.lower(), []).append(value)
+            for field, _, value in expression:
+                if field == 'base':
+                    uris.append(value)
+                else:
+                    query.setdefault(field.lower(), []).append(value)
         else:  # Type and What pair
             field = mapping.get(parameter.lower())
             if not field:
@@ -62,7 +66,7 @@ def _query_from_mpd_search_parameters(parameters, mapping):
             value = parameters.pop(0)
             if value.strip():
                 query.setdefault(field, []).append(value)
-    return query
+    return query, (uris or None)
 
 
 def _get_field(field, search_results):
@@ -111,10 +115,10 @@ def count(context, *args):
     - use multiple tag-needle pairs to make more specific searches.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         raise exceptions.MpdArgError("incorrect arguments")
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
     result_tracks = _get_tracks(results)
     total_length = sum(t.length for t in result_tracks if t.length)
     return [
@@ -158,11 +162,11 @@ def find(context, *args):
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
     result_tracks = []
     if (
         "artist" not in query
@@ -193,11 +197,11 @@ def findadd(context, *args):
         queue. Parameters have the same meaning as for ``find``.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
 
     context.core.tracklist.add(
         uris=[track.uri for track in _get_tracks(results)]
@@ -305,7 +309,7 @@ def list_(context, *args):
             query = {"artist": params}
     else:
         try:
-            query = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
+            query, _ = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
         except exceptions.MpdArgError as exc:
             exc.message = "Unknown filter type"  # noqa B306: Our own exception
             raise
@@ -473,10 +477,10 @@ def search(context, *args):
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
     artists = [_artist_as_track(a) for a in _get_artists(results)]
     albums = [_album_as_track(a) for a in _get_albums(results)]
     tracks = _get_tracks(results)
@@ -502,11 +506,11 @@ def searchadd(context, *args):
         queue. Parameters have the same meaning as for ``search``.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
 
     context.core.tracklist.add(
         uris=[track.uri for track in _get_tracks(results)]
@@ -538,10 +542,10 @@ def searchaddpl(context, *args):
         raise exceptions.MpdArgError("incorrect arguments")
     playlist_name = parameters.pop(0)
     try:
-        query = _query_from_mpd_search_parameters(parameters, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(parameters, _SEARCH_MAPPING)
     except ValueError:
         return
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
 
     uri = context.lookup_playlist_uri_from_name(playlist_name)
     playlist = uri is not None and context.core.playlists.lookup(uri).get()
