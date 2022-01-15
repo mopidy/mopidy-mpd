@@ -1,7 +1,7 @@
 import functools
 import itertools
 import os.path
-import requests
+from urllib.request import Request, urlopen
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
@@ -118,8 +118,8 @@ def _get_art(context, uri=None, offset=0):
             ) as image_file:
                 bytes = image_file.read()
         elif image_uri.startswith("https://"):
-            image_request = requests.get(image_uri)
-            bytes = image_request.content
+            with urlopen(Request(image_uri)) as r:
+                bytes = r.read()
         else:
             raise exceptions.MpdNotImplemented(
                 f"cannot make sense of the uri {image_uri}"
