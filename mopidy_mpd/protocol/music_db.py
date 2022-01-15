@@ -109,7 +109,7 @@ def _get_art(context, uri=None, offset=0):
                 os.path.join(data_path, extension, "images", file), "rb"
             ) as image_file:
                 bytes = image_file.read()
-        elif image_uri.startswith("https://"):
+        elif image_uri.startswith("https://") or image_uri.startswith("http://"):
             with urlopen(Request(image_uri)) as r:
                 bytes = r.read()
         else:
