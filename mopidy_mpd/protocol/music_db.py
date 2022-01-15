@@ -2,6 +2,7 @@ import functools
 import itertools
 import os.path
 from urllib.request import Request, urlopen
+import urllib.error
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
@@ -110,11 +111,14 @@ def _get_art(context, uri=None, offset=0):
             ) as image_file:
                 bytes = image_file.read()
         elif image_uri.startswith("https://") or image_uri.startswith("http://"):
-            with urlopen(Request(image_uri)) as r:
-                bytes = r.read()
+            try:
+                with urlopen(Request(image_uri)) as r:
+                    bytes = r.read()
+            except urllib.error.URLError as e:
+                raise exceptions.MpdArgError(f"There was an error with getting the uri, reason: {e.reason}")
         else:
             raise exceptions.MpdNotImplemented(
-                f"cannot make sense of the uri {image_uri}"
+                f"Cannot make sense of the uri {image_uri}"
             )
 
         context.art_cache = (image_uri, bytes)
