@@ -1,5 +1,8 @@
 import functools
 import itertools
+import os.path
+from urllib.request import Request, urlopen
+import urllib.error
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
@@ -82,6 +85,65 @@ def _artist_as_track(artist):
     return Track(
         uri=artist.uri, name="Artist: " + artist.name, artists=[artist]
     )
+
+
+def _get_art(context, uri=None, offset=0):
+    # TODO work out how validators work and move these there
+    if uri is None:
+        raise exceptions.MpdArgError("Need to specify uri")
+    offset = protocol.INT(offset)
+
+    images = context.core.library.get_images([uri]).get()[uri]
+
+    if len(images) == 0:
+        raise exceptions.MpdNoExistError("No file exists")
+
+    image_uri = images[0].uri
+
+    if image_uri == context.art_cache[0]:
+        bytes = context.art_cache[1]
+    else:
+        if image_uri.startswith("/"):
+            data_path = context.config["core"]["config_dir"]
+            _, extension, file = image_uri.split("/")
+            with open(
+                os.path.join(data_path, extension, "images", file), "rb"
+            ) as image_file:
+                bytes = image_file.read()
+        elif image_uri.startswith("https://") or image_uri.startswith("http://"):
+            try:
+                with urlopen(Request(image_uri)) as r:
+                    bytes = r.read()
+            except urllib.error.URLError as e:
+                raise exceptions.MpdArgError(f"There was an error with getting the uri, reason: {e.reason}")
+        else:
+            raise exceptions.MpdNotImplemented(
+                f"Cannot make sense of the uri {image_uri}"
+            )
+
+        context.art_cache = (image_uri, bytes)
+
+    if offset > len(bytes):
+        raise exceptions.MpdArgError("Offset too large")
+
+    return [
+        ("size", len(bytes)),
+        ("binary", len(bytes[offset : offset + context.binary_limit])),
+        bytes[offset : offset + context.binary_limit],
+    ]
+    pass
+
+
+@protocol.commands.add("albumart")
+def albumart(context, uri=None, offset=0):
+    """
+    `albumart {URI} {OFFSET}`
+
+    Locate album art for the given song and return a chunk of an album art
+    image file at offset OFFSET.
+    """
+    track = context.core.library.lookup([uri]).get()[uri]
+    return _get_art(context, track[0].album.uri, offset)
 
 
 @protocol.commands.add("count")
@@ -548,3 +610,14 @@ def readcomments(context, uri):
         support it. For example, on Ogg files, this lists the Vorbis comments.
     """
     pass
+
+
+@protocol.commands.add("readpicture")
+def readpicture(context, uri=None, offset=0):
+    """
+    `readpicture {URI} {OFFSET}`
+
+    Locate a picture for the given song and return a chunk of the image file at
+    offset OFFSET.
+    """
+    return _get_art(context, uri, offset)
