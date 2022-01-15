@@ -86,11 +86,7 @@ def _artist_as_track(artist):
     )
 
 
-_art_cache = ("", bytes())
-
-
 def _get_art(context, uri=None, offset=0):
-    global _art_cache
     # TODO work out how validators work and move these there
     if uri is None:
         raise exceptions.MpdArgError("Need to specify uri")
@@ -103,8 +99,8 @@ def _get_art(context, uri=None, offset=0):
 
     image_uri = images[0].uri
 
-    if image_uri == _art_cache[0]:
-        bytes = _art_cache[1]
+    if image_uri == context.art_cache[0]:
+        bytes = context.art_cache[1]
     else:
         if image_uri.startswith("/"):
             try:
@@ -125,7 +121,7 @@ def _get_art(context, uri=None, offset=0):
                 f"cannot make sense of the uri {image_uri}"
             )
 
-        _art_cache = (image_uri, bytes)
+        context.art_cache = (image_uri, bytes)
 
     if offset > len(bytes):
         raise exceptions.MpdArgError("Offset too large")

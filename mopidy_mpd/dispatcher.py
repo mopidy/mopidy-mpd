@@ -246,6 +246,9 @@ class MpdContext:
     #: The maximum binary chunk size
     binary_limit = 1024 * 1024
 
+    #: A cache of the most recently sent artwork
+    art_cache = ("", bytes())
+
     _uri_map = None
 
     def __init__(
