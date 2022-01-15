@@ -103,11 +103,7 @@ def _get_art(context, uri=None, offset=0):
         bytes = context.art_cache[1]
     else:
         if image_uri.startswith("/"):
-            try:
-                from mopidy_local import Extension
-                data_path = Extension.get_image_dir(context.dispatcher.config)
-            except ImportError:
-                raise exceptions.MpdNoExistError("A local file was requested, but there was no local extension.")
+            data_path = context.config["core"]["config_dir"]
             _, extension, file = image_uri.split("/")
             with open(
                 os.path.join(data_path, extension, "images", file), "rb"
