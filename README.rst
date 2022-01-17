@@ -140,7 +140,6 @@ This is a non-exhaustive list of MPD features that Mopidy doesn't support.
 - Replay gain is not supported.
 - ``stats`` does not provide any statistics.
 - ``decoders`` does not provide information about available decoders.
-- ``tagtypes`` is not fully supported.
 - Live update of the music database is not supported.
 
 
