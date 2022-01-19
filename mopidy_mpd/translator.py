@@ -18,7 +18,7 @@ def normalize_path(path, relative=False):
     return "/".join(parts)
 
 
-def track_to_mpd_format(track, position=None, stream_title=None, tagtypes=None):
+def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
     """
     Format track for output to MPD client.
 
@@ -175,7 +175,7 @@ def multi_tag_list(objects, attribute, tag):
     ]
 
 
-def tracks_to_mpd_format(tracks, start=0, end=None):
+def tracks_to_mpd_format(tracks, tagtypes, start=0, end=None):
     """
     Format list of tracks for output to MPD client.
 
@@ -197,16 +197,16 @@ def tracks_to_mpd_format(tracks, start=0, end=None):
     assert len(tracks) == len(positions)
     result = []
     for track, position in zip(tracks, positions):
-        formatted_track = track_to_mpd_format(track, position)
+        formatted_track = track_to_mpd_format(track, tagtypes, position)
         if formatted_track:
             result.append(formatted_track)
     return result
 
 
-def playlist_to_mpd_format(playlist, *args, **kwargs):
+def playlist_to_mpd_format(playlist, tagtypes, *args, **kwargs):
     """
     Format playlist for output to MPD client.
 
     Arguments as for :func:`tracks_to_mpd_format`, except the first one.
     """
-    return tracks_to_mpd_format(playlist.tracks, *args, **kwargs)
+    return tracks_to_mpd_format(playlist.tracks, tagtypes, *args, **kwargs)

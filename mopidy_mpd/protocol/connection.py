@@ -99,7 +99,8 @@ def tagtypes(context, *parameters):
 
 
 def _validate_tagtypes(parameters):
-    if not parameters:
+    param_set = set(parameters)
+    if not param_set:
         raise exceptions.MpdArgError("Not enough arguments")
-    if not all((value in tagtype_list.TAGTYPE_LIST for value in parameters)):
+    if not param_set.issubset(tagtype_list.TAGTYPE_LIST):
         raise exceptions.MpdArgError("Unknown tag type")

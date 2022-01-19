@@ -63,7 +63,7 @@ def listplaylistinfo(context, name):
     for uri in track_uris:
         tracks.extend(tracks_map[uri])
     playlist = playlist.replace(tracks=tracks)
-    return translator.playlist_to_mpd_format(playlist)
+    return translator.playlist_to_mpd_format(playlist, context.session.tagtypes)
 
 
 @protocol.commands.add("listplaylists")

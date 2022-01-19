@@ -22,7 +22,7 @@ class MpdSession(network.LineProtocol):
         self.dispatcher = dispatcher.MpdDispatcher(
             session=self, config=config, core=core, uri_map=uri_map
         )
-        self.tagtypes = set(tagtype_list.TAGTYPE_LIST)
+        self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
 
     def on_start(self):
         logger.info("New MPD connection from %s", self.connection)
