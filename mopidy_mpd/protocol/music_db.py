@@ -154,7 +154,9 @@ def find(context, *args):
     if "album" not in query:
         result_tracks += [_album_as_track(a) for a in _get_albums(results)]
     result_tracks += _get_tracks(results)
-    return translator.tracks_to_mpd_format(result_tracks)
+    return translator.tracks_to_mpd_format(
+        result_tracks, context.session.tagtypes
+    )
 
 
 @protocol.commands.add("findadd")
@@ -338,7 +340,11 @@ def listallinfo(context, uri=None):
         else:
             for tracks in lookup_future.get().values():
                 for track in tracks:
-                    result.extend(translator.track_to_mpd_format(track))
+                    result.extend(
+                        translator.track_to_mpd_format(
+                            track, context.session.tagtypes
+                        )
+                    )
     return result
 
 
@@ -390,7 +396,11 @@ def lsinfo(context, uri=None):
         else:
             for tracks in lookup_future.get().values():
                 if tracks:
-                    result.extend(translator.track_to_mpd_format(tracks[0]))
+                    result.extend(
+                        translator.track_to_mpd_format(
+                            tracks[0], context.session.tagtypes
+                        )
+                    )
 
     if uri in (None, "", "/"):
         result.extend(protocol.stored_playlists.listplaylists(context))
@@ -444,7 +454,9 @@ def search(context, *args):
     artists = [_artist_as_track(a) for a in _get_artists(results)]
     albums = [_album_as_track(a) for a in _get_albums(results)]
     tracks = _get_tracks(results)
-    return translator.tracks_to_mpd_format(artists + albums + tracks)
+    return translator.tracks_to_mpd_format(
+        artists + albums + tracks, context.session.tagtypes
+    )
 
 
 @protocol.commands.add("searchadd")
