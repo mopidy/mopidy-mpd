@@ -20,7 +20,7 @@ def test_on_line_received_logged(caplog):
     mpd_session.dispatcher = Mock(spec=dispatcher.MpdDispatcher)
     mpd_session.dispatcher.handle_request.return_value = [str(sentinel.resp)]
 
-    mpd_session.on_line_received(sentinel.line)
+    mpd_session.on_line_received("foobar")
 
-    assert f"Request from {connection}: {sentinel.line}" in caplog.text
+    assert f"Request from {connection}: foobar" in caplog.text
     assert f"Response to {connection}:" in caplog.text
