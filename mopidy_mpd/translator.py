@@ -106,8 +106,6 @@ def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
     if track.album and track.album.uri:
         result.append(("X-AlbumUri", track.album.uri))
 
-    if tagtypes is None:
-        tagtypes = tagtype_list.TAGTYPE_LIST
 
     return [element for element in result if _has_value(tagtypes, *element)]
 
