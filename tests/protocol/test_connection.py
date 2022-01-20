@@ -12,10 +12,10 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
 
     def test_empty_request(self):
         self.send_request("")
-        self.assertEqualResponse("ACK [5@0] {} No command given")
+        self.assertNoResponse()
 
         self.send_request("  ")
-        self.assertEqualResponse("ACK [5@0] {} No command given")
+        self.assertNoResponse()
 
     def test_kill(self):
         self.send_request("kill")

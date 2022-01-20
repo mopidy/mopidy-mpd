@@ -31,7 +31,7 @@ class MpdSession(network.LineProtocol):
 
         # All mpd commands start with a lowercase alphabetic character
         # To prevent CSRF attacks, requests starting with an invalid character are immediately dropped.
-        if not (line[0].islower() and line[0].isalpha()):
+        if len(line) == 0 or not (line[0].islower() and line[0].isalpha()):
             self.connection.stop("Malformed command")
             return
 
