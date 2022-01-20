@@ -1,4 +1,4 @@
-TAGTYPE_LIST = [
+TAGTYPE_LIST = {
     "Artist",
     "ArtistSort",
     "Album",
@@ -11,11 +11,11 @@ TAGTYPE_LIST = [
     "Date",
     "Composer",
     "Performer",
+    "Comment",
     "Disc",
     "MUSICBRAINZ_ARTISTID",
     "MUSICBRAINZ_ALBUMID",
     "MUSICBRAINZ_ALBUMARTISTID",
     "MUSICBRAINZ_TRACKID",
     "X-AlbumUri",
-    "X-AlbumImage",
-]
+}

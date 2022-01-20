@@ -2,6 +2,7 @@ import unittest
 
 from mopidy.models import Album, Artist, Playlist, TlTrack, Track
 from mopidy_mpd import translator
+from mopidy_mpd.protocol import tagtype_list
 
 from tests import path_utils
 
@@ -42,7 +43,7 @@ class TrackMpdFormatTest(unittest.TestCase):
 
     def test_track_to_mpd_format_for_empty_track(self):
         result = translator.track_to_mpd_format(
-            Track(uri="a uri", length=137000)
+            Track(uri="a uri", length=137000), tagtype_list.TAGTYPE_LIST
         )
         assert ("file", "a uri") in result
         assert ("Time", 137) in result
@@ -54,23 +55,29 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert len(result) == 2
 
     def test_track_to_mpd_format_with_position(self):
-        result = translator.track_to_mpd_format(Track(), position=1)
+        result = translator.track_to_mpd_format(
+            Track(), tagtype_list.TAGTYPE_LIST, position=1
+        )
         assert ("Pos", 1) not in result
 
     def test_track_to_mpd_format_with_tlid(self):
-        result = translator.track_to_mpd_format(TlTrack(1, Track()))
+        result = translator.track_to_mpd_format(
+            TlTrack(1, Track()), tagtype_list.TAGTYPE_LIST
+        )
         assert ("Id", 1) not in result
 
     def test_track_to_mpd_format_with_position_and_tlid(self):
         result = translator.track_to_mpd_format(
-            TlTrack(2, Track(uri="a uri")), position=1
+            TlTrack(2, Track(uri="a uri")),
+            tagtype_list.TAGTYPE_LIST,
+            position=1,
         )
         assert ("Pos", 1) in result
         assert ("Id", 2) in result
 
     def test_track_to_mpd_format_for_nonempty_track(self):
         result = translator.track_to_mpd_format(
-            TlTrack(122, self.track), position=9
+            TlTrack(122, self.track), tagtype_list.TAGTYPE_LIST, position=9
         )
         assert ("file", "à uri") in result
         assert ("Time", 137) in result
@@ -96,37 +103,49 @@ class TrackMpdFormatTest(unittest.TestCase):
 
     def test_track_to_mpd_format_with_last_modified(self):
         track = self.track.replace(last_modified=995303899000)
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         assert ("Last-Modified", "2001-07-16T17:18:19Z") in result
 
     def test_track_to_mpd_format_with_last_modified_of_zero(self):
         track = self.track.replace(last_modified=0)
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         keys = [k for k, v in result]
         assert "Last-Modified" not in keys
 
     def test_track_to_mpd_format_musicbrainz_trackid(self):
         track = self.track.replace(musicbrainz_id="foo")
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         assert ("MUSICBRAINZ_TRACKID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_albumid(self):
         album = self.track.album.replace(musicbrainz_id="foo")
         track = self.track.replace(album=album)
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         assert ("MUSICBRAINZ_ALBUMID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_albumartistid(self):
         artist = list(self.track.artists)[0].replace(musicbrainz_id="foo")
         album = self.track.album.replace(artists=[artist])
         track = self.track.replace(album=album)
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         assert ("MUSICBRAINZ_ALBUMARTISTID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_artistid(self):
         artist = list(self.track.artists)[0].replace(musicbrainz_id="foo")
         track = self.track.replace(artists=[artist])
-        result = translator.track_to_mpd_format(track)
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST
+        )
         assert ("MUSICBRAINZ_ARTISTID", "foo") in result
 
     def test_concat_multi_values(self):
@@ -145,20 +164,50 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert translated == ""
 
     def test_track_to_mpd_format_with_stream_title(self):
-        result = translator.track_to_mpd_format(self.track, stream_title="foo")
+        result = translator.track_to_mpd_format(
+            self.track, tagtype_list.TAGTYPE_LIST, stream_title="foo"
+        )
         assert ("Name", "a nàme") in result
         assert ("Title", "foo") in result
 
     def test_track_to_mpd_format_with_empty_stream_title(self):
-        result = translator.track_to_mpd_format(self.track, stream_title="")
+        result = translator.track_to_mpd_format(
+            self.track, tagtype_list.TAGTYPE_LIST, stream_title=""
+        )
         assert ("Name", "a nàme") in result
         assert ("Title", "") not in result
 
     def test_track_to_mpd_format_with_stream_and_no_track_name(self):
         track = self.track.replace(name=None)
-        result = translator.track_to_mpd_format(track, stream_title="foo")
+        result = translator.track_to_mpd_format(
+            track, tagtype_list.TAGTYPE_LIST, stream_title="foo"
+        )
         assert ("Name", "") not in result
         assert ("Title", "foo") in result
+
+    def test_track_to_mpd_client_filtered(self):
+        configured_tagtypes = [
+            "Artist",
+            "Album",
+            "Title",
+            "Track",
+            "Name",
+            "Genre",
+        ]
+        result = translator.track_to_mpd_format(
+            TlTrack(122, self.track), configured_tagtypes, position=9
+        )
+        assert ("file", "à uri") in result
+        assert ("Time", 137) in result
+        assert ("Artist", "an artist") in result
+        assert ("Artist", "yet another artist") in result
+        assert ("Title", "a nàme") in result
+        assert ("Album", "an album") in result
+        assert ("Genre", "a genre") in result
+        assert ("Track", "7/13") in result
+        assert ("Pos", 9) in result
+        assert ("Id", 122) in result
+        assert len(result) == 10
 
 
 class PlaylistMpdFormatTest(unittest.TestCase):
@@ -170,7 +219,9 @@ class PlaylistMpdFormatTest(unittest.TestCase):
                 Track(uri="baz", track_no=3),
             ]
         )
-        result = translator.playlist_to_mpd_format(playlist)
+        result = translator.playlist_to_mpd_format(
+            playlist, tagtype_list.TAGTYPE_LIST
+        )
         assert len(result) == 3
 
     def test_mpd_format_with_range(self):
@@ -181,6 +232,8 @@ class PlaylistMpdFormatTest(unittest.TestCase):
                 Track(uri="baz", track_no=3),
             ]
         )
-        result = translator.playlist_to_mpd_format(playlist, 1, 2)
+        result = translator.playlist_to_mpd_format(
+            playlist, tagtype_list.TAGTYPE_LIST, 1, 2
+        )
         assert len(result) == 1
         assert dict(result[0])["Track"] == 2

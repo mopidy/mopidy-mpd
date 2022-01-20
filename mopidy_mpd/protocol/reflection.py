@@ -1,5 +1,4 @@
 from mopidy_mpd import exceptions, protocol
-from mopidy_mpd.protocol import tagtype_list
 
 
 @protocol.commands.add("config", list_command=False)
@@ -79,25 +78,6 @@ def notcommands(context):
             command_names.add(name)
 
     return [("command", command_name) for command_name in sorted(command_names)]
-
-
-@protocol.commands.add("tagtypes")
-def tagtypes(context, *parameters):
-    """
-    *musicpd.org, reflection section:*
-
-        ``tagtypes [ALL | CLEAR | DISABLE {NAME...] | ENABLE {NAME...]]``
-
-        Shows a list of available song metadata.
-    """
-    parameters = list(parameters)
-    if parameters:
-        subcommand = parameters.pop(0).lower()
-        if subcommand not in ("all", "clear", "disable", "enable"):
-            raise exceptions.MpdArgError("Unknown sub command")
-        # TODO: this is only a stub; we always return all tags anyhow.
-        return
-    return [("tagtype", tagtype) for tagtype in tagtype_list.TAGTYPE_LIST]
 
 
 @protocol.commands.add("urlhandlers")

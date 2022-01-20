@@ -44,7 +44,10 @@ def currentsong(context):
     if tl_track is not None:
         position = context.core.tracklist.index(tl_track).get()
         return translator.track_to_mpd_format(
-            tl_track, position=position, stream_title=stream_title
+            tl_track,
+            position=position,
+            stream_title=stream_title,
+            tagtypes=context.session.tagtypes,
         )
 
 

@@ -188,7 +188,9 @@ def playlistfind(context, tag, needle):
         if not tl_tracks:
             return None
         position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(tl_tracks[0], position=position)
+        return translator.track_to_mpd_format(
+            tl_tracks[0], context.session.tagtypes, position=position
+        )
     raise exceptions.MpdNotImplemented  # TODO
 
 
@@ -207,10 +209,13 @@ def playlistid(context, tlid=None):
         if not tl_tracks:
             raise exceptions.MpdNoExistError("No such song")
         position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(tl_tracks[0], position=position)
+        return translator.track_to_mpd_format(
+            tl_tracks[0], context.session.tagtypes, position=position
+        )
     else:
         return translator.tracks_to_mpd_format(
-            context.core.tracklist.get_tl_tracks().get()
+            context.core.tracklist.get_tl_tracks().get(),
+            context.session.tagtypes,
         )
 
 
@@ -241,7 +246,9 @@ def playlistinfo(context, parameter=None):
         raise exceptions.MpdArgError("Bad song index")
     if end and end > len(tl_tracks):
         end = None
-    return translator.tracks_to_mpd_format(tl_tracks, start, end)
+    return translator.tracks_to_mpd_format(
+        tl_tracks, context.session.tagtypes, start, end
+    )
 
 
 @protocol.commands.add("playlistsearch")
@@ -281,7 +288,8 @@ def plchanges(context, version):
     tracklist_version = context.core.tracklist.get_version().get()
     if version < tracklist_version:
         return translator.tracks_to_mpd_format(
-            context.core.tracklist.get_tl_tracks().get()
+            context.core.tracklist.get_tl_tracks().get(),
+            context.session.tagtypes,
         )
     elif version == tracklist_version:
         # A version match could indicate this is just a metadata update, so
@@ -293,7 +301,10 @@ def plchanges(context, version):
         tl_track = context.core.playback.get_current_tl_track().get()
         position = context.core.tracklist.index(tl_track).get()
         return translator.track_to_mpd_format(
-            tl_track, position=position, stream_title=stream_title
+            tl_track,
+            context.session.tagtypes,
+            position=position,
+            stream_title=stream_title,
         )
 
 
