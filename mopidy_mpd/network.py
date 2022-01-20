@@ -454,6 +454,14 @@ class LineProtocol(pykka.ThreadingActor):
         self.connection.stop("Actor is shutting down.")
 
     def parse_lines(self):
+        """
+        All mpd commands begin with a lowercase letter
+        so we can immediately reject any potential HTTP request.
+        """
+        if self.recv_buffer[0] < ord('a') or self.recv_buffer[0] > ord('z'):
+            self.connection.stop("Invalid mpd command")
+            return
+
         """Consume new data and yield any lines found."""
         while re.search(self.terminator, self.recv_buffer):
             line, self.recv_buffer = self.delimiter.split(self.recv_buffer, 1)
