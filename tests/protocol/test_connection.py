@@ -26,3 +26,7 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
     def test_ping(self):
         self.send_request("ping")
         self.assertEqualResponse("OK")
+
+    def test_malformed_comamnd(self):
+        self.send_request("GET / HTTP/1.1")
+        self.assertEqualResponse("ERR malformed command GET")
