@@ -507,5 +507,9 @@ class LineProtocol(pykka.ThreadingActor):
         if not lines:
             return
 
+        # using translate() and fromkeys() to remove all control characters
+        mapping =  dict.fromkeys(range(32))
+        lines = list(map(lambda line: line.translate(mapping), lines))
+
         data = self.join_lines(lines)
         self.connection.queue_send(self.encode(data))
