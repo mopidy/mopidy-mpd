@@ -29,14 +29,11 @@ class MpdSession(network.LineProtocol):
     def on_line_received(self, line):
         logger.debug("Request from %s: %s", self.connection, line)
 
-        # To prevent CSRF attacks, requests with an invalid command syntax are immediately dropped.
-        if len(line.split()) > 0:
-            command = line.split()[0]
-            if not all(c.islower() and c.isalpha() or c == '_' for c in list(command)):
-                logger.debug("Dropping connection due to malformed command")
-                self.send_lines([f"ERR malformed command {command}"])
-                self.connection.stop("Malformed command")
-                return
+        # All mpd commands start with a lowercase alphabetic character
+        # To prevent CSRF attacks, requests starting with an invalid character are immediately dropped.
+        if not (line[0].islower() and line[0].isalpha()):
+            self.connection.stop("Malformed command")
+            return
 
         response = self.dispatcher.handle_request(line)
         if not response:

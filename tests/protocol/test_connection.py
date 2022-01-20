@@ -29,4 +29,4 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
 
     def test_malformed_comamnd(self):
         self.send_request("GET / HTTP/1.1")
-        self.assertEqualResponse("ERR malformed command GET")
+        self.assertNoResponse()
