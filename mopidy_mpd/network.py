@@ -12,7 +12,7 @@ from gi.repository import GLib
 logger = logging.getLogger(__name__)
 
 
-CONTROL_CHARS =  dict.fromkeys(range(32))
+CONTROL_CHARS = dict.fromkeys(range(32))
 
 def get_unix_socket_path(socket_path):
     match = re.search("^unix:(.*)", socket_path)
