@@ -38,7 +38,7 @@ class MpdSession(network.LineProtocol):
             self.connection,
             formatting.indent(
                 self.decode(self.terminator).join(
-                    [r for r in response if not isinstance(r, bytes)]
+                    r for r in response if not isinstance(r, bytes)
                 )
             ),
         )

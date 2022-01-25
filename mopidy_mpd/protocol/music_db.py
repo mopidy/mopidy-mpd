@@ -101,7 +101,7 @@ def _get_art(context, uri=None, offset=0):
     image_uri = images[0].uri
 
     if image_uri == context.art_cache[0]:
-        bytes = context.art_cache[1]
+        image_bytes = context.art_cache[1]
     else:
         if image_uri.startswith("/"):
             data_path = context.config["core"]["config_dir"]
@@ -109,11 +109,11 @@ def _get_art(context, uri=None, offset=0):
             with open(
                 os.path.join(data_path, extension, "images", file), "rb"
             ) as image_file:
-                bytes = image_file.read()
+                image_bytes = image_file.read()
         elif image_uri.startswith("https://") or image_uri.startswith("http://"):
             try:
                 with urlopen(Request(image_uri)) as r:
-                    bytes = r.read()
+                    image_bytes = r.read()
             except urllib.error.URLError as e:
                 raise exceptions.MpdArgError(f"There was an error with getting the uri, reason: {e.reason}")
         else:
@@ -121,17 +121,16 @@ def _get_art(context, uri=None, offset=0):
                 f"Cannot make sense of the uri {image_uri}"
             )
 
-        context.art_cache = (image_uri, bytes)
+        context.art_cache = (image_uri, image_bytes)
 
-    if offset > len(bytes):
+    if offset > len(image_bytes):
         raise exceptions.MpdArgError("Offset too large")
 
     return [
-        ("size", len(bytes)),
-        ("binary", len(bytes[offset : offset + context.binary_limit])),
-        bytes[offset : offset + context.binary_limit],
+        ("size", len(image_bytes)),
+        ("binary", len(image_bytes[offset : offset + context.binary_limit])),
+        image_bytes[offset : offset + context.binary_limit],
     ]
-    pass
 
 
 @protocol.commands.add("albumart")
