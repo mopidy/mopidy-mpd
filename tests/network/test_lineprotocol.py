@@ -211,14 +211,14 @@ class LineProtocolTest(unittest.TestCase):
         self.mock.connection = Mock(spec=network.Connection)
         self.mock.join_lines.return_value = "lines"
 
-        network.LineProtocol.send_lines(self.mock, sentinel.lines)
-        self.mock.join_lines.assert_called_once_with(sentinel.lines)
+        network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
+        self.mock.join_lines.assert_called_once_with(["line 1", "line 2"])
 
     def test_send_line_encodes_joined_lines_with_final_terminator(self):
         self.mock.connection = Mock(spec=network.Connection)
         self.mock.join_lines.return_value = "lines\n"
 
-        network.LineProtocol.send_lines(self.mock, sentinel.lines)
+        network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
         self.mock.encode.assert_called_once_with("lines\n")
 
     def test_send_lines_sends_encoded_string(self):
@@ -226,7 +226,7 @@ class LineProtocolTest(unittest.TestCase):
         self.mock.join_lines.return_value = "lines"
         self.mock.encode.return_value = sentinel.data
 
-        network.LineProtocol.send_lines(self.mock, sentinel.lines)
+        network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
         self.mock.connection.queue_send.assert_called_once_with(sentinel.data)
 
     def test_join_lines_returns_empty_string_for_no_lines(self):
