@@ -510,7 +510,7 @@ class LineProtocol(pykka.ThreadingActor):
         if not lines:
             return
 
-        # Remove all control characters (first 32 ascii characters)
+        # Remove all control characters (first 32 ASCII characters)
         lines = [l.translate(CONTROL_CHARS) for l in lines]
 
         data = self.join_lines(lines)
