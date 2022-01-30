@@ -12,6 +12,9 @@ from gi.repository import GLib
 logger = logging.getLogger(__name__)
 
 
+CONTROL_CHARS = dict.fromkeys(range(32))
+
+
 def get_unix_socket_path(socket_path):
     match = re.search("^unix:(.*)", socket_path)
     if not match:
@@ -506,6 +509,9 @@ class LineProtocol(pykka.ThreadingActor):
         """
         if not lines:
             return
+
+        # Remove all control characters (first 32 ASCII characters)
+        lines = [l.translate(CONTROL_CHARS) for l in lines]
 
         data = self.join_lines(lines)
         self.connection.queue_send(self.encode(data))
