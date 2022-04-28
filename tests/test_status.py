@@ -113,7 +113,7 @@ class StatusHandlerTest(unittest.TestCase):
         result = dict(status.status(self.context))
         assert "playlist" in result
         assert int(result["playlist"]) >= 0
-        assert int(result["playlist"]) <= ((2 ** 31) - 1)
+        assert int(result["playlist"]) <= ((2**31) - 1)
 
     def test_status_method_contains_playlistlength(self):
         result = dict(status.status(self.context))

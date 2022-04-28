@@ -15,7 +15,7 @@ class MpdSession(network.LineProtocol):
 
     terminator = protocol.LINE_TERMINATOR
     encoding = protocol.ENCODING
-    delimiter = br"\r?\n"
+    delimiter = rb"\r?\n"
 
     def __init__(self, connection, config=None, core=None, uri_map=None):
         super().__init__(connection)
