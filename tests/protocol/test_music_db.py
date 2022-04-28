@@ -36,6 +36,18 @@ class QueryFromMpdListFormatTest(unittest.TestCase):
     pass  # TODO
 
 
+class TagMappingTest(unittest.TestCase):
+    def test_is_list_name_mapping_for_every_field(self):
+        for field in music_db._LIST_MAPPING.values():
+            assert field in music_db._LIST_NAME_MAPPING
+
+    def test_list_mapping_does_not_includes_any(self):
+        assert "any" not in music_db._LIST_NAME_MAPPING
+
+    def test_search_mapping_includes_any(self):
+        assert "any" in music_db._SEARCH_MAPPING
+
+
 # TODO: why isn't core.playlists.filter getting deprecation warnings?
 
 
@@ -732,14 +744,38 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_list_foo_returns_ack(self):
-        self.send_request('list "foo"')
-        self.assertEqualResponse("ACK [2@0] {list} Unknown tag type: foo")
+        self.send_request('list "foO"')
+        self.assertEqualResponse("ACK [2@0] {list} Unknown tag type: foO")
 
     def test_list_without_type_returns_ack(self):
         self.send_request("list")
         self.assertEqualResponse(
             'ACK [2@0] {list} too few arguments for "list"'
         )
+
+    def test_list_all_supported_fields(self):
+        # Be nice to use pytest's parametrize here.
+        fields = [
+            "album",
+            "albumartist",
+            "artist",
+            "comment",
+            "composer",
+            "date",
+            "disc",
+            "file",
+            "filename",
+            "genre",
+            "musicbrainz_albumid",
+            "musicbrainz_artistid",
+            "musicbrainz_trackid",
+            "performer",
+            "title",
+            "track",
+        ]
+        for field in fields:
+            self.send_request(f'list "{field}"')
+            self.assertInResponse("OK")
 
     # Track title
 

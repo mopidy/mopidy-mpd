@@ -4,43 +4,44 @@ import itertools
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
 
-_SEARCH_MAPPING = {
+_LIST_MAPPING = {
     "album": "album",
     "albumartist": "albumartist",
-    "any": "any",
     "artist": "artist",
     "comment": "comment",
     "composer": "composer",
     "date": "date",
+    "disc": "disc_no",
     "file": "uri",
     "filename": "uri",
     "genre": "genre",
+    "musicbrainz_albumid": "musicbrainz_albumid",
+    "musicbrainz_artistid": "musicbrainz_artistid",
+    "musicbrainz_trackid": "musicbrainz_trackid",
     "performer": "performer",
     "title": "track_name",
     "track": "track_no",
 }
 
-_LIST_MAPPING = {
-    "title": "track",
-    "album": "album",
-    "albumartist": "albumartist",
-    "artist": "artist",
-    "composer": "composer",
-    "date": "date",
-    "genre": "genre",
-    "performer": "performer",
-}
-
 _LIST_NAME_MAPPING = {
-    "track": "Title",
     "album": "Album",
     "albumartist": "AlbumArtist",
     "artist": "Artist",
+    "comment": "Comment",
     "composer": "Composer",
     "date": "Date",
+    "disc_no": "Disc",
     "genre": "Genre",
     "performer": "Performer",
+    "musicbrainz_albumid": "MUSICBRAINZ_ALBUMID",
+    "musicbrainz_artistid": "MUSICBRAINZ_ARTISTID",
+    "musicbrainz_trackid": "MUSICBRAINZ_TRACKID",
+    "track_name": "Title",
+    "track_no": "Track",
+    "uri": "file",
 }
+
+_SEARCH_MAPPING = dict(_LIST_MAPPING, **{"any": "any"})
 
 
 def _query_from_mpd_search_parameters(parameters, mapping):
@@ -263,8 +264,8 @@ def list_(context, *args):
     if not params:
         raise exceptions.MpdArgError('too few arguments for "list"')
 
-    field_arg = params.pop(0).lower()
-    field = _LIST_MAPPING.get(field_arg)
+    field_arg = params.pop(0)
+    field = _LIST_MAPPING.get(field_arg.lower())
     if field is None:
         raise exceptions.MpdArgError(f"Unknown tag type: {field_arg}")
 
