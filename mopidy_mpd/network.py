@@ -511,7 +511,7 @@ class LineProtocol(pykka.ThreadingActor):
             return
 
         # Remove all control characters (first 32 ASCII characters)
-        lines = [l.translate(CONTROL_CHARS) for l in lines]
+        lines = [line.translate(CONTROL_CHARS) for line in lines]
 
         data = self.join_lines(lines)
         self.connection.queue_send(self.encode(data))

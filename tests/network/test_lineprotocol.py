@@ -110,7 +110,7 @@ class LineProtocolTest(unittest.TestCase):
 
     def prepare_parse_lines_test(self, recv_data=""):
         self.mock.terminator = b"\n"
-        self.mock.delimiter = re.compile(br"\n")
+        self.mock.delimiter = re.compile(rb"\n")
         self.mock.recv_buffer = recv_data.encode()
 
     def test_parse_lines_emtpy_buffer(self):
@@ -138,7 +138,7 @@ class LineProtocolTest(unittest.TestCase):
 
     def test_parse_lines_terminator_with_carriage_return(self):
         self.prepare_parse_lines_test("data\r\n")
-        self.mock.delimiter = re.compile(br"\r?\n")
+        self.mock.delimiter = re.compile(rb"\r?\n")
 
         lines = network.LineProtocol.parse_lines(self.mock)
         assert b"data" == next(lines)
