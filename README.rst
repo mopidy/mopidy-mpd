@@ -90,7 +90,7 @@ The following configuration values are available:
   - ``::``: Listens on all interfaces, both IPv4 and IPv6.
   - ``unix:/var/run/mopidy/mpd.sock``: Listen on the Unix socket at the
     specified path. Must be prefixed with ``unix:``.
-    Users must be added to the `mopidy` group (`usermod -a -G mopidy user`)
+    Users must be added to the ``mopidy`` group (``usermod -a -G mopidy user``)
     to communicate with MPD over a Unix socket.
 
 - ``mpd/port``:
