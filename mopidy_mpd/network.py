@@ -125,9 +125,12 @@ class Server:
         socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
-            oldmask = os.umask(0o002) # make socket writable for users in the 'mopidy' group
-            sock.bind(socket_path)
-            os.umask(oldmask)
+            # make socket writable for users in the 'mopidy' group 
+            oldmask = os.umask(0o002)
+            try:
+                sock.bind(socket_path)
+            finally:
+                os.umask(oldmask)
         else:
             # ensure the port is supplied
             if not isinstance(port, int):
