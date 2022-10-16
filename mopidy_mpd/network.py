@@ -36,6 +36,24 @@ def get_socket_address(host, port):
     else:
         return (host, port)
 
+def get_socket_umask(perms):
+    default_umask = 0o002
+    all_perms = 0o777
+    mask = all_perms - int(perms, 8)
+    if mask < 0:
+        logger.error(
+            f"Invalid Unix socket permission value: {perms}, "
+            f"reverting to default permission of 775."
+        )
+        return default_umask
+    elif mask >= 0o100:
+        logger.error(
+            f"Unix socket permission must allow user rwx, "
+            f"reverting to default permission of 775."
+        )
+        return default_umask 
+    else:
+        return mask
 
 class ShouldRetrySocketCall(Exception):
 
@@ -99,6 +117,7 @@ def format_hostname(hostname):
     return hostname
 
 
+
 class Server:
 
     """Setup listener and register it with GLib's event loop."""
@@ -107,6 +126,7 @@ class Server:
         self,
         host,
         port,
+        socket_permissions,
         protocol,
         protocol_kwargs=None,
         max_connections=5,
@@ -118,6 +138,7 @@ class Server:
         self.timeout = timeout
         self.server_socket = self.create_server_socket(host, port)
         self.address = get_socket_address(host, port)
+        self.umask = get_socket_umask(socket_permissions)
 
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
@@ -125,8 +146,8 @@ class Server:
         socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
-            # make socket writable for users in the 'mopidy' group 
-            oldmask = os.umask(0o002)
+            # apply socket perms from config
+            oldmask = os.umask(self.umask)
             try:
                 sock.bind(socket_path)
             finally:

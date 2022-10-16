@@ -32,6 +32,7 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
         self.hostname = network.format_hostname(config["mpd"]["hostname"])
         self.port = config["mpd"]["port"]
+        self.socket_permissions = config["mpd"]["socket_permissions"]
         self.uri_map = uri_mapper.MpdUriMapper(core)
 
         self.zeroconf_name = config["mpd"]["zeroconf"]
@@ -44,6 +45,7 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
             server = network.Server(
                 self.hostname,
                 self.port,
+                self.socket_permissions,
                 protocol=session.MpdSession,
                 protocol_kwargs={
                     "config": config,

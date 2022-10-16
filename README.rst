@@ -91,12 +91,21 @@ The following configuration values are available:
   - ``unix:/var/run/mopidy/mpd.sock``: Listen on the Unix socket at the
     specified path. Must be prefixed with ``unix:``.
     If `Mopidy is run as a system service <https://docs.mopidy.com/en/latest/running/service/>`_,
-    users must be added to the ``mopidy`` group (``usermod -a -G mopidy user``)
+    ``mpd/socket_permissions`` must allow group write access (default)
+    and users must be added to the ``mopidy`` group (``usermod -a -G mopidy user``)
     to communicate with the MPD server over a Unix socket.
 
 - ``mpd/port``:
   Which TCP port the MPD server should listen to.
   Default: 6600.
+
+- ``mpd/socket_permissions``:
+  The octal permission value used for the Unix socket created by the MPD server
+  (only applies if ``mpd/hostname`` is a unix socket).
+
+  - ``775``: rwx for user and group, r-x for others (default).
+  - ``777``: rwx for all users.
+  - ``755``: rwx for user, r-x for others.
 
 - ``mpd/password``:
   The password required for connecting to the MPD server.
