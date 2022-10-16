@@ -31,6 +31,7 @@ def test_idle_hooked_up_correctly(event, expected):
         "mpd": {
             "hostname": "foobar",
             "port": 1234,
+            "socket_permissions": "775",
             "zeroconf": None,
             "max_connections": None,
             "connection_timeout": None,

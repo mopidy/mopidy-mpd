@@ -38,6 +38,8 @@ def get_socket_address(host, port):
 
 def get_socket_umask(perms):
     default_umask = 0o002
+    if perms is None:
+        return default_umask
     all_perms = 0o777
     mask = all_perms - int(perms, 8)
     if mask < 0:
@@ -126,28 +128,29 @@ class Server:
         self,
         host,
         port,
-        socket_permissions,
         protocol,
         protocol_kwargs=None,
         max_connections=5,
         timeout=30,
+        socket_permissions=None,
     ):
         self.protocol = protocol
         self.protocol_kwargs = protocol_kwargs or {}
         self.max_connections = max_connections
         self.timeout = timeout
-        self.server_socket = self.create_server_socket(host, port)
+        self.server_socket = self.create_server_socket(host, port, socket_permissions)
         self.address = get_socket_address(host, port)
         self.umask = get_socket_umask(socket_permissions)
 
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
-    def create_server_socket(self, host, port):
+    def create_server_socket(self, host, port, socket_permissions=None):
         socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
             # apply socket perms from config
-            oldmask = os.umask(self.umask)
+            socket_umask = get_socket_umask(socket_permissions)
+            oldmask = os.umask(socket_umask)
             try:
                 sock.bind(socket_path)
             finally:

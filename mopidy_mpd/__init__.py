@@ -20,7 +20,7 @@ class Extension(ext.Extension):
         schema = super().get_config_schema()
         schema["hostname"] = config.Hostname()
         schema["port"] = config.Port(optional=True)
-        schema["socket_permissions"] = config.String()
+        schema["socket_permissions"] = config.String(optional=True)
         schema["password"] = config.Secret(optional=True)
         schema["max_connections"] = config.Integer(minimum=1)
         schema["connection_timeout"] = config.Integer(minimum=1)

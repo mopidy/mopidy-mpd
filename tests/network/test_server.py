@@ -21,7 +21,7 @@ class ServerTest(unittest.TestCase):
             self.mock, sentinel.host, sentinel.port, sentinel.protocol
         )
         self.mock.create_server_socket.assert_called_once_with(
-            sentinel.host, sentinel.port
+            sentinel.host, sentinel.port, None
         )
         self.mock.stop()
 
