@@ -36,6 +36,26 @@ def get_socket_address(host, port):
     else:
         return (host, port)
 
+def get_socket_umask(perms):
+    default_umask = 0o002
+    if perms is None:
+        return default_umask
+    all_perms = 0o777
+    mask = all_perms - int(perms, 8)
+    if mask < 0:
+        logger.error(
+            f"Invalid Unix socket permission value: {perms}, "
+            f"reverting to default permission of 775."
+        )
+        return default_umask
+    elif mask >= 0o100:
+        logger.error(
+            f"Unix socket permission must allow user rwx, "
+            f"reverting to default permission of 775."
+        )
+        return default_umask 
+    else:
+        return mask
 
 class ShouldRetrySocketCall(Exception):
 
@@ -99,6 +119,7 @@ def format_hostname(hostname):
     return hostname
 
 
+
 class Server:
 
     """Setup listener and register it with GLib's event loop."""
@@ -111,21 +132,29 @@ class Server:
         protocol_kwargs=None,
         max_connections=5,
         timeout=30,
+        socket_permissions=None,
     ):
         self.protocol = protocol
         self.protocol_kwargs = protocol_kwargs or {}
         self.max_connections = max_connections
         self.timeout = timeout
-        self.server_socket = self.create_server_socket(host, port)
+        self.server_socket = self.create_server_socket(host, port, socket_permissions)
         self.address = get_socket_address(host, port)
+        self.umask = get_socket_umask(socket_permissions)
 
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
-    def create_server_socket(self, host, port):
+    def create_server_socket(self, host, port, socket_permissions=None):
         socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
-            sock.bind(socket_path)
+            # apply socket perms from config
+            socket_umask = get_socket_umask(socket_permissions)
+            oldmask = os.umask(socket_umask)
+            try:
+                sock.bind(socket_path)
+            finally:
+                os.umask(oldmask)
         else:
             # ensure the port is supplied
             if not isinstance(port, int):

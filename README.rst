@@ -82,18 +82,30 @@ The following configuration values are available:
 
 - ``mpd/hostname``:
   Which address the MPD server should bind to.
-  This can be a network address or the path toa Unix socket:
+  This can be a network address or the path to a Unix socket:
 
   - ``127.0.0.1``: Listens only on the IPv4 loopback interface (default).
   - ``::1``: Listens only on the IPv6 loopback interface.
   - ``0.0.0.0``: Listens on all IPv4 interfaces.
   - ``::``: Listens on all interfaces, both IPv4 and IPv6.
-  - ``unix:/path/to/unix/socket.sock``: Listen on the Unix socket at the
+  - ``unix:/var/run/mopidy/mpd.sock``: Listen on the Unix socket at the
     specified path. Must be prefixed with ``unix:``.
+    If `Mopidy is run as a system service <https://docs.mopidy.com/en/latest/running/service/>`_,
+    ``mpd/socket_permissions`` must allow group write access (default)
+    and users must be added to the ``mopidy`` group (``usermod -a -G mopidy user``)
+    to communicate with the MPD server over a Unix socket.
 
 - ``mpd/port``:
   Which TCP port the MPD server should listen to.
   Default: 6600.
+
+- ``mpd/socket_permissions``:
+  The octal permission value used for the Unix socket created by the MPD server
+  (only applies if ``mpd/hostname`` is a unix socket).
+
+  - ``775``: rwx for user and group, r-x for others (default).
+  - ``777``: rwx for all users.
+  - ``755``: rwx for user, r-x for others.
 
 - ``mpd/password``:
   The password required for connecting to the MPD server.

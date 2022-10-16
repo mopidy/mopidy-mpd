@@ -32,6 +32,7 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
         self.hostname = network.format_hostname(config["mpd"]["hostname"])
         self.port = config["mpd"]["port"]
+        self.socket_permissions = config["mpd"]["socket_permissions"]
         self.uri_map = uri_mapper.MpdUriMapper(core)
 
         self.zeroconf_name = config["mpd"]["zeroconf"]
@@ -52,6 +53,7 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
                 },
                 max_connections=config["mpd"]["max_connections"],
                 timeout=config["mpd"]["connection_timeout"],
+                socket_permissions=self.socket_permissions,
             )
         except OSError as exc:
             raise exceptions.FrontendError(f"MPD server startup failed: {exc}")
