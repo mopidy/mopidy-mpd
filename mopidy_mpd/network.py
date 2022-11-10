@@ -15,6 +15,15 @@ logger = logging.getLogger(__name__)
 CONTROL_CHARS = dict.fromkeys(range(32))
 
 
+def get_systemd_socket():
+    """Attempt to get a socket from systemd."""
+    fdnames = os.environ.get("LISTEN_FDNAMES", "").split(":")
+    if "mpd" not in fdnames:
+        return None
+    fd = fdnames.index("mpd") + 3  # 3 is the first systemd file handle
+    return socket.socket(fileno=fd)
+
+
 def get_unix_socket_path(socket_path):
     match = re.search("^unix:(.*)", socket_path)
     if not match:
@@ -122,6 +131,10 @@ class Server:
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
     def create_server_socket(self, host, port):
+        sock = get_systemd_socket()
+        if sock is not None:
+            return sock
+
         socket_path = get_unix_socket_path(host)
         if socket_path is not None:  # host is a path so use unix socket
             sock = create_unix_socket()
