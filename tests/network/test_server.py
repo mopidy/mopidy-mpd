@@ -250,7 +250,7 @@ class ServerTest(unittest.TestCase):
 
         for error in (errno.EAGAIN, errno.EINTR):
             sock.accept.side_effect = socket.error(error, "")
-            with self.assertRaises(network.ShouldRetrySocketCall):
+            with self.assertRaises(network.ShouldRetrySocketCallError):
                 network.Server.accept_connection(self.mock)
 
     # FIXME decide if this should be allowed to propegate
