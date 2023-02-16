@@ -93,7 +93,7 @@ def delete(context, songrange):
     tl_tracks = context.core.tracklist.slice(start, end).get()
     if not tl_tracks:
         raise exceptions.MpdArgError("Bad song index", command="delete")
-    for (tlid, _) in tl_tracks:
+    for tlid, _ in tl_tracks:
         context.core.tracklist.remove({"tlid": [tlid]})
 
 
@@ -325,7 +325,7 @@ def plchangesposid(context, version):
     # XXX Naive implementation that returns all tracks as changed
     if int(version) != context.core.tracklist.get_version().get():
         result = []
-        for (position, (tlid, _)) in enumerate(
+        for position, (tlid, _) in enumerate(
             context.core.tracklist.get_tl_tracks().get()
         ):
             result.append(("cpos", position))

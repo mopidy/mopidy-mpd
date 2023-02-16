@@ -46,7 +46,7 @@ def get_socket_address(host, port):
         return (host, port)
 
 
-class ShouldRetrySocketCall(Exception):
+class ShouldRetrySocketCallError(Exception):
 
     """Indicate that attempted socket call should be retried"""
 
@@ -170,7 +170,7 @@ class Server:
     def handle_connection(self, fd, flags):
         try:
             sock, addr = self.accept_connection()
-        except ShouldRetrySocketCall:
+        except ShouldRetrySocketCallError:
             return True
 
         if self.maximum_connections_exceeded():
@@ -187,7 +187,7 @@ class Server:
             return sock, addr
         except OSError as e:
             if e.errno in (errno.EAGAIN, errno.EINTR):
-                raise ShouldRetrySocketCall
+                raise ShouldRetrySocketCallError
             raise
 
     def maximum_connections_exceeded(self):
