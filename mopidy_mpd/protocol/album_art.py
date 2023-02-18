@@ -57,7 +57,7 @@ def albumart(context, uri, offset):
     data = cover_cache[uri]
 
     total_size = len(data)
-    chunk_size = 8192
+    chunk_size = context.dispatcher.config["mpd"]["albumart_chunk_size"]
 
     if offset > total_size:
         return MpdArgError("Bad file offset")
