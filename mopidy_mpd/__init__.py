@@ -8,7 +8,6 @@ __version__ = pkg_resources.get_distribution("Mopidy-MPD").version
 
 
 class Extension(ext.Extension):
-
     dist_name = "Mopidy-MPD"
     ext_name = "mpd"
     version = __version__

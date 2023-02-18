@@ -169,7 +169,6 @@ class IssueGH69RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH113RegressionTest(protocol.BaseTestCase):
-
     r"""
     The issue: https://github.com/mopidy/mopidy/issues/113
 
