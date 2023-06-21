@@ -6,7 +6,7 @@ Mopidy-MPD
     :target: https://pypi.org/project/Mopidy-MPD/
     :alt: Latest PyPI version
 
-.. image:: https://img.shields.io/github/workflow/status/mopidy/mopidy-mpd/CI
+.. image:: https://img.shields.io/github/actions/workflow/status/mopidy/mopidy-mpd/ci.yml?branch=main
     :target: https://github.com/mopidy/mopidy-mpd/actions
     :alt: CI build status
 
