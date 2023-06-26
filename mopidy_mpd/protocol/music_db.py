@@ -3,6 +3,7 @@ import itertools
 
 from mopidy.models import Track
 from mopidy_mpd import exceptions, protocol, translator
+from mopidy_mpd.protocol.filter_expressions import parse_filter_expression
 
 _LIST_MAPPING = {
     "album": "album",
@@ -46,18 +47,27 @@ _SEARCH_MAPPING = dict(_LIST_MAPPING, **{"any": "any"})
 
 def _query_from_mpd_search_parameters(parameters, mapping):
     query = {}
+    uris = []
     parameters = list(parameters)
     while parameters:
-        # TODO: does it matter that this is now case insensitive
-        field = mapping.get(parameters.pop(0).lower())
-        if not field:
-            raise exceptions.MpdArgError("incorrect arguments")
-        if not parameters:
-            raise ValueError
-        value = parameters.pop(0)
-        if value.strip():
-            query.setdefault(field, []).append(value)
-    return query
+        parameter = parameters.pop(0)
+        if parameter.startswith('('):  # Filter Expression
+            expression = parse_filter_expression(parameter)
+            for field, _, value in expression:
+                if field == 'base':
+                    uris.append(value)
+                else:
+                    query.setdefault(field.lower(), []).append(value)
+        else:  # Type and What pair
+            field = mapping.get(parameter.lower())
+            if not field:
+                raise exceptions.MpdArgError("incorrect arguments")
+            if not parameters:
+                raise ValueError
+            value = parameters.pop(0)
+            if value.strip():
+                query.setdefault(field, []).append(value)
+    return query, (uris or None)
 
 
 def _get_field(field, search_results):
@@ -95,15 +105,21 @@ def count(context, *args):
         Counts the number of songs and their total playtime in the db
         matching ``TAG`` exactly.
 
+        ``count {FILTER} [group {GROUPTYPE}]``
+
+        Count the number of songs and their total playtime in the database
+        matching ``FILTER``. The group keyword may be used to group the results
+        by a tag.
+
     *GMPC:*
 
     - use multiple tag-needle pairs to make more specific searches.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         raise exceptions.MpdArgError("incorrect arguments")
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
     result_tracks = _get_tracks(results)
     total_length = sum(t.length for t in result_tracks if t.length)
     return [
@@ -124,6 +140,14 @@ def find(context, *args):
         to search by full path (relative to database root), and ``any`` to
         match against all available tags. ``WHAT`` is what to find.
 
+        ``find {FILTER} [sort {TYPE}] [window {START:END}]``
+
+        Search the database for songs matching ``FILTER``. ``sort`` sorts the
+        result by the specified tag. The sort is descending if the tag is
+        prefixed with a minus (``-``). ``window`` can be used to query only a
+        portion of the real response. The parameter is two zero-based record
+        numbers; a start number and an end number.
+
     *GMPC:*
 
     - also uses ``find album "[ALBUM]" artist "[ARTIST]"`` to list album
@@ -139,11 +163,11 @@ def find(context, *args):
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
     result_tracks = []
     if (
         "artist" not in query
@@ -169,13 +193,18 @@ def findadd(context, *args):
 
         Finds songs in the db that are exactly ``WHAT`` and adds them to
         current playlist. Parameters have the same meaning as for ``find``.
+
+        ``findadd {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        queue. Parameters have the same meaning as for ``find``.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search(query=query, exact=True, uris=uris).get()
 
     context.core.tracklist.add(
         uris=[track.uri for track in _get_tracks(results)]
@@ -194,6 +223,12 @@ def list_(context, *args):
 
         ``ARTIST`` is an optional parameter when type is ``album``,
         ``date``, or ``genre``. This filters the result list by an artist.
+
+        ``list {TYPE} {FILTER} [group {GROUPTYPE}]``
+
+        Lists unique tags values of the specified type. Additional arguments
+        may specify a filter. The group keyword may be used (repeatedly) to
+        group the results by one or more tags.
 
     *Clarifications:*
 
@@ -277,7 +312,7 @@ def list_(context, *args):
             query = {"artist": params}
     else:
         try:
-            query = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
+            query, _ = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
         except exceptions.MpdArgError as exc:
             exc.message = "Unknown filter type"  # noqa B306: Our own exception
             raise
@@ -431,6 +466,11 @@ def search(context, *args):
         Searches for any song that contains ``WHAT``. Parameters have the same
         meaning as for ``find``, except that search is not case sensitive.
 
+        ``search {FILTER} [sort {TYPE}] [window {START:END}]``
+
+        Search the database for songs matching ``FILTER``. Parameters have the
+        same meaning as for ``find``, except that search is not case sensitive.
+
     *GMPC:*
 
     - uses the undocumented field ``any``.
@@ -448,10 +488,10 @@ def search(context, *args):
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
     artists = [_artist_as_track(a) for a in _get_artists(results)]
     albums = [_album_as_track(a) for a in _get_albums(results)]
     tracks = _get_tracks(results)
@@ -472,13 +512,18 @@ def searchadd(context, *args):
 
         Parameters have the same meaning as for ``find``, except that search is
         not case sensitive.
+
+        ``searchadd {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        queue. Parameters have the same meaning as for ``search``.
     """
     try:
-        query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
 
     context.core.tracklist.add(
         uris=[track.uri for track in _get_tracks(results)]
@@ -499,16 +544,21 @@ def searchaddpl(context, *args):
 
         Parameters have the same meaning as for ``find``, except that search is
         not case sensitive.
+
+        ``searchaddpl {NAME} {FILTER}``
+
+        Search the database for songs matching ``FILTER`` and add them to the
+        playlist named ``NAME``.
     """
     parameters = list(args)
     if not parameters:
         raise exceptions.MpdArgError("incorrect arguments")
     playlist_name = parameters.pop(0)
     try:
-        query = _query_from_mpd_search_parameters(parameters, _SEARCH_MAPPING)
+        query, uris = _query_from_mpd_search_parameters(parameters, _SEARCH_MAPPING)
     except ValueError:
         return
-    results = context.core.library.search(query).get()
+    results = context.core.library.search(query, uris=uris).get()
 
     uri = context.lookup_playlist_uri_from_name(playlist_name)
     playlist = uri is not None and context.core.playlists.lookup(uri).get()

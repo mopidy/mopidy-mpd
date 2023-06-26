@@ -11,23 +11,26 @@ from tests import protocol
 
 class QueryFromMpdSearchFormatTest(unittest.TestCase):
     def test_dates_are_extracted(self):
-        result = music_db._query_from_mpd_search_parameters(
+        result, uris = music_db._query_from_mpd_search_parameters(
             ["Date", "1974-01-02", "Date", "1975"], music_db._SEARCH_MAPPING
         )
         assert result["date"][0] == "1974-01-02"
         assert result["date"][1] == "1975"
+        assert uris is None
 
     def test_empty_value_is_ignored(self):
-        result = music_db._query_from_mpd_search_parameters(
+        result, uris = music_db._query_from_mpd_search_parameters(
             ["Date", ""], music_db._SEARCH_MAPPING
         )
         assert result == {}
+        assert uris is None
 
     def test_whitespace_value_is_ignored(self):
-        result = music_db._query_from_mpd_search_parameters(
+        result, uris = music_db._query_from_mpd_search_parameters(
             ["Date", "  "], music_db._SEARCH_MAPPING
         )
         assert result == {}
+        assert uris is None
 
     # TODO Test more mappings
 
