@@ -23,3 +23,4 @@ def test_get_config_schema():
     assert "zeroconf" in schema
     assert "command_blacklist" in schema
     assert "default_playlist_scheme" in schema
+    assert "albumart_chunk_size" in schema

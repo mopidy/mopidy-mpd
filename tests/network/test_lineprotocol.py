@@ -211,32 +211,36 @@ class LineProtocolTest(unittest.TestCase):
         self.mock.connection = Mock(spec=network.Connection)
         self.mock.join_lines.return_value = "lines"
 
-        network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
-        self.mock.join_lines.assert_called_once_with(["line 1", "line 2"])
+        network.LineProtocol.send_lines(
+            self.mock, ["line 1".encode(), "line 2".encode()]
+        )
+        self.mock.join_lines.assert_called_once_with(
+            ["line 1".encode(), "line 2".encode()]
+        )
 
     def test_send_line_encodes_joined_lines_with_final_terminator(self):
         self.mock.connection = Mock(spec=network.Connection)
-        self.mock.join_lines.return_value = "lines\n"
 
-        network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
-        self.mock.encode.assert_called_once_with("lines\n")
+        network.LineProtocol.send_lines(self.mock, ["line 1"])
+        self.mock.encode.assert_called_once_with("line 1")
 
     def test_send_lines_sends_encoded_string(self):
         self.mock.connection = Mock(spec=network.Connection)
-        self.mock.join_lines.return_value = "lines"
+        self.mock.join_lines.return_value = sentinel.data
         self.mock.encode.return_value = sentinel.data
 
         network.LineProtocol.send_lines(self.mock, ["line 1", "line 2"])
         self.mock.connection.queue_send.assert_called_once_with(sentinel.data)
 
     def test_join_lines_returns_empty_string_for_no_lines(self):
-        assert "" == network.LineProtocol.join_lines(self.mock, [])
+        assert b"" == network.LineProtocol.join_lines(self.mock, [])
 
     def test_join_lines_returns_joined_lines(self):
         self.mock.decode.return_value = "\n"
-        assert "1\n2\n" == network.LineProtocol.join_lines(
-            self.mock, ["1", "2"]
+        result = network.LineProtocol.join_lines(
+            self.mock, ["1".encode(), "2".encode()]
         )
+        assert "1\n2\n".encode() == result
 
     def test_decode_calls_decode_on_string(self):
         string = Mock()

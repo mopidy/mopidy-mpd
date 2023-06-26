@@ -30,6 +30,7 @@ def load_protocol_modules():
     :attr:`commands`.
     """
     from . import (  # noqa
+        album_art,
         audio_output,
         channels,
         command_list,
