@@ -3,6 +3,7 @@ import unittest
 from unittest.mock import Mock, sentinel
 
 from mopidy_mpd import network
+
 from tests import any_unicode
 
 

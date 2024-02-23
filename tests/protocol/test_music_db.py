@@ -2,8 +2,8 @@ import unittest
 from unittest import mock
 
 from mopidy.models import Album, Artist, Playlist, Ref, SearchResult, Track
-
 from mopidy_mpd.protocol import music_db, stored_playlists
+
 from tests import protocol
 
 # TODO: split into more modules for faster parallel tests?

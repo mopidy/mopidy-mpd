@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from mopidy_mpd.protocol import tagtype_list
+
 from tests import protocol
 
 

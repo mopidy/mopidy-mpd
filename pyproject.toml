@@ -87,7 +87,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"mopidy_mpd/protocol/*" = [
+"src/mopidy_mpd/protocol/*" = [
 	"ARG001", # unused-function-argument
 ]
 "tests/*" = [

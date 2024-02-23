@@ -1,9 +1,9 @@
 import unittest
 
 from mopidy.models import Album, Artist, Playlist, TlTrack, Track
-
 from mopidy_mpd import translator
 from mopidy_mpd.protocol import tagtype_list
+
 from tests import path_utils
 
 

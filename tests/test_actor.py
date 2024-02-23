@@ -1,7 +1,6 @@
 from unittest import mock
 
 import pytest
-
 from mopidy_mpd import actor
 
 # NOTE: Should be kept in sync with all events from mopidy.core.listener
