@@ -37,6 +37,16 @@ Issues = "https://github.com/mopidy/mopidy-mpd/issues"
 mpd = "mopidy_mpd:Extension"
 
 
+[tool.pyright]
+pythonVersion = "3.11"
+# Use venv from parent directory, to share it with any extensions:
+venvPath = "../"
+venv = ".venv"
+typeCheckingMode = "basic"
+# Already covered by flake8-self:
+reportPrivateImportUsage = false
+
+
 [tool.ruff]
 target-version = "py311"
 
