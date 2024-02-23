@@ -80,7 +80,9 @@ select = [
 	"W",   # pycodestyle
 ]
 ignore = [
-	"ANN",    # flake8-annotations
+	"ANN101", # missing-type-self
+	"ANN102", # missing-type-cls
+	"ANN401", # any-type
 	"D",      # pydocstyle
 	"ISC001", # single-line-implicit-string-concatenation
 	"TRY003", # raise-vanilla-args
