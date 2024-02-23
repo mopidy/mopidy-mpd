@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import contextlib
 import errno
 import logging
@@ -6,17 +8,24 @@ import re
 import socket
 import sys
 import threading
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import pykka
 from gi.repository import GLib
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from types import TracebackType
+
+    from mopidy_mpd.session import MpdSession
+    from mopidy_mpd.types import SocketAddress
 
 CONTROL_CHARS = dict.fromkeys(range(32))
 
 
-def get_systemd_socket():
+def get_systemd_socket() -> socket.socket | None:
     """Attempt to get a socket from systemd."""
     fdnames = os.environ.get("LISTEN_FDNAMES", "").split(":")
     if "mpd" not in fdnames:
@@ -25,21 +34,21 @@ def get_systemd_socket():
     return socket.socket(fileno=fd)
 
 
-def get_unix_socket_path(socket_path):
+def get_unix_socket_path(socket_path: str) -> str | None:
     match = re.search("^unix:(.*)", socket_path)
     if not match:
         return None
     return match.group(1)
 
 
-def is_unix_socket(sock):
+def is_unix_socket(sock: socket.socket) -> bool:
     """Check if the provided socket is a Unix domain socket"""
     if hasattr(socket, "AF_UNIX"):
         return sock.family == socket.AF_UNIX
     return False
 
 
-def get_socket_address(host, port):
+def get_socket_address(host: str, port: int) -> tuple[str, int | None]:
     unix_socket_path = get_unix_socket_path(host)
     if unix_socket_path is not None:
         return (unix_socket_path, None)
@@ -51,7 +60,7 @@ class ShouldRetrySocketCallError(Exception):
     """Indicate that attempted socket call should be retried"""
 
 
-def try_ipv6_socket():
+def try_ipv6_socket() -> bool:
     """Determine if system really supports IPv6"""
     if not socket.has_ipv6:
         return False
@@ -70,7 +79,7 @@ def try_ipv6_socket():
 has_ipv6 = try_ipv6_socket()
 
 
-def create_tcp_socket():
+def create_tcp_socket() -> socket.socket:
     """Create a TCP socket with or without IPv6 depending on system support"""
     if has_ipv6:
         sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
@@ -87,12 +96,12 @@ def create_tcp_socket():
     return sock
 
 
-def create_unix_socket():
+def create_unix_socket() -> socket.socket:
     """Create a Unix domain socket"""
     return socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
 
 
-def format_address(address):
+def format_address(address: SocketAddress) -> str:
     """Format socket address for display."""
     host, port = address[:2]
     if port is not None:
@@ -100,7 +109,7 @@ def format_address(address):
     return f"[{host}]"
 
 
-def format_hostname(hostname):
+def format_hostname(hostname: str) -> str:
     """Format hostname for display."""
     if has_ipv6 and re.match(r"\d+.\d+.\d+.\d+", hostname) is not None:
         hostname = f"::ffff:{hostname}"
@@ -113,13 +122,13 @@ class Server:
 
     def __init__(  # noqa: PLR0913
         self,
-        host,
-        port,
-        protocol,
-        protocol_kwargs=None,
-        max_connections=5,
-        timeout=30,
-    ):
+        host: str,
+        port: int,
+        protocol: type[MpdSession],
+        protocol_kwargs: dict[str, Any] | None = None,
+        max_connections: int = 5,
+        timeout: int = 30,
+    ) -> None:
         self.protocol = protocol
         self.protocol_kwargs = protocol_kwargs or {}
         self.max_connections = max_connections
@@ -129,7 +138,7 @@ class Server:
 
         self.watcher = self.register_server_socket(self.server_socket.fileno())
 
-    def create_server_socket(self, host, port):
+    def create_server_socket(self, host: str, port: int) -> socket.socket:
         sock = get_systemd_socket()
         if sock is not None:
             return sock
@@ -149,7 +158,7 @@ class Server:
         sock.listen(1)
         return sock
 
-    def stop(self):
+    def stop(self) -> None:
         GLib.source_remove(self.watcher)
         if is_unix_socket(self.server_socket):
             unix_socket_path = self.server_socket.getsockname()
@@ -163,10 +172,10 @@ class Server:
         if unix_socket_path is not None:
             os.unlink(unix_socket_path)  # noqa: PTH108
 
-    def register_server_socket(self, fileno):
+    def register_server_socket(self, fileno: int) -> Any:
         return GLib.io_add_watch(fileno, GLib.IO_IN, self.handle_connection)
 
-    def handle_connection(self, _fd, _flags):
+    def handle_connection(self, _fd: int, _flags: int) -> bool:
         try:
             sock, addr = self.accept_connection()
         except ShouldRetrySocketCallError:
@@ -178,34 +187,37 @@ class Server:
             self.init_connection(sock, addr)
         return True
 
-    def accept_connection(self):
+    def accept_connection(self) -> tuple[socket.socket, SocketAddress]:
         try:
             sock, addr = self.server_socket.accept()
             if is_unix_socket(sock):
                 addr = (sock.getsockname(), None)
-        except OSError as e:
-            if e.errno in (errno.EAGAIN, errno.EINTR):
+        except OSError as exc:
+            if exc.errno in (errno.EAGAIN, errno.EINTR):
                 raise ShouldRetrySocketCallError from None
             raise
         else:
-            return sock, addr
+            return (
+                sock,
+                addr[:2],  # addr is a two-tuple for IPv4 and four-tuple for IPv6
+            )
 
-    def maximum_connections_exceeded(self):
+    def maximum_connections_exceeded(self) -> bool:
         return (
             self.max_connections is not None
             and self.number_of_connections() >= self.max_connections
         )
 
-    def number_of_connections(self):
+    def number_of_connections(self) -> int:
         return len(pykka.ActorRegistry.get_by_class(self.protocol))
 
-    def reject_connection(self, sock, addr):
+    def reject_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
         # FIXME provide more context in logging?
         logger.warning("Rejected connection from %s", format_address(addr))
         with contextlib.suppress(OSError):
             sock.close()
 
-    def init_connection(self, sock, addr):
+    def init_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
         Connection(self.protocol, self.protocol_kwargs, sock, addr, self.timeout)
 
 
@@ -218,10 +230,20 @@ class Connection:
     # false return value would only tell us that what we thought was registered
     # is already gone, there is really nothing more we can do.
 
-    def __init__(self, protocol, protocol_kwargs, sock, addr, timeout):  # noqa: PLR0913
+    host: str
+    port: int | None
+
+    def __init__(  # noqa: PLR0913
+        self,
+        protocol: type[MpdSession],
+        protocol_kwargs: dict[str, Any],
+        sock: socket.socket,
+        addr: SocketAddress,
+        timeout: int,
+    ) -> None:
         sock.setblocking(False)  # noqa: FBT003
 
-        self.host, self.port = addr[:2]  # IPv6 has larger addr
+        self.host, self.port = addr[:2]
 
         self._sock = sock
         self.protocol = protocol
@@ -242,7 +264,7 @@ class Connection:
         self.enable_recv()
         self.enable_timeout()
 
-    def stop(self, reason, level=logging.DEBUG):
+    def stop(self, reason: str, level: int = logging.DEBUG) -> None:
         if self.stopping:
             logger.log(level, f"Already stopping: {reason}")
             return
@@ -261,7 +283,7 @@ class Connection:
         with contextlib.suppress(OSError):
             self._sock.close()
 
-    def queue_send(self, data):
+    def queue_send(self, data: bytes) -> None:
         """Try to send data to client exactly as is and queue rest."""
         self.send_lock.acquire(blocking=True)
         self.send_buffer = self.send(self.send_buffer + data)
@@ -269,7 +291,7 @@ class Connection:
         if self.send_buffer:
             self.enable_send()
 
-    def send(self, data):
+    def send(self, data: bytes) -> bytes:
         """Send data to client, return any unsent data."""
         try:
             sent = self._sock.send(data)
@@ -280,7 +302,7 @@ class Connection:
             self.stop(f"Unexpected client error: {exc}")
             return b""
 
-    def enable_timeout(self):
+    def enable_timeout(self) -> None:
         """Reactivate timeout mechanism."""
         if self.timeout is None or self.timeout <= 0:
             return
@@ -288,14 +310,14 @@ class Connection:
         self.disable_timeout()
         self.timeout_id = GLib.timeout_add_seconds(self.timeout, self.timeout_callback)
 
-    def disable_timeout(self):
+    def disable_timeout(self) -> None:
         """Deactivate timeout mechanism."""
         if self.timeout_id is None:
             return
         GLib.source_remove(self.timeout_id)
         self.timeout_id = None
 
-    def enable_recv(self):
+    def enable_recv(self) -> None:
         if self.recv_id is not None:
             return
 
@@ -308,13 +330,13 @@ class Connection:
         except OSError as exc:
             self.stop(f"Problem with connection: {exc}")
 
-    def disable_recv(self):
+    def disable_recv(self) -> None:
         if self.recv_id is None:
             return
         GLib.source_remove(self.recv_id)
         self.recv_id = None
 
-    def enable_send(self):
+    def enable_send(self) -> None:
         if self.send_id is not None:
             return
 
@@ -327,14 +349,14 @@ class Connection:
         except OSError as exc:
             self.stop(f"Problem with connection: {exc}")
 
-    def disable_send(self):
+    def disable_send(self) -> None:
         if self.send_id is None:
             return
 
         GLib.source_remove(self.send_id)
         self.send_id = None
 
-    def recv_callback(self, fd, flags):  # noqa: ARG002
+    def recv_callback(self, fd: int, flags: int) -> bool:  # noqa: ARG002
         if flags & (GLib.IO_ERR | GLib.IO_HUP):
             self.stop(f"Bad client flags: {flags}")
             return True
@@ -358,7 +380,7 @@ class Connection:
 
         return True
 
-    def send_callback(self, fd, flags):  # noqa: ARG002
+    def send_callback(self, fd: int, flags: int) -> bool:  # noqa: ARG002
         if flags & (GLib.IO_ERR | GLib.IO_HUP):
             self.stop(f"Bad client flags: {flags}")
             return True
@@ -377,11 +399,11 @@ class Connection:
 
         return True
 
-    def timeout_callback(self):
+    def timeout_callback(self) -> bool:
         self.stop(f"Client inactive for {self.timeout:d}s; closing connection")
         return False
 
-    def __str__(self):
+    def __str__(self) -> str:
         return format_address((self.host, self.port))
 
 
@@ -397,33 +419,27 @@ class LineProtocol(pykka.ThreadingActor):
     #: Line terminator to use for outputed lines.
     terminator = b"\n"
 
-    #: Regex to use for spliting lines, will be set compiled version of its
-    #: own value, or to ``terminator``s value if it is not set itself.
-    delimiter = None
+    #: Regex to use for spliting lines.
+    delimiter = re.compile(rb"\r?\n")
 
-    #: What encoding to expect incoming data to be in, can be :class:`None`.
+    #: What encoding to expect incoming data to be in.
     encoding = "utf-8"
 
-    def __init__(self, connection):
+    def __init__(self, connection: Connection) -> None:
         super().__init__()
         self.connection = connection
         self.prevent_timeout = False
         self.recv_buffer = b""
 
-        if self.delimiter:
-            self.delimiter = re.compile(self.delimiter)
-        else:
-            self.delimiter = re.compile(self.terminator)
-
     @property
-    def host(self):
+    def host(self) -> str:
         return self.connection.host
 
     @property
-    def port(self):
+    def port(self) -> int | None:
         return self.connection.port
 
-    def on_line_received(self, line):
+    def on_line_received(self, line: str) -> None:
         """
         Called whenever a new line is found.
 
@@ -431,7 +447,7 @@ class LineProtocol(pykka.ThreadingActor):
         """
         raise NotImplementedError
 
-    def on_receive(self, message):
+    def on_receive(self, message: dict[str, Any]) -> None:
         """Handle messages with new data from server."""
         if "close" in message:
             self.connection.stop("Client most likely disconnected.")
@@ -451,21 +467,26 @@ class LineProtocol(pykka.ThreadingActor):
         if not self.prevent_timeout:
             self.connection.enable_timeout()
 
-    def on_failure(self, exception_type, exception_value, traceback):  # noqa: ARG002
+    def on_failure(
+        self,
+        exception_type: type[BaseException] | None,  # noqa: ARG002
+        exception_value: BaseException | None,  # noqa: ARG002
+        traceback: TracebackType | None,  # noqa: ARG002
+    ) -> None:
         """Clean up connection resouces when actor fails."""
         self.connection.stop("Actor failed.")
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         """Clean up connection resouces when actor stops."""
         self.connection.stop("Actor is shutting down.")
 
-    def parse_lines(self):
+    def parse_lines(self) -> Generator[bytes, Any, None]:
         """Consume new data and yield any lines found."""
         while re.search(self.terminator, self.recv_buffer):
             line, self.recv_buffer = self.delimiter.split(self.recv_buffer, 1)
             yield line
 
-    def encode(self, line):
+    def encode(self, line: str) -> bytes:
         """
         Handle encoding of line.
 
@@ -480,8 +501,9 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
+            return NoReturn
 
-    def decode(self, line):
+    def decode(self, line: bytes) -> str:
         """
         Handle decoding of line.
 
@@ -496,14 +518,15 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
+            return NoReturn
 
-    def join_lines(self, lines):
+    def join_lines(self, lines: list[str]) -> str:
         if not lines:
             return ""
         line_terminator = self.decode(self.terminator)
         return line_terminator.join(lines) + line_terminator
 
-    def send_lines(self, lines):
+    def send_lines(self, lines: list[str]) -> None:
         """
         Send array of lines to client via connection.
 

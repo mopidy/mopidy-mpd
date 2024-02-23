@@ -1,9 +1,16 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy_mpd import exceptions, protocol
 from mopidy_mpd.protocol import tagtype_list
 
+if TYPE_CHECKING:
+    from mopidy_mpd.dispatcher import MpdContext
+
 
 @protocol.commands.add("close", auth_required=False)
-def close(context):
+def close(context: MpdContext) -> None:
     """
     *musicpd.org, connection section:*
 
@@ -15,7 +22,7 @@ def close(context):
 
 
 @protocol.commands.add("kill", list_command=False)
-def kill(context):
+def kill(context: MpdContext) -> Never:
     """
     *musicpd.org, connection section:*
 
@@ -27,7 +34,7 @@ def kill(context):
 
 
 @protocol.commands.add("password", auth_required=False)
-def password(context, password):
+def password(context: MpdContext, password: str) -> None:
     """
     *musicpd.org, connection section:*
 
@@ -43,7 +50,7 @@ def password(context, password):
 
 
 @protocol.commands.add("ping", auth_required=False)
-def ping(context):
+def ping(context: MpdContext) -> None:
     """
     *musicpd.org, connection section:*
 
@@ -54,7 +61,7 @@ def ping(context):
 
 
 @protocol.commands.add("tagtypes")
-def tagtypes(context, *parameters):
+def tagtypes(context: MpdContext, *parameters: list[str]) -> protocol.Result:
     """
     *mpd.readthedocs.io, connection settings section:*
 
@@ -98,7 +105,7 @@ def tagtypes(context, *parameters):
     return [("tagtype", tagtype) for tagtype in context.session.tagtypes]
 
 
-def _validate_tagtypes(parameters):
+def _validate_tagtypes(parameters: list[str]) -> None:
     param_set = set(parameters)
     if not param_set:
         raise exceptions.MpdArgError("Not enough arguments")

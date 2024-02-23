@@ -1,7 +1,17 @@
-import pykka
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy.core import PlaybackState
 
 from mopidy_mpd import exceptions, protocol, translator
+
+if TYPE_CHECKING:
+    from mopidy.models import Track
+    from mopidy.types import DurationMs
+
+    from mopidy_mpd.dispatcher import MpdContext
+
 
 #: Subsystems that can be registered with idle command.
 SUBSYSTEMS = [
@@ -17,7 +27,7 @@ SUBSYSTEMS = [
 
 
 @protocol.commands.add("clearerror")
-def clearerror(context):
+def clearerror(context: MpdContext) -> Never:
     """
     *musicpd.org, status section:*
 
@@ -30,7 +40,7 @@ def clearerror(context):
 
 
 @protocol.commands.add("currentsong")
-def currentsong(context):
+def currentsong(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
@@ -53,7 +63,7 @@ def currentsong(context):
 
 
 @protocol.commands.add("idle")
-def idle(context, *subsystems):
+def idle(context: MpdContext, *subsystems: list[str]) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
@@ -109,7 +119,7 @@ def idle(context, *subsystems):
 
 
 @protocol.commands.add("noidle", list_command=False)
-def noidle(context):
+def noidle(context: MpdContext) -> None:
     """See :meth:`_status_idle`."""
     if not context.subscriptions:
         return
@@ -119,7 +129,7 @@ def noidle(context):
 
 
 @protocol.commands.add("stats")
-def stats(context):
+def stats(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
@@ -146,7 +156,7 @@ def stats(context):
 
 
 @protocol.commands.add("status")
-def status(context):
+def status(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
@@ -182,140 +192,85 @@ def status(context):
         - ``elapsed``: Higher resolution means time in seconds with three
           decimal places for millisecond precision.
     """
-    tl_track = context.core.playback.get_current_tl_track()
-    next_tlid = context.core.tracklist.get_next_tlid()
+    # Fire these off first, as other futures depends on them
+    f_current_tl_track = context.core.playback.get_current_tl_track()
+    f_next_tlid = context.core.tracklist.get_next_tlid()
 
-    futures = {
-        "tracklist.length": context.core.tracklist.get_length(),
-        "tracklist.version": context.core.tracklist.get_version(),
-        "mixer.volume": context.core.mixer.get_volume(),
-        "tracklist.consume": context.core.tracklist.get_consume(),
-        "tracklist.random": context.core.tracklist.get_random(),
-        "tracklist.repeat": context.core.tracklist.get_repeat(),
-        "tracklist.single": context.core.tracklist.get_single(),
-        "playback.state": context.core.playback.get_state(),
-        "playback.current_tl_track": tl_track,
-        "tracklist.index": context.core.tracklist.index(tl_track.get()),
-        "tracklist.next_tlid": next_tlid,
-        "tracklist.next_index": context.core.tracklist.index(tlid=next_tlid.get()),
-        "playback.time_position": context.core.playback.get_time_position(),
-    }
-    pykka.get_all(futures.values())
+    # ...and wait for them to complete
+    current_tl_track = f_current_tl_track.get()
+    current_tlid = current_tl_track.tlid if current_tl_track else None
+    current_track = current_tl_track.track if current_tl_track else None
+    next_tlid = f_next_tlid.get()
+
+    # Then fire off the rest...
+    f_current_index = context.core.tracklist.index(tlid=current_tlid)
+    f_mixer_volume = context.core.mixer.get_volume()
+    f_next_index = context.core.tracklist.index(tlid=next_tlid)
+    f_playback_state = context.core.playback.get_state()
+    f_playback_time_position = context.core.playback.get_time_position()
+    f_tracklist_consume = context.core.tracklist.get_consume()
+    f_tracklist_length = context.core.tracklist.get_length()
+    f_tracklist_random = context.core.tracklist.get_random()
+    f_tracklist_repeat = context.core.tracklist.get_repeat()
+    f_tracklist_single = context.core.tracklist.get_single()
+    f_tracklist_version = context.core.tracklist.get_version()
+
+    # ...and wait for them to complete
+    current_index = f_current_index.get()
+    mixer_volume = f_mixer_volume.get()
+    next_index = f_next_index.get()
+    playback_state = f_playback_state.get()
+    playback_time_position = f_playback_time_position.get()
+    tracklist_consume = f_tracklist_consume.get()
+    tracklist_length = f_tracklist_length.get()
+    tracklist_random = f_tracklist_random.get()
+    tracklist_repeat = f_tracklist_repeat.get()
+    tracklist_single = f_tracklist_single.get()
+    tracklist_version = f_tracklist_version.get()
+
     result = [
-        ("volume", _status_volume(futures)),
-        ("repeat", _status_repeat(futures)),
-        ("random", _status_random(futures)),
-        ("single", _status_single(futures)),
-        ("consume", _status_consume(futures)),
-        ("playlist", _status_playlist_version(futures)),
-        ("playlistlength", _status_playlist_length(futures)),
-        ("xfade", _status_xfade(futures)),
-        ("state", _status_state(futures)),
+        ("volume", mixer_volume if mixer_volume is not None else -1),
+        ("repeat", int(tracklist_repeat)),
+        ("random", int(tracklist_random)),
+        ("single", int(tracklist_single)),
+        ("consume", int(tracklist_consume)),
+        ("playlist", tracklist_version),
+        ("playlistlength", tracklist_length),
+        ("xfade", 0),  # Not supported
+        ("state", _status_state(playback_state)),
     ]
-    if futures["playback.current_tl_track"].get() is not None:
-        result.append(("song", _status_songpos(futures)))
-        result.append(("songid", _status_songid(futures)))
-    if futures["tracklist.next_tlid"].get() is not None:
-        result.append(("nextsong", _status_nextsongpos(futures)))
-        result.append(("nextsongid", _status_nextsongid(futures)))
-    if futures["playback.state"].get() in (
-        PlaybackState.PLAYING,
-        PlaybackState.PAUSED,
+    if current_tlid is not None and current_index is not None:
+        result.append(("song", current_index))
+        result.append(("songid", current_tlid))
+    if next_tlid is not None and next_index is not None:
+        result.append(("nextsong", next_index))
+        result.append(("nextsongid", next_tlid))
+    if (
+        playback_state in (PlaybackState.PLAYING, PlaybackState.PAUSED)
+        and current_track is not None
     ):
-        result.append(("time", _status_time(futures)))
-        result.append(("elapsed", _status_time_elapsed(futures)))
-        result.append(("bitrate", _status_bitrate(futures)))
+        result.append(("time", _status_time(playback_time_position, current_track)))
+        result.append(("elapsed", _status_time_elapsed(playback_time_position)))
+        result.append(("bitrate", current_track.bitrate or 0))
     return result
 
 
-def _status_bitrate(futures):
-    current_tl_track = futures["playback.current_tl_track"].get()
-    if current_tl_track is None:
-        return 0
-    if current_tl_track.track.bitrate is None:
-        return 0
-    return current_tl_track.track.bitrate
-
-
-def _status_consume(futures):
-    return int(futures["tracklist.consume"].get())
-
-
-def _status_playlist_length(futures):
-    return futures["tracklist.length"].get()
-
-
-def _status_playlist_version(futures):
-    return futures["tracklist.version"].get()
-
-
-def _status_random(futures):
-    return int(futures["tracklist.random"].get())
-
-
-def _status_repeat(futures):
-    return int(futures["tracklist.repeat"].get())
-
-
-def _status_single(futures):
-    return int(futures["tracklist.single"].get())
-
-
-def _status_songid(futures):
-    current_tl_track = futures["playback.current_tl_track"].get()
-    if current_tl_track is not None:
-        return current_tl_track.tlid
-    return _status_songpos(futures)
-
-
-def _status_songpos(futures):
-    return futures["tracklist.index"].get()
-
-
-def _status_nextsongid(futures):
-    return futures["tracklist.next_tlid"].get()
-
-
-def _status_nextsongpos(futures):
-    return futures["tracklist.next_index"].get()
-
-
-def _status_state(futures):
-    match futures["playback.state"].get():
+def _status_state(playback_state: PlaybackState) -> str:
+    match playback_state:
         case PlaybackState.PLAYING:
             return "play"
         case PlaybackState.STOPPED:
             return "stop"
         case PlaybackState.PAUSED:
             return "pause"
-        case _:
-            return None
 
 
-def _status_time(futures):
-    position = futures["playback.time_position"].get() // 1000
-    total = _status_time_total(futures) // 1000
+def _status_time(playback_time_position: DurationMs, current_track: Track) -> str:
+    position = playback_time_position // 1000
+    total = (current_track.length or 0) // 1000
     return f"{position:d}:{total:d}"
 
 
-def _status_time_elapsed(futures):
-    elapsed = futures["playback.time_position"].get() / 1000.0
+def _status_time_elapsed(playback_time_position: DurationMs) -> str:
+    elapsed = playback_time_position / 1000.0
     return f"{elapsed:.3f}"
-
-
-def _status_time_total(futures):
-    current_tl_track = futures["playback.current_tl_track"].get()
-    if current_tl_track is None or current_tl_track.track.length is None:
-        return 0
-    return current_tl_track.track.length
-
-
-def _status_volume(futures):
-    volume = futures["mixer.volume"].get()
-    if volume is None:
-        return -1
-    return volume
-
-
-def _status_xfade(futures):
-    return 0  # Not supported

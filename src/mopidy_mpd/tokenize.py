@@ -44,7 +44,7 @@ BAD_QUOTED_PARAM_RE = re.compile(
 UNESCAPE_RE = re.compile(r"\\(.)")  # Backslash escapes any following char.
 
 
-def split(line):
+def split(line: str) -> list[str]:
     """Splits a line into tokens using same rules as MPD.
 
     - Lines may not start with whitespace
@@ -71,7 +71,7 @@ def split(line):
     if whitespace:
         raise exceptions.MpdUnknownError("Letter expected")
 
-    result = [command]
+    result: list[str] = [command]
     while remainder:
         match = PARAM_RE.match(remainder)
         if not match:
@@ -82,7 +82,7 @@ def split(line):
     return result
 
 
-def _determine_error_message(remainder):
+def _determine_error_message(remainder: str) -> str:
     """Helper to emulate MPD errors."""
     # Following checks are simply to match MPD error messages:
     match = BAD_QUOTED_PARAM_RE.match(remainder)

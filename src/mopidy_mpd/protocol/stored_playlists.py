@@ -1,19 +1,47 @@
+from __future__ import annotations
+
 import datetime
 import logging
 import re
-import urllib
+from typing import TYPE_CHECKING, Literal, overload
+from urllib.parse import urlparse
+
+from mopidy.types import Uri, UriScheme
 
 from mopidy_mpd import exceptions, protocol, translator
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from mopidy.models import Playlist, Track
+
+    from mopidy_mpd.dispatcher import MpdContext
 
 logger = logging.getLogger(__name__)
 
 
-def _check_playlist_name(name):
+def _check_playlist_name(name: str) -> None:
     if re.search("[/\n\r]", name):
         raise exceptions.MpdInvalidPlaylistNameError
 
 
-def _get_playlist(context, name, *, must_exist=True):
+@overload
+def _get_playlist(
+    context: MpdContext, name: str, *, must_exist: Literal[True]
+) -> Playlist:
+    ...
+
+
+@overload
+def _get_playlist(
+    context: MpdContext, name: str, *, must_exist: Literal[False]
+) -> Playlist | None:
+    ...
+
+
+def _get_playlist(
+    context: MpdContext, name: str, *, must_exist: bool
+) -> Playlist | None:
     playlist = None
     uri = context.lookup_playlist_uri_from_name(name)
     if uri:
@@ -24,7 +52,7 @@ def _get_playlist(context, name, *, must_exist=True):
 
 
 @protocol.commands.add("listplaylist")
-def listplaylist(context, name):
+def listplaylist(context: MpdContext, name: str) -> protocol.Result:
     """
     *musicpd.org, stored playlists section:*
 
@@ -38,12 +66,12 @@ def listplaylist(context, name):
         file: relative/path/to/file2.ogg
         file: relative/path/to/file3.mp3
     """
-    playlist = _get_playlist(context, name)
-    return [f"file: {track.uri}" for track in playlist.tracks]
+    playlist = _get_playlist(context, name, must_exist=True)
+    return [("file", track.uri) for track in playlist.tracks]
 
 
 @protocol.commands.add("listplaylistinfo")
-def listplaylistinfo(context, name):
+def listplaylistinfo(context: MpdContext, name: str) -> protocol.Result:
     """
     *musicpd.org, stored playlists section:*
 
@@ -56,7 +84,7 @@ def listplaylistinfo(context, name):
         Standard track listing, with fields: file, Time, Title, Date,
         Album, Artist, Track
     """
-    playlist = _get_playlist(context, name)
+    playlist = _get_playlist(context, name, must_exist=True)
     track_uris = [track.uri for track in playlist.tracks]
     tracks_map = context.core.library.lookup(uris=track_uris).get()
     tracks = []
@@ -67,7 +95,7 @@ def listplaylistinfo(context, name):
 
 
 @protocol.commands.add("listplaylists")
-def listplaylists(context):
+def listplaylists(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, stored playlists section:*
 
@@ -104,7 +132,7 @@ def listplaylists(context):
 
 
 # TODO: move to translators?
-def _get_last_modified(last_modified=None):
+def _get_last_modified(last_modified: int | None = None) -> str:
     """Formats last modified timestamp of a playlist for MPD.
 
     Time in UTC with second precision, formatted in the ISO 8601 format, with
@@ -122,7 +150,11 @@ DEFAULT_PLAYLIST_SLICE = slice(0, None)
 
 
 @protocol.commands.add("load", playlist_slice=protocol.RANGE)
-def load(context, name, playlist_slice=DEFAULT_PLAYLIST_SLICE):
+def load(
+    context: MpdContext,
+    name: str,
+    playlist_slice: slice = DEFAULT_PLAYLIST_SLICE,
+) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -143,13 +175,13 @@ def load(context, name, playlist_slice=DEFAULT_PLAYLIST_SLICE):
     - MPD 0.17.1 does not fail if the specified range is outside the playlist,
       in either or both ends.
     """
-    playlist = _get_playlist(context, name)
+    playlist = _get_playlist(context, name, must_exist=True)
     track_uris = [track.uri for track in playlist.tracks[playlist_slice]]
     context.core.tracklist.add(uris=track_uris).get()
 
 
 @protocol.commands.add("playlistadd")
-def playlistadd(context, name, track_uri):
+def playlistadd(context: MpdContext, name: str, track_uri: Uri) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -177,18 +209,18 @@ def playlistadd(context, name, track_uri):
         )
         saved_playlist = context.core.playlists.save(new_playlist).get()
         if saved_playlist is None:
-            playlist_scheme = urllib.parse.urlparse(old_playlist.uri).scheme
-            uri_scheme = urllib.parse.urlparse(track_uri).scheme
+            playlist_scheme = UriScheme(urlparse(old_playlist.uri).scheme)
+            uri_scheme = UriScheme(urlparse(track_uri).scheme)
             raise exceptions.MpdInvalidTrackForPlaylistError(
                 playlist_scheme, uri_scheme
             )
 
 
-def _create_playlist(context, name, tracks):
+def _create_playlist(context: MpdContext, name: str, tracks: Iterable[Track]) -> None:
     """
     Creates new playlist using backend appropriate for the given tracks
     """
-    uri_schemes = {urllib.parse.urlparse(t.uri).scheme for t in tracks}
+    uri_schemes = {urlparse(t.uri).scheme for t in tracks}
     for scheme in uri_schemes:
         new_playlist = context.core.playlists.create(name, scheme).get()
         if new_playlist is None:
@@ -209,12 +241,12 @@ def _create_playlist(context, name, tracks):
     new_playlist = new_playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(new_playlist).get()
     if saved_playlist is None:
-        uri_scheme = urllib.parse.urlparse(new_playlist.uri).scheme
+        uri_scheme = UriScheme(urlparse(new_playlist.uri).scheme)
         raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
 
 
 @protocol.commands.add("playlistclear")
-def playlistclear(context, name):
+def playlistclear(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -229,16 +261,19 @@ def playlistclear(context, name):
     if not playlist:
         playlist = context.core.playlists.create(name).get()
 
+    # TODO(type): Handle the failure to create a playlist
+    assert playlist
+
     # Just replace tracks with empty list and save
     playlist = playlist.replace(tracks=[])
     if context.core.playlists.save(playlist).get() is None:
         raise exceptions.MpdFailedToSavePlaylistError(
-            urllib.parse.urlparse(playlist.uri).scheme
+            UriScheme(urlparse(playlist.uri).scheme)
         )
 
 
 @protocol.commands.add("playlistdelete", songpos=protocol.UINT)
-def playlistdelete(context, name, songpos):
+def playlistdelete(context: MpdContext, name: str, songpos: int) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -247,7 +282,7 @@ def playlistdelete(context, name, songpos):
         Deletes ``SONGPOS`` from the playlist ``NAME.m3u``.
     """
     _check_playlist_name(name)
-    playlist = _get_playlist(context, name)
+    playlist = _get_playlist(context, name, must_exist=True)
 
     try:
         # Convert tracks to list and remove requested
@@ -260,13 +295,11 @@ def playlistdelete(context, name, songpos):
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylistError(
-            urllib.parse.urlparse(playlist.uri).scheme
-        )
+        raise exceptions.MpdFailedToSavePlaylistError(urlparse(playlist.uri).scheme)
 
 
 @protocol.commands.add("playlistmove", from_pos=protocol.UINT, to_pos=protocol.UINT)
-def playlistmove(context, name, from_pos, to_pos):
+def playlistmove(context: MpdContext, name: str, from_pos: int, to_pos: int) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -285,7 +318,7 @@ def playlistmove(context, name, from_pos, to_pos):
         return
 
     _check_playlist_name(name)
-    playlist = _get_playlist(context, name)
+    playlist = _get_playlist(context, name, must_exist=True)
     if from_pos == to_pos:
         return  # Nothing to do
 
@@ -301,13 +334,11 @@ def playlistmove(context, name, from_pos, to_pos):
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylistError(
-            urllib.parse.urlparse(playlist.uri).scheme
-        )
+        raise exceptions.MpdFailedToSavePlaylistError(urlparse(playlist.uri).scheme)
 
 
 @protocol.commands.add("rename")
-def rename(context, old_name, new_name):
+def rename(context: MpdContext, old_name: str, new_name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -318,14 +349,14 @@ def rename(context, old_name, new_name):
     _check_playlist_name(old_name)
     _check_playlist_name(new_name)
 
-    old_playlist = _get_playlist(context, old_name)
+    old_playlist = _get_playlist(context, old_name, must_exist=True)
 
     if _get_playlist(context, new_name, must_exist=False):
         raise exceptions.MpdExistError("Playlist already exists")
     # TODO: should we purge the mapping in an else?
 
     # Create copy of the playlist and remove original
-    uri_scheme = urllib.parse.urlparse(old_playlist.uri).scheme
+    uri_scheme = UriScheme(urlparse(old_playlist.uri).scheme)
     new_playlist = context.core.playlists.create(new_name, uri_scheme).get()
     new_playlist = new_playlist.replace(tracks=old_playlist.tracks)
     saved_playlist = context.core.playlists.save(new_playlist).get()
@@ -336,7 +367,7 @@ def rename(context, old_name, new_name):
 
 
 @protocol.commands.add("rm")
-def rm(context, name):
+def rm(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -352,7 +383,7 @@ def rm(context, name):
 
 
 @protocol.commands.add("save")
-def save(context, name):
+def save(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
 
@@ -373,5 +404,5 @@ def save(context, name):
         saved_playlist = context.core.playlists.save(new_playlist).get()
         if saved_playlist is None:
             raise exceptions.MpdFailedToSavePlaylistError(
-                urllib.parse.urlparse(playlist.uri).scheme
+                UriScheme(urlparse(playlist.uri).scheme)
             )

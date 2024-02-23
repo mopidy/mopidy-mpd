@@ -10,12 +10,20 @@ implement our own MPD server which is compatible with the numerous existing
 `MPD clients <https://mpd.fandom.com/wiki/Clients>`_.
 """
 
+from __future__ import annotations
+
+import functools
 import inspect
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from mopidy_mpd import exceptions
 
+if TYPE_CHECKING:
+    from mopidy_mpd.dispatcher import MpdContext
+
 #: The MPD protocol uses UTF-8 for encoding all data.
-ENCODING = "UTF-8"
+ENCODING = "utf-8"
 
 #: The MPD protocol uses ``\n`` as line terminator.
 LINE_TERMINATOR = b"\n"
@@ -24,7 +32,15 @@ LINE_TERMINATOR = b"\n"
 VERSION = "0.19.0"
 
 
-def load_protocol_modules():
+ResultValue: TypeAlias = str | int
+ResultDict: TypeAlias = dict[str, ResultValue]
+ResultTuple: TypeAlias = tuple[str, ResultValue]
+ResultList: TypeAlias = list[ResultTuple | ResultDict]
+Result: TypeAlias = None | ResultDict | ResultTuple | ResultList
+Handler: TypeAlias = Callable[..., Result]
+
+
+def load_protocol_modules() -> None:
     """
     The protocol modules must be imported to get them registered in
     :attr:`commands`.
@@ -45,7 +61,7 @@ def load_protocol_modules():
     )
 
 
-def INT(value):  # noqa: N802
+def INT(value: str) -> int:  # noqa: N802
     r"""Converts a value that matches [+-]?\d+ into an integer."""
     if value is None:
         raise ValueError("None is not a valid integer")
@@ -53,7 +69,7 @@ def INT(value):  # noqa: N802
     return int(value)
 
 
-def UINT(value):  # noqa: N802
+def UINT(value: str) -> int:  # noqa: N802
     r"""Converts a value that matches \d+ into an integer."""
     if value is None:
         raise ValueError("None is not a valid integer")
@@ -62,31 +78,31 @@ def UINT(value):  # noqa: N802
     return int(value)
 
 
-def FLOAT(value):  # noqa: N802
+def FLOAT(value: str) -> float:  # noqa: N802
     r"""Converts a value that matches [+-]\d+(.\d+)? into a float."""
     if value is None:
         raise ValueError("None is not a valid float")
     return float(value)
 
 
-def UFLOAT(value):  # noqa: N802
+def UFLOAT(value: str) -> float:  # noqa: N802
     r"""Converts a value that matches \d+(.\d+)? into a float."""
     if value is None:
         raise ValueError("None is not a valid float")
-    value = float(value)
-    if value < 0:
+    result = float(value)
+    if result < 0:
         raise ValueError("Only positive numbers are allowed")
-    return value
+    return result
 
 
-def BOOL(value):  # noqa: N802
+def BOOL(value: str) -> bool:  # noqa: N802
     """Convert the values 0 and 1 into booleans."""
     if value in ("1", "0"):
         return bool(int(value))
     raise ValueError(f"{value!r} is not 0 or 1")
 
 
-def RANGE(value):  # noqa: N802
+def RANGE(value: str) -> slice:  # noqa: N802
     """Convert a single integer or range spec into a slice
 
     ``n`` should become ``slice(n, n+1)``
@@ -116,12 +132,19 @@ class Commands:
     installed into.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.handlers = {}
 
     # TODO: consider removing auth_required and list_command in favour of
     # additional command instances to register in?
-    def add(self, name, *, auth_required=True, list_command=True, **validators):  # noqa: C901
+    def add(  # noqa: C901
+        self,
+        name: str,
+        *,
+        auth_required: bool = True,
+        list_command: bool = True,
+        **validators: Callable[[str], Any],
+    ) -> Callable[[Handler], Handler]:
         """Create a decorator that registers a handler and validation rules.
 
         Additional keyword arguments are treated as converters/validators to
@@ -137,12 +160,12 @@ class Commands:
         Decorator returns the unwrapped function so that tests etc can use the
         functions with values with correct python types instead of strings.
 
-        :param string name: Name of the command being registered.
-        :param bool auth_required: If authorization is required.
-        :param bool list_command: If command should be listed in reflection.
+        :param name: Name of the command being registered.
+        :param auth_required: If authorization is required.
+        :param list_command: If command should be listed in reflection.
         """
 
-        def wrapper(func):  # noqa: C901
+        def wrapper(func: Handler) -> Handler:  # noqa: C901
             if name in self.handlers:
                 raise ValueError(f"{name} already registered")
 
@@ -167,7 +190,8 @@ class Commands:
             if spec.varkw or spec.kwonlyargs:
                 raise TypeError("Keyword arguments are not permitted")
 
-            def validate(*args, **kwargs):
+            @functools.wraps(func)
+            def validate(*args: Any, **kwargs: Any) -> Result:
                 if spec.varargs:
                     return func(*args, **kwargs)
 
@@ -197,21 +221,26 @@ class Commands:
 
         return wrapper
 
-    def call(self, tokens, context=None):
+    def call(
+        self,
+        *,
+        context: MpdContext,
+        tokens: list[str],
+    ) -> Result:
         """Find and run the handler registered for the given command.
 
         If the handler was registered with any converters/validators they will
         be run before calling the real handler.
 
-        :param list tokens: List of tokens to process
-        :param context: MPD context.
-        :type context: :class:`~mopidy_mpd.dispatcher.MpdContext`
+        :param context: MPD context
+        :param tokens: List of tokens to process
         """
         if not tokens:
             raise exceptions.MpdNoCommandError
-        if tokens[0] not in self.handlers:
-            raise exceptions.MpdUnknownCommandError(command=tokens[0])
-        return self.handlers[tokens[0]](context, *tokens[1:])
+        command, tokens = tokens[0], tokens[1:]
+        if command not in self.handlers:
+            raise exceptions.MpdUnknownCommandError(command=command)
+        return self.handlers[command](context, *tokens)
 
 
 #: Global instance to install commands into

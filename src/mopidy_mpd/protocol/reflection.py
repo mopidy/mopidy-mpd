@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy_mpd.dispatcher import MpdContext
 
 
 @protocol.commands.add("config", list_command=False)
-def config(context):
+def config(context: MpdContext) -> Never:
     """
     *musicpd.org, reflection section:*
 
@@ -16,7 +23,7 @@ def config(context):
 
 
 @protocol.commands.add("commands", auth_required=False)
-def commands(context):
+def commands(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, reflection section:*
 
@@ -35,7 +42,7 @@ def commands(context):
 
 
 @protocol.commands.add("decoders")
-def decoders(context):
+def decoders(context: MpdContext) -> None:
     """
     *musicpd.org, reflection section:*
 
@@ -62,7 +69,7 @@ def decoders(context):
 
 
 @protocol.commands.add("notcommands", auth_required=False)
-def notcommands(context):
+def notcommands(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, reflection section:*
 
@@ -81,7 +88,7 @@ def notcommands(context):
 
 
 @protocol.commands.add("urlhandlers")
-def urlhandlers(context):
+def urlhandlers(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, reflection section:*
 

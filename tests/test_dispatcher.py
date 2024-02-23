@@ -1,8 +1,10 @@
 import unittest
+from typing import cast
 
 import pykka
 import pytest
-from mopidy import core
+from mopidy.backend import BackendProxy
+from mopidy.core import Core, CoreProxy
 from mopidy.models import Ref
 from mopidy_mpd.dispatcher import MpdContext, MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
@@ -15,9 +17,10 @@ class MpdDispatcherTest(unittest.TestCase):
     def setUp(self):
         config = {"mpd": {"password": None, "command_blacklist": ["disabled"]}}
         self.backend = dummy_backend.create_proxy()
-        self.dispatcher = MpdDispatcher(config=config)
-
-        self.core = core.Core.start(config=None, backends=[self.backend]).proxy()
+        self.core = cast(
+            CoreProxy, Core.start(config=None, backends=[self.backend]).proxy()
+        )
+        self.dispatcher = MpdDispatcher(config=config, core=self.core)
 
     def tearDown(self):
         pykka.ActorRegistry.stop_all()
@@ -44,30 +47,40 @@ class MpdDispatcherTest(unittest.TestCase):
 
 
 @pytest.fixture()
-def a_track():
+def a_track() -> Ref:
     return Ref.track(uri="dummy:/a", name="a")
 
 
 @pytest.fixture()
-def b_track():
+def b_track() -> Ref:
     return Ref.track(uri="dummy:/foo/b", name="b")
 
 
 @pytest.fixture()
-def backend_to_browse(a_track, b_track):
-    backend = dummy_backend.create_proxy()
+def backend_to_browse(a_track: Ref, b_track: Ref) -> BackendProxy:
+    backend = cast(BackendProxy, dummy_backend.create_proxy())
     backend.library.dummy_browse_result = {
-        "dummy:/": [a_track, Ref.directory(uri="dummy:/foo", name="foo")],
-        "dummy:/foo": [b_track],
+        "dummy:/": [
+            a_track,
+            Ref.directory(uri="dummy:/foo", name="foo"),
+        ],
+        "dummy:/foo": [
+            b_track,
+        ],
     }
     return backend
 
 
 @pytest.fixture()
-def mpd_context(backend_to_browse):
-    mopidy_core = core.Core.start(config=None, backends=[backend_to_browse]).proxy()
-    uri_map = MpdUriMapper(mopidy_core)
-    return MpdContext(None, core=mopidy_core, uri_map=uri_map)
+def mpd_context(backend_to_browse: BackendProxy) -> MpdContext:
+    core = cast(
+        CoreProxy,
+        Core.start(config=None, backends=[backend_to_browse]).proxy(),
+    )
+    return MpdContext(
+        core=core,
+        uri_map=MpdUriMapper(core),
+    )
 
 
 class TestMpdContext:

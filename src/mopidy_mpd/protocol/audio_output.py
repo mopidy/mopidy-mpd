@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy_mpd.dispatcher import MpdContext
 
 
 @protocol.commands.add("disableoutput", outputid=protocol.UINT)
-def disableoutput(context, outputid):
+def disableoutput(context: MpdContext, outputid: int) -> None:
     """
     *musicpd.org, audio output section:*
 
@@ -19,7 +26,7 @@ def disableoutput(context, outputid):
 
 
 @protocol.commands.add("enableoutput", outputid=protocol.UINT)
-def enableoutput(context, outputid):
+def enableoutput(context: MpdContext, outputid: int) -> None:
     """
     *musicpd.org, audio output section:*
 
@@ -36,7 +43,7 @@ def enableoutput(context, outputid):
 
 
 @protocol.commands.add("toggleoutput", outputid=protocol.UINT)
-def toggleoutput(context, outputid):
+def toggleoutput(context: MpdContext, outputid: int) -> None:
     """
     *musicpd.org, audio output section:*
 
@@ -54,7 +61,7 @@ def toggleoutput(context, outputid):
 
 
 @protocol.commands.add("outputs")
-def outputs(context):
+def outputs(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, audio output section:*
 

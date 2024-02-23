@@ -1,8 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy.types import Uri
+
+    from mopidy_mpd.dispatcher import MpdContext
 
 
 @protocol.commands.add("sticker", list_command=False)
-def sticker(context, action, field, uri, name=None, value=None):  # noqa: PLR0913
+def sticker(  # noqa: PLR0913
+    context: MpdContext,
+    action: str,
+    field: str,
+    uri: Uri,
+    name: str | None = None,
+    value: str | None = None,
+) -> Never:
     """
     *musicpd.org, sticker section:*
 

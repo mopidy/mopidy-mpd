@@ -1,4 +1,7 @@
+from typing import Any
+
 from mopidy.exceptions import MopidyException
+from mopidy.types import UriScheme
 
 
 class MpdAckError(MopidyException):
@@ -20,13 +23,18 @@ class MpdAckError(MopidyException):
 
     error_code = 0
 
-    def __init__(self, message="", index=0, command=None):
+    def __init__(
+        self,
+        message: str = "",
+        index: int = 0,
+        command: str | None = None,
+    ) -> None:
         super().__init__(message, index, command)
         self.message = message
         self.index = index
         self.command = command
 
-    def get_mpd_ack(self):
+    def get_mpd_ack(self) -> str:
         """
         MPD error code format::
 
@@ -49,7 +57,7 @@ class MpdPasswordError(MpdAckError):
 class MpdPermissionError(MpdAckError):
     error_code = MpdAckError.ACK_ERROR_PERMISSION
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         assert self.command is not None, "command must be given explicitly"
         self.message = f'you don\'t have permission for "{self.command}"'
@@ -60,7 +68,7 @@ class MpdUnknownError(MpdAckError):
 
 
 class MpdUnknownCommandError(MpdUnknownError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         assert self.command is not None, "command must be given explicitly"
         self.message = f'unknown command "{self.command}"'
@@ -68,7 +76,7 @@ class MpdUnknownCommandError(MpdUnknownError):
 
 
 class MpdNoCommandError(MpdUnknownCommandError):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         kwargs["command"] = ""
         super().__init__(*args, **kwargs)
         self.message = "No command given"
@@ -89,7 +97,7 @@ class MpdSystemError(MpdAckError):
 class MpdInvalidPlaylistNameError(MpdAckError):
     error_code = MpdAckError.ACK_ERROR_ARG
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.message = (
             "playlist name is invalid: playlist names may not "
@@ -100,7 +108,7 @@ class MpdInvalidPlaylistNameError(MpdAckError):
 class MpdNotImplementedError(MpdAckError):
     error_code = 0
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.message = "Not implemented"
 
@@ -109,7 +117,13 @@ class MpdInvalidTrackForPlaylistError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 
-    def __init__(self, playlist_scheme, track_scheme, *args, **kwargs):
+    def __init__(
+        self,
+        playlist_scheme: UriScheme,
+        track_scheme: UriScheme,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.message = (
             f'Playlist with scheme "{playlist_scheme}" '
@@ -121,7 +135,12 @@ class MpdFailedToSavePlaylistError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 
-    def __init__(self, backend_scheme, *args, **kwargs):
+    def __init__(
+        self,
+        backend_scheme: UriScheme,
+        *args: Any,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(*args, **kwargs)
         self.message = f'Backend with scheme "{backend_scheme}" failed to save playlist'
 
@@ -130,7 +149,7 @@ class MpdDisabledError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         assert self.command is not None, "command must be given explicitly"
         self.message = f'"{self.command}" has been disabled in the server'

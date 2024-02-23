@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy_mpd.dispatcher import MpdContext
 
 
 @protocol.commands.add("command_list_begin", list_command=False)
-def command_list_begin(context):
+def command_list_begin(context: MpdContext) -> None:
     """
     *musicpd.org, command list section:*
 
@@ -24,7 +31,7 @@ def command_list_begin(context):
 
 
 @protocol.commands.add("command_list_end", list_command=False)
-def command_list_end(context):
+def command_list_end(context: MpdContext) -> protocol.Result:
     """See :meth:`command_list_begin()`."""
     # TODO: batch consecutive add commands
     if not context.dispatcher.command_list_receiving:
@@ -52,7 +59,7 @@ def command_list_end(context):
 
 
 @protocol.commands.add("command_list_ok_begin", list_command=False)
-def command_list_ok_begin(context):
+def command_list_ok_begin(context: MpdContext) -> None:
     """See :meth:`command_list_begin()`."""
     context.dispatcher.command_list_receiving = True
     context.dispatcher.command_list_ok = True

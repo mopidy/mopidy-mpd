@@ -204,12 +204,15 @@ class ServerTest(unittest.TestCase):
     def test_accept_connection(self):
         sock = Mock(spec=socket.socket)
         connected_sock = Mock(spec=socket.socket)
-        sock.accept.return_value = (connected_sock, sentinel.addr)
+        sock.accept.return_value = (
+            connected_sock,
+            (sentinel.host, sentinel.port, sentinel.flow, sentinel.scope),
+        )
         self.mock.server_socket = sock
 
         sock, addr = network.Server.accept_connection(self.mock)
-        assert connected_sock == sock
-        assert sentinel.addr == addr
+        assert sock == connected_sock
+        assert addr == (sentinel.host, sentinel.port)
 
     def test_accept_connection_unix(self):
         sock = Mock(spec=socket.socket)

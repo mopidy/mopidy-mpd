@@ -207,8 +207,20 @@ class PlaylistMpdFormatTest(unittest.TestCase):
                 Track(uri="baz", track_no=3),
             ]
         )
+
         result = translator.playlist_to_mpd_format(playlist, tagtype_list.TAGTYPE_LIST)
-        assert len(result) == 3
+
+        assert result == [
+            ("file", "foo"),
+            ("Time", 0),
+            ("Track", 1),
+            ("file", "bàr"),
+            ("Time", 0),
+            ("Track", 2),
+            ("file", "baz"),
+            ("Time", 0),
+            ("Track", 3),
+        ]
 
     def test_mpd_format_with_range(self):
         playlist = Playlist(
@@ -218,8 +230,9 @@ class PlaylistMpdFormatTest(unittest.TestCase):
                 Track(uri="baz", track_no=3),
             ]
         )
+
         result = translator.playlist_to_mpd_format(
             playlist, tagtype_list.TAGTYPE_LIST, start=1, end=2
         )
-        assert len(result) == 1
-        assert dict(result[0])["Track"] == 2
+
+        assert result == [("file", "bàr"), ("Time", 0), ("Track", 2)]
