@@ -7,12 +7,11 @@ from unittest.mock import Mock, patch, sentinel
 from gi.repository import GLib
 
 from mopidy_mpd import network
-
 from tests import any_int
 
 
 class ServerTest(unittest.TestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         self.mock = Mock(spec=network.Server)
 
     @patch.object(network, "get_socket_address", new=Mock())
@@ -31,9 +30,7 @@ class ServerTest(unittest.TestCase):
             self.mock, sentinel.host, sentinel.port, sentinel.protocol
         )
         self.mock.create_server_socket.return_value = None
-        network.get_socket_address.assert_called_once_with(
-            sentinel.host, sentinel.port
-        )
+        network.get_socket_address.assert_called_once_with(sentinel.host, sentinel.port)
         self.mock.stop()
 
     @patch.object(network, "get_socket_address", new=Mock())
@@ -45,9 +42,7 @@ class ServerTest(unittest.TestCase):
         network.Server.__init__(
             self.mock, sentinel.host, sentinel.port, sentinel.protocol
         )
-        self.mock.register_server_socket.assert_called_once_with(
-            sentinel.fileno
-        )
+        self.mock.register_server_socket.assert_called_once_with(sentinel.fileno)
 
     @patch.object(network, "get_socket_address", new=Mock())
     def test_init_fails_on_fileno_call(self):
@@ -81,9 +76,7 @@ class ServerTest(unittest.TestCase):
 
     def test_create_server_socket_no_port(self):
         with self.assertRaises(TypeError):
-            network.Server.create_server_socket(
-                self.mock, str(sentinel.host), None
-            )
+            network.Server.create_server_socket(self.mock, str(sentinel.host), None)
 
     def test_create_server_socket_invalid_port(self):
         with self.assertRaises(TypeError):
@@ -102,9 +95,7 @@ class ServerTest(unittest.TestCase):
         create_tcp_socket.assert_called_once()
 
     @patch.object(network, "create_unix_socket", spec=socket.socket)
-    def test_create_server_socket_sets_up_listener_unix(
-        self, create_unix_socket
-    ):
+    def test_create_server_socket_sets_up_listener_unix(self, create_unix_socket):
         sock = create_unix_socket.return_value
 
         network.Server.create_server_socket(
@@ -119,9 +110,7 @@ class ServerTest(unittest.TestCase):
     def test_create_server_socket_fails(self):
         network.create_tcp_socket.side_effect = socket.error
         with self.assertRaises(socket.error):
-            network.Server.create_server_socket(
-                self.mock, str(sentinel.host), 1234
-            )
+            network.Server.create_server_socket(self.mock, str(sentinel.host), 1234)
 
     @patch.object(network, "create_unix_socket", new=Mock())
     def test_create_server_socket_fails_unix(self):
@@ -137,9 +126,7 @@ class ServerTest(unittest.TestCase):
         sock.bind.side_effect = socket.error
 
         with self.assertRaises(socket.error):
-            network.Server.create_server_socket(
-                self.mock, str(sentinel.host), 1234
-            )
+            network.Server.create_server_socket(self.mock, str(sentinel.host), 1234)
 
     @patch.object(network, "create_unix_socket", new=Mock())
     def test_create_server_bind_fails_unix(self):
@@ -157,9 +144,7 @@ class ServerTest(unittest.TestCase):
         sock.listen.side_effect = socket.error
 
         with self.assertRaises(socket.error):
-            network.Server.create_server_socket(
-                self.mock, str(sentinel.host), 1234
-            )
+            network.Server.create_server_socket(self.mock, str(sentinel.host), 1234)
 
     @patch.object(network, "create_unix_socket", new=Mock())
     def test_create_server_listen_fails_unix(self):
@@ -195,15 +180,11 @@ class ServerTest(unittest.TestCase):
         )
         self.mock.maximum_connections_exceeded.return_value = False
 
-        assert network.Server.handle_connection(
-            self.mock, sentinel.fileno, GLib.IO_IN
-        )
+        assert network.Server.handle_connection(self.mock, sentinel.fileno, GLib.IO_IN)
         self.mock.accept_connection.assert_called_once_with()
         self.mock.maximum_connections_exceeded.assert_called_once_with()
-        self.mock.init_connection.assert_called_once_with(
-            sentinel.sock, sentinel.addr
-        )
-        assert 0 == self.mock.reject_connection.call_count
+        self.mock.init_connection.assert_called_once_with(sentinel.sock, sentinel.addr)
+        assert self.mock.reject_connection.call_count == 0
 
     def test_handle_connection_exceeded_connections(self):
         self.mock.accept_connection.return_value = (
@@ -212,15 +193,13 @@ class ServerTest(unittest.TestCase):
         )
         self.mock.maximum_connections_exceeded.return_value = True
 
-        assert network.Server.handle_connection(
-            self.mock, sentinel.fileno, GLib.IO_IN
-        )
+        assert network.Server.handle_connection(self.mock, sentinel.fileno, GLib.IO_IN)
         self.mock.accept_connection.assert_called_once_with()
         self.mock.maximum_connections_exceeded.assert_called_once_with()
         self.mock.reject_connection.assert_called_once_with(
             sentinel.sock, sentinel.addr
         )
-        assert 0 == self.mock.init_connection.call_count
+        assert self.mock.init_connection.call_count == 0
 
     def test_accept_connection(self):
         sock = Mock(spec=socket.socket)
@@ -249,7 +228,7 @@ class ServerTest(unittest.TestCase):
         self.mock.server_socket = sock
 
         for error in (errno.EAGAIN, errno.EINTR):
-            sock.accept.side_effect = socket.error(error, "")
+            sock.accept.side_effect = OSError(error, "")
             with self.assertRaises(network.ShouldRetrySocketCallError):
                 network.Server.accept_connection(self.mock)
 
@@ -278,10 +257,10 @@ class ServerTest(unittest.TestCase):
         self.mock.protocol = sentinel.protocol
 
         get_by_class.return_value = [1, 2, 3]
-        assert 3 == network.Server.number_of_connections(self.mock)
+        assert network.Server.number_of_connections(self.mock) == 3
 
         get_by_class.return_value = []
-        assert 0 == network.Server.number_of_connections(self.mock)
+        assert network.Server.number_of_connections(self.mock) == 0
 
     @patch.object(network, "Connection", new=Mock())
     def test_init_connection(self):
@@ -315,9 +294,7 @@ class ServerTest(unittest.TestCase):
         network.Server.reject_connection(
             self.mock, sock, (sentinel.host, sentinel.port)
         )
-        network.format_address.assert_called_once_with(
-            (sentinel.host, sentinel.port)
-        )
+        network.format_address.assert_called_once_with((sentinel.host, sentinel.port))
         network.logger.warning.assert_called_once_with(
             "Rejected connection from %s", sentinel.formatted
         )

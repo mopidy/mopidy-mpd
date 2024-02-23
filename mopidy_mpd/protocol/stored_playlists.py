@@ -10,10 +10,10 @@ logger = logging.getLogger(__name__)
 
 def _check_playlist_name(name):
     if re.search("[/\n\r]", name):
-        raise exceptions.MpdInvalidPlaylistName()
+        raise exceptions.MpdInvalidPlaylistNameError
 
 
-def _get_playlist(context, name, must_exist=True):
+def _get_playlist(context, name, *, must_exist=True):
     playlist = None
     uri = context.lookup_playlist_uri_from_name(name)
     if uri:
@@ -112,11 +112,10 @@ def _get_last_modified(last_modified=None):
     """
     if last_modified is None:
         # If unknown, assume the playlist is modified
-        dt = datetime.datetime.utcnow()
+        dt = datetime.datetime.now(tz=datetime.UTC)
     else:
-        dt = datetime.datetime.utcfromtimestamp(last_modified / 1000.0)
-    dt = dt.replace(microsecond=0)
-    return f"{dt.isoformat()}Z"
+        dt = datetime.datetime.fromtimestamp(last_modified / 1000.0, tz=datetime.UTC)
+    return dt.isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 DEFAULT_PLAYLIST_SLICE = slice(0, None)
@@ -165,9 +164,7 @@ def playlistadd(context, name, track_uri):
     if not old_playlist:
         # Create new playlist with this single track
         lookup_res = context.core.library.lookup(uris=[track_uri]).get()
-        tracks = [
-            track for uri_tracks in lookup_res.values() for track in uri_tracks
-        ]
+        tracks = [track for uri_tracks in lookup_res.values() for track in uri_tracks]
         _create_playlist(context, name, tracks)
     else:
         # Add track to existing playlist
@@ -182,7 +179,7 @@ def playlistadd(context, name, track_uri):
         if saved_playlist is None:
             playlist_scheme = urllib.parse.urlparse(old_playlist.uri).scheme
             uri_scheme = urllib.parse.urlparse(track_uri).scheme
-            raise exceptions.MpdInvalidTrackForPlaylist(
+            raise exceptions.MpdInvalidTrackForPlaylistError(
                 playlist_scheme, uri_scheme
             )
 
@@ -201,20 +198,19 @@ def _create_playlist(context, name, tracks):
         saved_playlist = context.core.playlists.save(new_playlist).get()
         if saved_playlist is not None:
             return  # Created and saved
-        else:
-            continue  # Failed to save using this backend
+        continue  # Failed to save using this backend
     # Can't use backend appropriate for passed URI schemes, use default one
     default_scheme = context.dispatcher.config["mpd"]["default_playlist_scheme"]
     new_playlist = context.core.playlists.create(name, default_scheme).get()
     if new_playlist is None:
         # If even MPD's default backend can't save playlist, everything is lost
         logger.warning("MPD's default backend can't create playlists")
-        raise exceptions.MpdFailedToSavePlaylist(default_scheme)
+        raise exceptions.MpdFailedToSavePlaylistError(default_scheme)
     new_playlist = new_playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(new_playlist).get()
     if saved_playlist is None:
         uri_scheme = urllib.parse.urlparse(new_playlist.uri).scheme
-        raise exceptions.MpdFailedToSavePlaylist(uri_scheme)
+        raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
 
 
 @protocol.commands.add("playlistclear")
@@ -236,7 +232,7 @@ def playlistclear(context, name):
     # Just replace tracks with empty list and save
     playlist = playlist.replace(tracks=[])
     if context.core.playlists.save(playlist).get() is None:
-        raise exceptions.MpdFailedToSavePlaylist(
+        raise exceptions.MpdFailedToSavePlaylistError(
             urllib.parse.urlparse(playlist.uri).scheme
         )
 
@@ -257,21 +253,19 @@ def playlistdelete(context, name, songpos):
         # Convert tracks to list and remove requested
         tracks = list(playlist.tracks)
         tracks.pop(songpos)
-    except IndexError:
-        raise exceptions.MpdArgError("Bad song index")
+    except IndexError as exc:
+        raise exceptions.MpdArgError("Bad song index") from exc
 
     # Replace tracks and save playlist
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylist(
+        raise exceptions.MpdFailedToSavePlaylistError(
             urllib.parse.urlparse(playlist.uri).scheme
         )
 
 
-@protocol.commands.add(
-    "playlistmove", from_pos=protocol.UINT, to_pos=protocol.UINT
-)
+@protocol.commands.add("playlistmove", from_pos=protocol.UINT, to_pos=protocol.UINT)
 def playlistmove(context, name, from_pos, to_pos):
     """
     *musicpd.org, stored playlists section:*
@@ -300,14 +294,14 @@ def playlistmove(context, name, from_pos, to_pos):
         tracks = list(playlist.tracks)
         track = tracks.pop(from_pos)
         tracks.insert(to_pos, track)
-    except IndexError:
-        raise exceptions.MpdArgError("Bad song index")
+    except IndexError as exc:
+        raise exceptions.MpdArgError("Bad song index") from exc
 
     # Replace tracks and save playlist
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylist(
+        raise exceptions.MpdFailedToSavePlaylistError(
             urllib.parse.urlparse(playlist.uri).scheme
         )
 
@@ -337,7 +331,7 @@ def rename(context, old_name, new_name):
     saved_playlist = context.core.playlists.save(new_playlist).get()
 
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylist(uri_scheme)
+        raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
     context.core.playlists.delete(old_playlist.uri).get()
 
 
@@ -378,6 +372,6 @@ def save(context, name):
         new_playlist = playlist.replace(tracks=tracks)
         saved_playlist = context.core.playlists.save(new_playlist).get()
         if saved_playlist is None:
-            raise exceptions.MpdFailedToSavePlaylist(
+            raise exceptions.MpdFailedToSavePlaylistError(
                 urllib.parse.urlparse(playlist.uri).scheme
             )

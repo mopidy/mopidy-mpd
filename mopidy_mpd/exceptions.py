@@ -59,7 +59,7 @@ class MpdUnknownError(MpdAckError):
     error_code = MpdAckError.ACK_ERROR_UNKNOWN
 
 
-class MpdUnknownCommand(MpdUnknownError):
+class MpdUnknownCommandError(MpdUnknownError):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         assert self.command is not None, "command must be given explicitly"
@@ -67,7 +67,7 @@ class MpdUnknownCommand(MpdUnknownError):
         self.command = ""
 
 
-class MpdNoCommand(MpdUnknownCommand):
+class MpdNoCommandError(MpdUnknownCommandError):
     def __init__(self, *args, **kwargs):
         kwargs["command"] = ""
         super().__init__(*args, **kwargs)
@@ -86,7 +86,7 @@ class MpdSystemError(MpdAckError):
     error_code = MpdAckError.ACK_ERROR_SYSTEM
 
 
-class MpdInvalidPlaylistName(MpdAckError):
+class MpdInvalidPlaylistNameError(MpdAckError):
     error_code = MpdAckError.ACK_ERROR_ARG
 
     def __init__(self, *args, **kwargs):
@@ -97,7 +97,7 @@ class MpdInvalidPlaylistName(MpdAckError):
         )
 
 
-class MpdNotImplemented(MpdAckError):
+class MpdNotImplementedError(MpdAckError):
     error_code = 0
 
     def __init__(self, *args, **kwargs):
@@ -105,7 +105,7 @@ class MpdNotImplemented(MpdAckError):
         self.message = "Not implemented"
 
 
-class MpdInvalidTrackForPlaylist(MpdAckError):
+class MpdInvalidTrackForPlaylistError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 
@@ -117,18 +117,16 @@ class MpdInvalidTrackForPlaylist(MpdAckError):
         )
 
 
-class MpdFailedToSavePlaylist(MpdAckError):
+class MpdFailedToSavePlaylistError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 
     def __init__(self, backend_scheme, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.message = (
-            f'Backend with scheme "{backend_scheme}" failed to save playlist'
-        )
+        self.message = f'Backend with scheme "{backend_scheme}" failed to save playlist'
 
 
-class MpdDisabled(MpdAckError):
+class MpdDisabledError(MpdAckError):
     # NOTE: This is a custom error for Mopidy that does not exist in MPD.
     error_code = 0
 

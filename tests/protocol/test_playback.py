@@ -134,7 +134,7 @@ class PlaybackOptionsHandlerTest(protocol.BaseTestCase):
 
 
 class PlaybackControlHandlerTest(protocol.BaseTestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         super().setUp()
         self.tracks = [
             Track(uri="dummy:a", length=40000),
@@ -152,55 +152,55 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         self.send_request('play "0"')
         self.send_request('pause "1"')
         self.send_request('pause "0"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_pause_on(self):
         self.send_request('play "0"')
         self.send_request('pause "1"')
-        assert PAUSED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PAUSED
         self.assertInResponse("OK")
 
     def test_pause_toggle(self):
         self.send_request('play "0"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
         # Deprecated version
         self.send_request("pause")
-        assert PAUSED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PAUSED
         self.assertInResponse("OK")
         self.send_request("pause")
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_play_without_pos(self):
         self.send_request("play")
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_play_with_pos(self):
         self.send_request('play "0"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_play_with_pos_without_quotes(self):
         self.send_request("play 0")
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_play_with_pos_out_of_bounds(self):
         self.core.tracklist.clear().get()
         self.send_request('play "0"')
-        assert STOPPED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == STOPPED
         self.assertInResponse("ACK [2@0] {play} Bad song index")
 
     def test_play_minus_one_plays_first_in_playlist_if_no_current_track(self):
         assert self.core.playback.get_current_track().get() is None
 
         self.send_request('play "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
-        assert "dummy:a" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_state().get() == PLAYING
+        assert self.core.playback.get_current_track().get().uri == "dummy:a"
         self.assertInResponse("OK")
 
     def test_play_minus_one_plays_current_track_if_current_track_is_set(self):
@@ -211,15 +211,15 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         assert self.core.playback.get_current_track().get() is not None
 
         self.send_request('play "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
-        assert "dummy:b" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_state().get() == PLAYING
+        assert self.core.playback.get_current_track().get().uri == "dummy:b"
         self.assertInResponse("OK")
 
     def test_play_minus_one_on_empty_playlist_does_not_ack(self):
         self.core.tracklist.clear()
 
         self.send_request('play "-1"')
-        assert STOPPED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == STOPPED
         assert self.core.playback.get_current_track().get() is None
         self.assertInResponse("OK")
 
@@ -227,10 +227,10 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         self.core.playback.play().get()
         self.core.playback.seek(30000)
         assert self.core.playback.get_time_position().get() >= 30000
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
 
         self.send_request('play "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         assert self.core.playback.get_time_position().get() >= 30000
         self.assertInResponse("OK")
 
@@ -238,31 +238,31 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         self.core.playback.play().get()
         self.core.playback.seek(30000)
         assert self.core.playback.get_time_position().get() >= 30000
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.core.playback.pause()
-        assert PAUSED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PAUSED
 
         self.send_request('play "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         assert self.core.playback.get_time_position().get() >= 30000
         self.assertInResponse("OK")
 
     def test_playid(self):
         self.send_request('playid "1"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_playid_without_quotes(self):
         self.send_request("playid 1")
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.assertInResponse("OK")
 
     def test_playid_minus_1_plays_first_in_playlist_if_no_current_track(self):
         assert self.core.playback.get_current_track().get() is None
 
         self.send_request('playid "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
-        assert "dummy:a" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_state().get() == PLAYING
+        assert self.core.playback.get_current_track().get().uri == "dummy:a"
         self.assertInResponse("OK")
 
     def test_playid_minus_1_plays_current_track_if_current_track_is_set(self):
@@ -273,15 +273,15 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         assert self.core.playback.get_current_track().get() is not None
 
         self.send_request('playid "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
-        assert "dummy:b" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_state().get() == PLAYING
+        assert self.core.playback.get_current_track().get().uri == "dummy:b"
         self.assertInResponse("OK")
 
     def test_playid_minus_one_on_empty_playlist_does_not_ack(self):
         self.core.tracklist.clear()
 
         self.send_request('playid "-1"')
-        assert STOPPED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == STOPPED
         assert self.core.playback.get_current_track().get() is None
         self.assertInResponse("OK")
 
@@ -289,10 +289,10 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         self.core.playback.play().get()
         self.core.playback.seek(30000)
         assert self.core.playback.get_time_position().get() >= 30000
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
 
         self.send_request('playid "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         assert self.core.playback.get_time_position().get() >= 30000
         self.assertInResponse("OK")
 
@@ -300,12 +300,12 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
         self.core.playback.play().get()
         self.core.playback.seek(30000)
         assert self.core.playback.get_time_position().get() >= 30000
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         self.core.playback.pause()
-        assert PAUSED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PAUSED
 
         self.send_request('playid "-1"')
-        assert PLAYING == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == PLAYING
         assert self.core.playback.get_time_position().get() >= 30000
         self.assertInResponse("OK")
 
@@ -432,44 +432,44 @@ class PlaybackControlHandlerTest(protocol.BaseTestCase):
     def test_stop(self):
         self.core.tracklist.clear().get()
         self.send_request("stop")
-        assert STOPPED == self.core.playback.get_state().get()
+        assert self.core.playback.get_state().get() == STOPPED
         self.assertInResponse("OK")
 
 
 class VolumeTest(protocol.BaseTestCase):
     def test_setvol_below_min(self):
         self.send_request('setvol "-10"')
-        assert 0 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 0
         self.assertInResponse("OK")
 
     def test_setvol_min(self):
         self.send_request('setvol "0"')
-        assert 0 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 0
         self.assertInResponse("OK")
 
     def test_setvol_middle(self):
         self.send_request('setvol "50"')
-        assert 50 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 50
         self.assertInResponse("OK")
 
     def test_setvol_max(self):
         self.send_request('setvol "100"')
-        assert 100 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 100
         self.assertInResponse("OK")
 
     def test_setvol_above_max(self):
         self.send_request('setvol "110"')
-        assert 100 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 100
         self.assertInResponse("OK")
 
     def test_setvol_plus_is_ignored(self):
         self.send_request('setvol "+10"')
-        assert 10 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 10
         self.assertInResponse("OK")
 
     def test_setvol_without_quotes(self):
         self.send_request("setvol 50")
-        assert 50 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 50
         self.assertInResponse("OK")
 
     def test_volume_plus(self):
@@ -477,7 +477,7 @@ class VolumeTest(protocol.BaseTestCase):
 
         self.send_request("volume +20")
 
-        assert 70 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 70
         self.assertInResponse("OK")
 
     def test_volume_minus(self):
@@ -485,7 +485,7 @@ class VolumeTest(protocol.BaseTestCase):
 
         self.send_request("volume -20")
 
-        assert 30 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 30
         self.assertInResponse("OK")
 
     def test_volume_less_than_minus_100(self):
@@ -493,7 +493,7 @@ class VolumeTest(protocol.BaseTestCase):
 
         self.send_request("volume -110")
 
-        assert 50 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 50
         self.assertInResponse("ACK [2@0] {volume} Invalid volume value")
 
     def test_volume_more_than_plus_100(self):
@@ -501,7 +501,7 @@ class VolumeTest(protocol.BaseTestCase):
 
         self.send_request("volume +110")
 
-        assert 50 == self.core.mixer.get_volume().get()
+        assert self.core.mixer.get_volume().get() == 50
         self.assertInResponse("ACK [2@0] {volume} Invalid volume value")
 
 

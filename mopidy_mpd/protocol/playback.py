@@ -1,4 +1,5 @@
 from mopidy.core import PlaybackState
+
 from mopidy_mpd import exceptions, protocol
 
 
@@ -25,7 +26,7 @@ def crossfade(context, seconds):
 
         Sets crossfading between songs.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("mixrampdb")
@@ -42,7 +43,7 @@ def mixrampdb(context, decibels):
     tags crossfading will be used. See
     https://sourceforge.net/projects/mixramp/
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("mixrampdelay", seconds=protocol.UINT)
@@ -56,7 +57,7 @@ def mixrampdelay(context, seconds):
         value of "nan" disables MixRamp overlapping and falls back to
         crossfading.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("next")
@@ -170,21 +171,22 @@ def play(context, songpos=None):
     """
     if songpos is None:
         return context.core.playback.play().get()
-    elif songpos == -1:
+
+    if songpos == -1:
         return _play_minus_one(context)
 
     try:
         tl_track = context.core.tracklist.slice(songpos, songpos + 1).get()[0]
         return context.core.playback.play(tl_track).get()
-    except IndexError:
-        raise exceptions.MpdArgError("Bad song index")
+    except IndexError as exc:
+        raise exceptions.MpdArgError("Bad song index") from exc
 
 
 def _play_minus_one(context):
     playback_state = context.core.playback.get_state().get()
     if playback_state == PlaybackState.PLAYING:
-        return  # Nothing to do
-    elif playback_state == PlaybackState.PAUSED:
+        return None  # Nothing to do
+    if playback_state == PlaybackState.PAUSED:
         return context.core.playback.resume().get()
 
     current_tl_track = context.core.playback.get_current_tl_track().get()
@@ -195,7 +197,7 @@ def _play_minus_one(context):
     if tl_tracks:
         return context.core.playback.play(tl_tracks[0]).get()
 
-    return  # Fail silently
+    return None  # Fail silently
 
 
 @protocol.commands.add("playid", tlid=protocol.INT)
@@ -309,7 +311,7 @@ def replay_gain_mode(context, mode):
 
         This command triggers the options idle event.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("replay_gain_status")
@@ -436,14 +438,19 @@ def volume(context, change):
 
         Note: ``volume`` is deprecated, use ``setvol`` instead.
     """
-    if change < -100 or change > 100:
+    min_volume_change = -100
+    max_volume_change = 100
+    min_volume = 0
+    max_volume = 100
+
+    if change < min_volume_change or change > max_volume_change:
         raise exceptions.MpdArgError("Invalid volume value")
 
     old_volume = context.core.mixer.get_volume().get()
     if old_volume is None:
         raise exceptions.MpdSystemError("problems setting volume")
 
-    new_volume = min(max(0, old_volume + change), 100)
+    new_volume = min(max(min_volume, old_volume + change), max_volume)
     success = context.core.mixer.set_volume(new_volume).get()
     if not success:
         raise exceptions.MpdSystemError("problems setting volume")

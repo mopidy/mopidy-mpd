@@ -28,7 +28,7 @@ def command_list_end(context):
     """See :meth:`command_list_begin()`."""
     # TODO: batch consecutive add commands
     if not context.dispatcher.command_list_receiving:
-        raise exceptions.MpdUnknownCommand(command="command_list_end")
+        raise exceptions.MpdUnknownCommandError(command="command_list_end")
     context.dispatcher.command_list_receiving = False
     (command_list, context.dispatcher.command_list) = (
         context.dispatcher.command_list,
@@ -44,9 +44,7 @@ def command_list_end(context):
             command, current_command_list_index=index
         )
         command_list_response.extend(response)
-        if command_list_response and command_list_response[-1].startswith(
-            "ACK"
-        ):
+        if command_list_response and command_list_response[-1].startswith("ACK"):
             return command_list_response
         if command_list_ok:
             command_list_response.append("list_OK")

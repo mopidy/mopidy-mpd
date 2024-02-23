@@ -2,8 +2,8 @@ import random
 from unittest import mock
 
 from mopidy.models import Playlist, Ref, Track
-from mopidy_mpd.protocol import stored_playlists
 
+from mopidy_mpd.protocol import stored_playlists
 from tests import protocol
 
 
@@ -40,17 +40,17 @@ class IssueGH17RegressionTest(protocol.BaseTestCase):
         # Playlist order: abcfde
 
         self.send_request("play")
-        assert "dummy:a" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_current_track().get().uri == "dummy:a"
         self.send_request('random "1"')
         self.send_request("next")
-        assert "dummy:b" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_current_track().get().uri == "dummy:b"
         self.send_request("next")
         # Should now be at track 'c', but playback fails and it skips ahead
-        assert "dummy:f" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_current_track().get().uri == "dummy:f"
         self.send_request("next")
-        assert "dummy:d" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_current_track().get().uri == "dummy:d"
         self.send_request("next")
-        assert "dummy:e" == self.core.playback.get_current_track().get().uri
+        assert self.core.playback.get_current_track().get().uri == "dummy:e"
 
 
 class IssueGH18RegressionTest(protocol.BaseTestCase):
@@ -184,9 +184,7 @@ class IssueGH113RegressionTest(protocol.BaseTestCase):
         self.core.playlists.create(r"all lart spotify:track:\w\{22\} pastes")
 
         self.send_request('lsinfo "/"')
-        self.assertInResponse(
-            r"playlist: all lart spotify:track:\w\{22\} pastes"
-        )
+        self.assertInResponse(r"playlist: all lart spotify:track:\w\{22\} pastes")
 
         self.send_request(
             r'listplaylistinfo "all lart spotify:track:\\w\\{22\\} pastes"'

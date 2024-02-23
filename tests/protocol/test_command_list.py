@@ -13,9 +13,7 @@ class CommandListsTest(protocol.BaseTestCase):
 
     def test_command_list_end_without_start_first_is_an_unknown_command(self):
         self.send_request("command_list_end")
-        self.assertEqualResponse(
-            'ACK [5@0] {} unknown command "command_list_end"'
-        )
+        self.assertEqualResponse('ACK [5@0] {} unknown command "command_list_end"')
 
     def test_command_list_with_ping(self):
         self.send_request("command_list_begin")

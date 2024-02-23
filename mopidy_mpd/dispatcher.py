@@ -49,9 +49,7 @@ class MpdDispatcher:
         # TODO: validate against mopidy_mpd/protocol/status.SUBSYSTEMS
         self.context.events.add(subsystem)
 
-        subsystems = self.context.subscriptions.intersection(
-            self.context.events
-        )
+        subsystems = self.context.subscriptions.intersection(self.context.events)
         if not subsystems:
             return
 
@@ -67,10 +65,9 @@ class MpdDispatcher:
         if filter_chain:
             next_filter = filter_chain.pop(0)
             return next_filter(request, response, filter_chain)
-        else:
-            return response
+        return response
 
-    # Filter: catch MPD ACK errors
+    # --- Filter: catch MPD ACK errors
 
     def _catch_mpd_ack_errors_filter(self, request, response, filter_chain):
         try:
@@ -80,53 +77,55 @@ class MpdDispatcher:
                 mpd_ack_error.index = self.command_list_index
             return [mpd_ack_error.get_mpd_ack()]
 
-    # Filter: authenticate
+    # --- Filter: authenticate
 
     def _authenticate_filter(self, request, response, filter_chain):
         if self.authenticated:
             return self._call_next_filter(request, response, filter_chain)
-        elif self.config["mpd"]["password"] is None:
+
+        if self.config["mpd"]["password"] is None:
             self.authenticated = True
             return self._call_next_filter(request, response, filter_chain)
-        else:
-            command_name = request.split(" ")[0]
-            command = protocol.commands.handlers.get(command_name)
-            if command and not command.auth_required:
-                return self._call_next_filter(request, response, filter_chain)
-            else:
-                raise exceptions.MpdPermissionError(command=command_name)
 
-    # Filter: command list
+        command_name = request.split(" ")[0]
+        command = protocol.commands.handlers.get(command_name)
+
+        if command and not command.auth_required:
+            return self._call_next_filter(request, response, filter_chain)
+
+        raise exceptions.MpdPermissionError(command=command_name)
+
+    # --- Filter: command list
 
     def _command_list_filter(self, request, response, filter_chain):
         if self._is_receiving_command_list(request):
             self.command_list.append(request)
             return []
-        else:
-            response = self._call_next_filter(request, response, filter_chain)
-            if self._is_receiving_command_list(
-                request
-            ) or self._is_processing_command_list(request):
-                if response and response[-1] == "OK":
-                    response = response[:-1]
-            return response
+
+        response = self._call_next_filter(request, response, filter_chain)
+        if (
+            (
+                self._is_receiving_command_list(request)
+                or self._is_processing_command_list(request)
+            )
+            and response
+            and response[-1] == "OK"
+        ):
+            response = response[:-1]
+        return response
 
     def _is_receiving_command_list(self, request):
         return self.command_list_receiving and request != "command_list_end"
 
     def _is_processing_command_list(self, request):
-        return (
-            self.command_list_index is not None
-            and request != "command_list_end"
-        )
+        return self.command_list_index is not None and request != "command_list_end"
 
-    # Filter: idle
+    # --- Filter: idle
 
     def _idle_filter(self, request, response, filter_chain):
         if self._is_currently_idle() and not self._noidle.match(request):
             logger.debug(
-                "Client sent us %s, only %s is allowed while in "
-                "the idle state",
+                "Client sent us %s, only %s is allowed while in " "the idle state",
                 repr(request),
                 repr("noidle"),
             )
@@ -140,13 +139,13 @@ class MpdDispatcher:
 
         if self._is_currently_idle():
             return []
-        else:
-            return response
+
+        return response
 
     def _is_currently_idle(self):
         return bool(self.context.subscriptions)
 
-    # Filter: add OK
+    # --- Filter: add OK
 
     def _add_ok_filter(self, request, response, filter_chain):
         response = self._call_next_filter(request, response, filter_chain)
@@ -157,15 +156,15 @@ class MpdDispatcher:
     def _has_error(self, response):
         return response and response[-1].startswith("ACK")
 
-    # Filter: call handler
+    # --- Filter: call handler
 
     def _call_handler_filter(self, request, response, filter_chain):
         try:
             response = self._format_response(self._call_handler(request))
             return self._call_next_filter(request, response, filter_chain)
-        except pykka.ActorDeadError as e:
+        except pykka.ActorDeadError as exc:
             logger.warning("Tried to communicate with dead actor.")
-            raise exceptions.MpdSystemError(e)
+            raise exceptions.MpdSystemError(exc) from exc
 
     def _call_handler(self, request):
         tokens = tokenize.split(request)
@@ -173,7 +172,7 @@ class MpdDispatcher:
         blacklist = self.config["mpd"].get("command_blacklist", [])
         if tokens and tokens[0] in blacklist:
             logger.warning("MPD client used blacklisted command: %s", tokens[0])
-            raise exceptions.MpdDisabled(command=tokens[0])
+            raise exceptions.MpdDisabledError(command=tokens[0])
         try:
             return protocol.commands.call(tokens, context=self.context)
         except exceptions.MpdAckError as exc:
@@ -241,9 +240,7 @@ class MpdContext:
 
     _uri_map = None
 
-    def __init__(
-        self, dispatcher, session=None, config=None, core=None, uri_map=None
-    ):
+    def __init__(self, dispatcher, session=None, config=None, core=None, uri_map=None):  # noqa: PLR0913
         self.dispatcher = dispatcher
         self.session = session
         if config is not None:
@@ -265,7 +262,7 @@ class MpdContext:
         """
         return self._uri_map.playlist_name_from_uri(uri)
 
-    def browse(self, path, recursive=True, lookup=True):
+    def browse(self, path, *, recursive=True, lookup=True):  # noqa: C901, PLR0912
         """
         Browse the contents of a given directory path.
 
@@ -285,7 +282,7 @@ class MpdContext:
         """
 
         path_parts = re.findall(r"[^/]+", path or "")
-        root_path = "/".join([""] + path_parts)
+        root_path = "/".join(["", *path_parts])
 
         uri = self._uri_map.uri_from_name(root_path)
         if uri is None:

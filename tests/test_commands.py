@@ -5,16 +5,16 @@ from mopidy_mpd import exceptions, protocol
 
 class TestConverts(unittest.TestCase):
     def test_integer(self):
-        assert 123 == protocol.INT("123")
-        assert (-123) == protocol.INT("-123")
-        assert 123 == protocol.INT("+123")
+        assert protocol.INT("123") == 123
+        assert protocol.INT("-123") == (-123)
+        assert protocol.INT("+123") == 123
         self.assertRaises(ValueError, protocol.INT, "3.14")
         self.assertRaises(ValueError, protocol.INT, "")
         self.assertRaises(ValueError, protocol.INT, "abc")
         self.assertRaises(ValueError, protocol.INT, "12 34")
 
     def test_unsigned_integer(self):
-        assert 123 == protocol.UINT("123")
+        assert protocol.UINT("123") == 123
         self.assertRaises(ValueError, protocol.UINT, "-123")
         self.assertRaises(ValueError, protocol.UINT, "+123")
         self.assertRaises(ValueError, protocol.UINT, "3.14")
@@ -51,7 +51,7 @@ class TestConverts(unittest.TestCase):
 
 
 class TestCommands(unittest.TestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         self.commands = protocol.Commands()
 
     def test_add_as_a_decorator(self):
@@ -97,7 +97,7 @@ class TestCommands(unittest.TestCase):
         sentinel, args = object(), []
         self.commands.add("bar")(lambda context, *args: sentinel)
         for _ in range(10):
-            assert sentinel == self.commands.call((["bar"] + args))
+            assert sentinel == self.commands.call(["bar", *args])
             args.append("test")
 
     def test_function_has_only_varags_succeeds(self):
@@ -140,7 +140,7 @@ class TestCommands(unittest.TestCase):
         assert sentinel3 == self.commands.call(["baz"])
 
     def test_call_with_nonexistent_handler(self):
-        with self.assertRaises(exceptions.MpdUnknownCommand):
+        with self.assertRaises(exceptions.MpdUnknownCommandError):
             self.commands.call(["bar"])
 
     def test_call_passes_context(self):
@@ -149,26 +149,26 @@ class TestCommands(unittest.TestCase):
         assert sentinel == self.commands.call(["foo"], context=sentinel)
 
     def test_call_without_args_fails(self):
-        with self.assertRaises(exceptions.MpdNoCommand):
+        with self.assertRaises(exceptions.MpdNoCommandError):
             self.commands.call([])
 
     def test_call_passes_required_argument(self):
         self.commands.add("foo")(lambda context, required: required)
-        assert "test123" == self.commands.call(["foo", "test123"])
+        assert self.commands.call(["foo", "test123"]) == "test123"
 
     def test_call_passes_optional_argument(self):
         sentinel = object()
         self.commands.add("foo")(lambda context, optional=sentinel: optional)
         assert sentinel == self.commands.call(["foo"])
-        assert "test" == self.commands.call(["foo", "test"])
+        assert self.commands.call(["foo", "test"]) == "test"
 
     def test_call_passes_required_and_optional_argument(self):
         def func(context, required, optional=None):
             return (required, optional)
 
         self.commands.add("foo")(func)
-        assert ("arg", None) == self.commands.call(["foo", "arg"])
-        assert ("arg", "kwarg") == self.commands.call(["foo", "arg", "kwarg"])
+        assert self.commands.call(["foo", "arg"]) == ("arg", None)
+        assert self.commands.call(["foo", "arg", "kwarg"]) == ("arg", "kwarg")
 
     def test_call_passes_varargs(self):
         self.commands.add("foo")(lambda context, *args: args)

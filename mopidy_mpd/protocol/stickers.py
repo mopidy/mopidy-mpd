@@ -2,7 +2,7 @@ from mopidy_mpd import exceptions, protocol
 
 
 @protocol.commands.add("sticker", list_command=False)
-def sticker(context, action, field, uri, name=None, value=None):
+def sticker(context, action, field, uri, name=None, value=None):  # noqa: PLR0913
     """
     *musicpd.org, sticker section:*
 
@@ -33,4 +33,4 @@ def sticker(context, action, field, uri, name=None, value=None):
     """
     # TODO: check that action in ('list', 'find', 'get', 'set', 'delete')
     # TODO: check name/value matches with action
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO

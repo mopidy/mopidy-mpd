@@ -1,13 +1,12 @@
 import unittest
 
 import pykka
-
 from mopidy import core
 from mopidy.core import PlaybackState
 from mopidy.models import Track
+
 from mopidy_mpd import dispatcher
 from mopidy_mpd.protocol import status
-
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 PAUSED = PlaybackState.PAUSED
@@ -19,7 +18,7 @@ STOPPED = PlaybackState.STOPPED
 
 
 class StatusHandlerTest(unittest.TestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         config = {"core": {"max_tracklist_length": 10000}}
 
         self.audio = dummy_audio.create_proxy()
@@ -36,7 +35,7 @@ class StatusHandlerTest(unittest.TestCase):
         self.dispatcher = dispatcher.MpdDispatcher(core=self.core)
         self.context = self.dispatcher.context
 
-    def tearDown(self):  # noqa: N802
+    def tearDown(self):
         pykka.ActorRegistry.stop_all()
 
     def set_tracklist(self, tracks):

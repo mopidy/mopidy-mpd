@@ -1,24 +1,14 @@
 import datetime
 import logging
-import re
 
 from mopidy.models import TlTrack
+
 from mopidy_mpd.protocol import tagtype_list
 
 logger = logging.getLogger(__name__)
 
-# TODO: special handling of local:// uri scheme
-normalize_path_re = re.compile(r"[^/]+")
 
-
-def normalize_path(path, relative=False):
-    parts = normalize_path_re.findall(path or "")
-    if not relative:
-        parts.insert(0, "")
-    return "/".join(parts)
-
-
-def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
+def track_to_mpd_format(track, tagtypes, *, position=None, stream_title=None):  # noqa: C901, PLR0912
     """
     Format track for output to MPD client.
 
@@ -33,7 +23,7 @@ def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
     if isinstance(track, TlTrack):
         (tlid, track) = track
     else:
-        (tlid, track) = (None, track)
+        (tlid, track) = (None, track)  # noqa: PLW0127
 
     if not track.uri:
         logger.warning("Ignoring track without uri")
@@ -57,9 +47,7 @@ def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
         result.append(("Date", track.date))
 
     if track.album is not None and track.album.num_tracks is not None:
-        result.append(
-            ("Track", f"{track.track_no or 0}/{track.album.num_tracks}")
-        )
+        result.append(("Track", f"{track.track_no or 0}/{track.album.num_tracks}"))
     else:
         result.append(("Track", track.track_no or 0))
     if position is not None and tlid is not None:
@@ -71,9 +59,7 @@ def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
     if track.album is not None and track.album.artists:
         result += multi_tag_list(track.album.artists, "name", "AlbumArtist")
 
-        musicbrainz_ids = concat_multi_values(
-            track.album.artists, "musicbrainz_id"
-        )
+        musicbrainz_ids = concat_multi_values(track.album.artists, "musicbrainz_id")
         if musicbrainz_ids:
             result.append(("MUSICBRAINZ_ALBUMARTISTID", musicbrainz_ids))
 
@@ -95,10 +81,10 @@ def track_to_mpd_format(track, tagtypes, position=None, stream_title=None):
         result.append(("Disc", track.disc_no))
 
     if track.last_modified:
-        datestring = datetime.datetime.utcfromtimestamp(
-            track.last_modified // 1000
-        ).isoformat()
-        result.append(("Last-Modified", datestring + "Z"))
+        datestring = datetime.datetime.fromtimestamp(
+            track.last_modified // 1000, tz=datetime.UTC
+        ).isoformat(timespec="seconds")
+        result.append(("Last-Modified", datestring.replace("+00:00", "Z")))
 
     if track.musicbrainz_id is not None:
         result.append(("MUSICBRAINZ_TRACKID", track.musicbrainz_id))
@@ -122,10 +108,9 @@ def _has_value(tagtypes, tagtype, value):
     :rtype: bool
     """
     if tagtype in tagtype_list.TAGTYPE_LIST:
-        if tagtype in tagtypes:
-            return bool(value)
-        else:
+        if tagtype not in tagtypes:
             return False
+        return bool(value)
     return True
 
 
@@ -144,9 +129,7 @@ def concat_multi_values(models, attribute):
     # strict alphabetical). If we just use them in the order in which they come
     # in then the musicbrainz ids have a higher chance of staying in sync
     return ";".join(
-        getattr(m, attribute)
-        for m in models
-        if getattr(m, attribute, None) is not None
+        getattr(m, attribute) for m in models if getattr(m, attribute, None) is not None
     )
 
 
@@ -172,7 +155,7 @@ def multi_tag_list(objects, attribute, tag):
     ]
 
 
-def tracks_to_mpd_format(tracks, tagtypes, start=0, end=None):
+def tracks_to_mpd_format(tracks, tagtypes, *, start=0, end=None):
     """
     Format list of tracks for output to MPD client.
 
@@ -193,17 +176,17 @@ def tracks_to_mpd_format(tracks, tagtypes, start=0, end=None):
     positions = range(start, end)
     assert len(tracks) == len(positions)
     result = []
-    for track, position in zip(tracks, positions):
-        formatted_track = track_to_mpd_format(track, tagtypes, position)
+    for track, position in zip(tracks, positions, strict=False):
+        formatted_track = track_to_mpd_format(track, tagtypes, position=position)
         if formatted_track:
             result.append(formatted_track)
     return result
 
 
-def playlist_to_mpd_format(playlist, tagtypes, *args, **kwargs):
+def playlist_to_mpd_format(playlist, tagtypes, *, start=0, end=None):
     """
     Format playlist for output to MPD client.
 
     Arguments as for :func:`tracks_to_mpd_format`, except the first one.
     """
-    return tracks_to_mpd_format(playlist.tracks, tagtypes, *args, **kwargs)
+    return tracks_to_mpd_format(playlist.tracks, tagtypes, start=start, end=end)

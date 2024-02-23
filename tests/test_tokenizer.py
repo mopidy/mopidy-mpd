@@ -13,7 +13,7 @@ class TestTokenizer(unittest.TestCase):
         assert cm.exception.message == message
 
     def test_empty_string(self):
-        ex = exceptions.MpdNoCommand
+        ex = exceptions.MpdNoCommandError
         msg = "No command given"
         self.assertTokenizeRaises(ex, msg, "")
         self.assertTokenizeRaises(ex, msg, "      ")

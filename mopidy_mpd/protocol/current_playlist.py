@@ -1,4 +1,4 @@
-import urllib
+from urllib.parse import urlparse
 
 from mopidy_mpd import exceptions, protocol, translator
 
@@ -22,9 +22,8 @@ def add(context, uri):
 
     # If we have an URI just try and add it directly without bothering with
     # jumping through browse...
-    if urllib.parse.urlparse(uri).scheme != "":
-        if context.core.tracklist.add(uris=[uri]).get():
-            return
+    if urlparse(uri).scheme != "" and context.core.tracklist.add(uris=[uri]).get():
+        return
 
     try:
         uris = []
@@ -32,9 +31,7 @@ def add(context, uri):
             if ref:
                 uris.append(ref.uri)
     except exceptions.MpdNoExistError as exc:
-        exc.message = (  # noqa B306: Our own exception
-            "directory or file not found"
-        )
+        exc.message = "directory or file not found"
         raise
 
     if not uris:
@@ -68,9 +65,7 @@ def addid(context, uri, songpos=None):
     if songpos is not None and songpos > length.get():
         raise exceptions.MpdArgError("Bad song index")
 
-    tl_tracks = context.core.tracklist.add(
-        uris=[uri], at_position=songpos
-    ).get()
+    tl_tracks = context.core.tracklist.add(uris=[uri], at_position=songpos).get()
 
     if not tl_tracks:
         raise exceptions.MpdNoExistError("No such song")
@@ -191,7 +186,7 @@ def playlistfind(context, tag, needle):
         return translator.track_to_mpd_format(
             tl_tracks[0], context.session.tagtypes, position=position
         )
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("playlistid", tlid=protocol.UINT)
@@ -212,11 +207,11 @@ def playlistid(context, tlid=None):
         return translator.track_to_mpd_format(
             tl_tracks[0], context.session.tagtypes, position=position
         )
-    else:
-        return translator.tracks_to_mpd_format(
-            context.core.tracklist.get_tl_tracks().get(),
-            context.session.tagtypes,
-        )
+
+    return translator.tracks_to_mpd_format(
+        context.core.tracklist.get_tl_tracks().get(),
+        context.session.tagtypes,
+    )
 
 
 @protocol.commands.add("playlistinfo")
@@ -247,7 +242,7 @@ def playlistinfo(context, parameter=None):
     if end and end > len(tl_tracks):
         end = None
     return translator.tracks_to_mpd_format(
-        tl_tracks, context.session.tagtypes, start, end
+        tl_tracks, context.session.tagtypes, start=start, end=end
     )
 
 
@@ -265,7 +260,7 @@ def playlistsearch(context, tag, needle):
 
     - uses ``filename`` and ``any`` as tags
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("plchanges", version=protocol.INT)
@@ -286,12 +281,14 @@ def plchanges(context, version):
     """
     # XXX Naive implementation that returns all tracks as changed
     tracklist_version = context.core.tracklist.get_version().get()
+
     if version < tracklist_version:
         return translator.tracks_to_mpd_format(
             context.core.tracklist.get_tl_tracks().get(),
             context.session.tagtypes,
         )
-    elif version == tracklist_version:
+
+    if version == tracklist_version:
         # A version match could indicate this is just a metadata update, so
         # check for a stream ref and let the client know about the change.
         stream_title = context.core.playback.get_stream_title().get()
@@ -306,6 +303,8 @@ def plchanges(context, version):
             position=position,
             stream_title=stream_title,
         )
+
+    return None
 
 
 @protocol.commands.add("plchangesposid", version=protocol.INT)
@@ -331,6 +330,7 @@ def plchangesposid(context, version):
             result.append(("cpos", position))
             result.append(("Id", tlid))
         return result
+    return None
 
 
 @protocol.commands.add("prio", priority=protocol.UINT, position=protocol.RANGE)
@@ -346,7 +346,7 @@ def prio(context, priority, position):
         A priority is an integer between 0 and 255. The default priority of new
         songs is 0.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("prioid")
@@ -358,7 +358,7 @@ def prioid(context, *args):
 
         Same as prio, but address the songs with their id.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("rangeid", tlid=protocol.UINT, songrange=protocol.RANGE)
@@ -377,7 +377,7 @@ def rangeid(context, tlid, songrange):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("shuffle", songrange=protocol.RANGE)
@@ -445,7 +445,7 @@ def addtagid(context, tlid, tag, value):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("cleartagid", tlid=protocol.UINT)
@@ -462,4 +462,4 @@ def cleartagid(context, tlid, tag):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO

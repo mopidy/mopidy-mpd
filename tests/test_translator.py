@@ -1,9 +1,9 @@
 import unittest
 
 from mopidy.models import Album, Artist, Playlist, TlTrack, Track
+
 from mopidy_mpd import translator
 from mopidy_mpd.protocol import tagtype_list
-
 from tests import path_utils
 
 
@@ -34,11 +34,11 @@ class TrackMpdFormatTest(unittest.TestCase):
         length=137000,
     )
 
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         self.media_dir = "/dir/subdir"
         path_utils.mtime.set_fake_time(1234567)
 
-    def tearDown(self):  # noqa: N802
+    def tearDown(self):
         path_utils.mtime.undo_fake()
 
     def test_track_to_mpd_format_for_empty_track(self):
@@ -103,49 +103,37 @@ class TrackMpdFormatTest(unittest.TestCase):
 
     def test_track_to_mpd_format_with_last_modified(self):
         track = self.track.replace(last_modified=995303899000)
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         assert ("Last-Modified", "2001-07-16T17:18:19Z") in result
 
     def test_track_to_mpd_format_with_last_modified_of_zero(self):
         track = self.track.replace(last_modified=0)
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         keys = [k for k, v in result]
         assert "Last-Modified" not in keys
 
     def test_track_to_mpd_format_musicbrainz_trackid(self):
         track = self.track.replace(musicbrainz_id="foo")
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         assert ("MUSICBRAINZ_TRACKID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_albumid(self):
         album = self.track.album.replace(musicbrainz_id="foo")
         track = self.track.replace(album=album)
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         assert ("MUSICBRAINZ_ALBUMID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_albumartistid(self):
-        artist = list(self.track.artists)[0].replace(musicbrainz_id="foo")
+        artist = next(iter(self.track.artists)).replace(musicbrainz_id="foo")
         album = self.track.album.replace(artists=[artist])
         track = self.track.replace(album=album)
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         assert ("MUSICBRAINZ_ALBUMARTISTID", "foo") in result
 
     def test_track_to_mpd_format_musicbrainz_artistid(self):
-        artist = list(self.track.artists)[0].replace(musicbrainz_id="foo")
+        artist = next(iter(self.track.artists)).replace(musicbrainz_id="foo")
         track = self.track.replace(artists=[artist])
-        result = translator.track_to_mpd_format(
-            track, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.track_to_mpd_format(track, tagtype_list.TAGTYPE_LIST)
         assert ("MUSICBRAINZ_ARTISTID", "foo") in result
 
     def test_concat_multi_values(self):
@@ -219,9 +207,7 @@ class PlaylistMpdFormatTest(unittest.TestCase):
                 Track(uri="baz", track_no=3),
             ]
         )
-        result = translator.playlist_to_mpd_format(
-            playlist, tagtype_list.TAGTYPE_LIST
-        )
+        result = translator.playlist_to_mpd_format(playlist, tagtype_list.TAGTYPE_LIST)
         assert len(result) == 3
 
     def test_mpd_format_with_range(self):
@@ -233,7 +219,7 @@ class PlaylistMpdFormatTest(unittest.TestCase):
             ]
         )
         result = translator.playlist_to_mpd_format(
-            playlist, tagtype_list.TAGTYPE_LIST, 1, 2
+            playlist, tagtype_list.TAGTYPE_LIST, start=1, end=2
         )
         assert len(result) == 1
         assert dict(result[0])["Track"] == 2

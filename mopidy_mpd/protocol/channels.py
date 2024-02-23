@@ -13,7 +13,7 @@ def subscribe(context, channel):
         underscore, dash, dot and colon.
     """
     # TODO: match channel against [A-Za-z0-9:._-]+
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("unsubscribe")
@@ -26,7 +26,7 @@ def unsubscribe(context, channel):
         Unsubscribe from a channel.
     """
     # TODO: match channel against [A-Za-z0-9:._-]+
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("channels")
@@ -39,7 +39,7 @@ def channels(context):
         Obtain a list of all channels. The response is a list of "channel:"
         lines.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("readmessages")
@@ -52,7 +52,7 @@ def readmessages(context):
         Reads messages for this client. The response is a list of "channel:"
         and "message:" lines.
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("sendmessage")
@@ -65,4 +65,4 @@ def sendmessage(context, channel, text):
         Send a message to the specified channel.
     """
     # TODO: match channel against [A-Za-z0-9:._-]+
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO

@@ -1,4 +1,4 @@
-def indent(string, places=4, linebreak="\n", singles=False):
+def indent(string, *, places=4, linebreak="\n", singles=False):
     lines = string.split(linebreak)
     if not singles and len(lines) == 1:
         return string

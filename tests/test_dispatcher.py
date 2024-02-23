@@ -2,25 +2,24 @@ import unittest
 
 import pykka
 import pytest
-
 from mopidy import core
 from mopidy.models import Ref
+
 from mopidy_mpd.dispatcher import MpdContext, MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
 from mopidy_mpd.uri_mapper import MpdUriMapper
-
 from tests import dummy_backend
 
 
 class MpdDispatcherTest(unittest.TestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         config = {"mpd": {"password": None, "command_blacklist": ["disabled"]}}
         self.backend = dummy_backend.create_proxy()
         self.dispatcher = MpdDispatcher(config=config)
 
-        self.core = core.Core.start(backends=[self.backend]).proxy()
+        self.core = core.Core.start(config=None, backends=[self.backend]).proxy()
 
-    def tearDown(self):  # noqa: N802
+    def tearDown(self):
         pykka.ActorRegistry.stop_all()
 
     def test_call_handler_for_unknown_command_raises_exception(self):
@@ -44,17 +43,17 @@ class MpdDispatcherTest(unittest.TestCase):
         )
 
 
-@pytest.fixture
+@pytest.fixture()
 def a_track():
     return Ref.track(uri="dummy:/a", name="a")
 
 
-@pytest.fixture
+@pytest.fixture()
 def b_track():
     return Ref.track(uri="dummy:/foo/b", name="b")
 
 
-@pytest.fixture
+@pytest.fixture()
 def backend_to_browse(a_track, b_track):
     backend = dummy_backend.create_proxy()
     backend.library.dummy_browse_result = {
@@ -64,9 +63,9 @@ def backend_to_browse(a_track, b_track):
     return backend
 
 
-@pytest.fixture
+@pytest.fixture()
 def mpd_context(backend_to_browse):
-    mopidy_core = core.Core.start(backends=[backend_to_browse]).proxy()
+    mopidy_core = core.Core.start(config=None, backends=[backend_to_browse]).proxy()
     uri_map = MpdUriMapper(mopidy_core)
     return MpdContext(None, core=mopidy_core, uri_map=uri_map)
 
