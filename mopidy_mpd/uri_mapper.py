@@ -33,7 +33,7 @@ class MpdUriMapper:
             i += 1
         return name
 
-    def insert(self, name, uri, playlist=False):
+    def insert(self, name, uri, *, playlist=False):
         """
         Create a unique and MPD compatible name that maps to the given URI.
         """

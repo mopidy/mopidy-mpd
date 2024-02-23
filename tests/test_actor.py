@@ -8,7 +8,7 @@ from mopidy_mpd import actor
 
 
 @pytest.mark.parametrize(
-    "event,expected",
+    ("event", "expected"),
     [
         (["track_playback_paused", "tl_track", "time_position"], None),
         (["track_playback_resumed", "tl_track", "time_position"], None),

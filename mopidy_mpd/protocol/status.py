@@ -1,6 +1,6 @@
 import pykka
-
 from mopidy.core import PlaybackState
+
 from mopidy_mpd import exceptions, protocol, translator
 
 #: Subsystems that can be registered with idle command.
@@ -26,7 +26,7 @@ def clearerror(context):
         Clears the current error message in status (this is also
         accomplished by any command that starts playback).
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("currentsong")
@@ -49,6 +49,7 @@ def currentsong(context):
             stream_title=stream_title,
             tagtypes=context.session.tagtypes,
         )
+    return None
 
 
 @protocol.commands.add("idle")
@@ -96,7 +97,7 @@ def idle(context, *subsystems):
     active = context.subscriptions.intersection(context.events)
     if not active:
         context.session.prevent_timeout = True
-        return
+        return None
 
     response = []
     context.events = set()
@@ -196,9 +197,7 @@ def status(context):
         "playback.current_tl_track": tl_track,
         "tracklist.index": context.core.tracklist.index(tl_track.get()),
         "tracklist.next_tlid": next_tlid,
-        "tracklist.next_index": context.core.tracklist.index(
-            tlid=next_tlid.get()
-        ),
+        "tracklist.next_index": context.core.tracklist.index(tlid=next_tlid.get()),
         "playback.time_position": context.core.playback.get_time_position(),
     }
     pykka.get_all(futures.values())
@@ -239,10 +238,7 @@ def _status_bitrate(futures):
 
 
 def _status_consume(futures):
-    if futures["tracklist.consume"].get():
-        return 1
-    else:
-        return 0
+    return int(futures["tracklist.consume"].get())
 
 
 def _status_playlist_length(futures):
@@ -269,8 +265,7 @@ def _status_songid(futures):
     current_tl_track = futures["playback.current_tl_track"].get()
     if current_tl_track is not None:
         return current_tl_track.tlid
-    else:
-        return _status_songpos(futures)
+    return _status_songpos(futures)
 
 
 def _status_songpos(futures):
@@ -286,13 +281,15 @@ def _status_nextsongpos(futures):
 
 
 def _status_state(futures):
-    state = futures["playback.state"].get()
-    if state == PlaybackState.PLAYING:
-        return "play"
-    elif state == PlaybackState.STOPPED:
-        return "stop"
-    elif state == PlaybackState.PAUSED:
-        return "pause"
+    match futures["playback.state"].get():
+        case PlaybackState.PLAYING:
+            return "play"
+        case PlaybackState.STOPPED:
+            return "stop"
+        case PlaybackState.PAUSED:
+            return "pause"
+        case _:
+            return None
 
 
 def _status_time(futures):
@@ -308,20 +305,16 @@ def _status_time_elapsed(futures):
 
 def _status_time_total(futures):
     current_tl_track = futures["playback.current_tl_track"].get()
-    if current_tl_track is None:
+    if current_tl_track is None or current_tl_track.track.length is None:
         return 0
-    elif current_tl_track.track.length is None:
-        return 0
-    else:
-        return current_tl_track.track.length
+    return current_tl_track.track.length
 
 
 def _status_volume(futures):
     volume = futures["mixer.volume"].get()
-    if volume is not None:
-        return volume
-    else:
+    if volume is None:
         return -1
+    return volume
 
 
 def _status_xfade(futures):

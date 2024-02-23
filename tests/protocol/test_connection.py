@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
-from tests import protocol
 from mopidy_mpd.protocol import tagtype_list
+from tests import protocol
 
 
 class ConnectionHandlerTest(protocol.BaseTestCase):

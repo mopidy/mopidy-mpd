@@ -88,9 +88,7 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
         assert self.core.mixer.get_mute().get() is None
 
         self.send_request('enableoutput "0"')
-        self.assertInResponse(
-            "ACK [52@0] {enableoutput} problems enabling output"
-        )
+        self.assertInResponse("ACK [52@0] {enableoutput} problems enabling output")
 
         assert self.core.mixer.get_mute().get() is None
 
@@ -98,9 +96,7 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
         assert self.core.mixer.get_mute().get() is None
 
         self.send_request('disableoutput "0"')
-        self.assertInResponse(
-            "ACK [52@0] {disableoutput} problems disabling output"
-        )
+        self.assertInResponse("ACK [52@0] {disableoutput} problems disabling output")
 
         assert self.core.mixer.get_mute().get() is None
 

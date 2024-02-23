@@ -1,3 +1,4 @@
+import contextlib
 import errno
 import logging
 import os
@@ -42,8 +43,7 @@ def get_socket_address(host, port):
     unix_socket_path = get_unix_socket_path(host)
     if unix_socket_path is not None:
         return (unix_socket_path, None)
-    else:
-        return (host, port)
+    return (host, port)
 
 
 class ShouldRetrySocketCallError(Exception):
@@ -57,13 +57,13 @@ def try_ipv6_socket():
         return False
     try:
         socket.socket(socket.AF_INET6).close()
-        return True
     except OSError as exc:
         logger.debug(
-            f"Platform supports IPv6, but socket creation failed, "
-            f"disabling: {exc}"
+            f"Platform supports IPv6, but socket creation failed, " f"disabling: {exc}"
         )
-    return False
+        return False
+    else:
+        return True
 
 
 #: Boolean value that indicates if creating an IPv6 socket will succeed.
@@ -97,8 +97,7 @@ def format_address(address):
     host, port = address[:2]
     if port is not None:
         return f"[{host}]:{port}"
-    else:
-        return f"[{host}]"
+    return f"[{host}]"
 
 
 def format_hostname(hostname):
@@ -112,7 +111,7 @@ class Server:
 
     """Setup listener and register it with GLib's event loop."""
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         host,
         port,
@@ -146,7 +145,7 @@ class Server:
             sock = create_tcp_socket()
             sock.bind((host, port))
 
-        sock.setblocking(False)
+        sock.setblocking(False)  # noqa: FBT003
         sock.listen(1)
         return sock
 
@@ -162,12 +161,12 @@ class Server:
 
         # clean up the socket file
         if unix_socket_path is not None:
-            os.unlink(unix_socket_path)
+            os.unlink(unix_socket_path)  # noqa: PTH108
 
     def register_server_socket(self, fileno):
         return GLib.io_add_watch(fileno, GLib.IO_IN, self.handle_connection)
 
-    def handle_connection(self, fd, flags):
+    def handle_connection(self, _fd, _flags):
         try:
             sock, addr = self.accept_connection()
         except ShouldRetrySocketCallError:
@@ -184,11 +183,12 @@ class Server:
             sock, addr = self.server_socket.accept()
             if is_unix_socket(sock):
                 addr = (sock.getsockname(), None)
-            return sock, addr
         except OSError as e:
             if e.errno in (errno.EAGAIN, errno.EINTR):
-                raise ShouldRetrySocketCallError
+                raise ShouldRetrySocketCallError from None
             raise
+        else:
+            return sock, addr
 
     def maximum_connections_exceeded(self):
         return (
@@ -202,15 +202,11 @@ class Server:
     def reject_connection(self, sock, addr):
         # FIXME provide more context in logging?
         logger.warning("Rejected connection from %s", format_address(addr))
-        try:
+        with contextlib.suppress(OSError):
             sock.close()
-        except OSError:
-            pass
 
     def init_connection(self, sock, addr):
-        Connection(
-            self.protocol, self.protocol_kwargs, sock, addr, self.timeout
-        )
+        Connection(self.protocol, self.protocol_kwargs, sock, addr, self.timeout)
 
 
 class Connection:
@@ -222,8 +218,8 @@ class Connection:
     # false return value would only tell us that what we thought was registered
     # is already gone, there is really nothing more we can do.
 
-    def __init__(self, protocol, protocol_kwargs, sock, addr, timeout):
-        sock.setblocking(False)
+    def __init__(self, protocol, protocol_kwargs, sock, addr, timeout):  # noqa: PLR0913
+        sock.setblocking(False)  # noqa: FBT003
 
         self.host, self.port = addr[:2]  # IPv6 has larger addr
 
@@ -250,28 +246,24 @@ class Connection:
         if self.stopping:
             logger.log(level, f"Already stopping: {reason}")
             return
-        else:
-            self.stopping = True
+
+        self.stopping = True
 
         logger.log(level, reason)
 
-        try:
+        with contextlib.suppress(pykka.ActorDeadError):
             self.actor_ref.stop(block=False)
-        except pykka.ActorDeadError:
-            pass
 
         self.disable_timeout()
         self.disable_recv()
         self.disable_send()
 
-        try:
+        with contextlib.suppress(OSError):
             self._sock.close()
-        except OSError:
-            pass
 
     def queue_send(self, data):
         """Try to send data to client exactly as is and queue rest."""
-        self.send_lock.acquire(True)
+        self.send_lock.acquire(blocking=True)
         self.send_buffer = self.send(self.send_buffer + data)
         self.send_lock.release()
         if self.send_buffer:
@@ -294,9 +286,7 @@ class Connection:
             return
 
         self.disable_timeout()
-        self.timeout_id = GLib.timeout_add_seconds(
-            self.timeout, self.timeout_callback
-        )
+        self.timeout_id = GLib.timeout_add_seconds(self.timeout, self.timeout_callback)
 
     def disable_timeout(self):
         """Deactivate timeout mechanism."""
@@ -344,7 +334,7 @@ class Connection:
         GLib.source_remove(self.send_id)
         self.send_id = None
 
-    def recv_callback(self, fd, flags):
+    def recv_callback(self, fd, flags):  # noqa: ARG002
         if flags & (GLib.IO_ERR | GLib.IO_HUP):
             self.stop(f"Bad client flags: {flags}")
             return True
@@ -368,14 +358,14 @@ class Connection:
 
         return True
 
-    def send_callback(self, fd, flags):
+    def send_callback(self, fd, flags):  # noqa: ARG002
         if flags & (GLib.IO_ERR | GLib.IO_HUP):
             self.stop(f"Bad client flags: {flags}")
             return True
 
         # If with can't get the lock, simply try again next time socket is
         # ready for sending.
-        if not self.send_lock.acquire(False):
+        if not self.send_lock.acquire(blocking=False):
             return True
 
         try:
@@ -454,14 +444,14 @@ class LineProtocol(pykka.ThreadingActor):
         self.recv_buffer += message["received"]
 
         for line in self.parse_lines():
-            line = self.decode(line)
-            if line is not None:
-                self.on_line_received(line)
+            decoded_line = self.decode(line)
+            if decoded_line is not None:
+                self.on_line_received(decoded_line)
 
         if not self.prevent_timeout:
             self.connection.enable_timeout()
 
-    def on_failure(self, exception_type, exception_value, traceback):
+    def on_failure(self, exception_type, exception_value, traceback):  # noqa: ARG002
         """Clean up connection resouces when actor fails."""
         self.connection.stop("Actor failed.")
 

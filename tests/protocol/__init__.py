@@ -2,10 +2,9 @@ import unittest
 from unittest import mock
 
 import pykka
-
 from mopidy import core
-from mopidy_mpd import session, uri_mapper
 
+from mopidy_mpd import session, uri_mapper
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 
@@ -31,7 +30,7 @@ class BaseTestCase(unittest.TestCase):
             "mpd": {"password": None, "default_playlist_scheme": "dummy"},
         }
 
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         if self.enable_mixer:
             self.mixer = dummy_mixer.create_proxy()
         else:
@@ -57,7 +56,7 @@ class BaseTestCase(unittest.TestCase):
         self.dispatcher = self.session.dispatcher
         self.context = self.dispatcher.context
 
-    def tearDown(self):  # noqa: N802
+    def tearDown(self):
         pykka.ActorRegistry.stop_all()
 
     def send_request(self, request):
@@ -77,7 +76,7 @@ class BaseTestCase(unittest.TestCase):
     def assertOnceInResponse(self, value):  # noqa: N802
         matched = len([r for r in self.connection.response if r == value])
         assert (
-            1 == matched
+            matched == 1
         ), f"Expected to find {value!r} once in {self.connection.response!r}"
 
     def assertNotInResponse(self, value):  # noqa: N802
@@ -86,7 +85,7 @@ class BaseTestCase(unittest.TestCase):
         ), f"Found {value!r} in {self.connection.response!r}"
 
     def assertEqualResponse(self, value):  # noqa: N802
-        assert 1 == len(self.connection.response)
+        assert len(self.connection.response) == 1
         assert value == self.connection.response[0]
 
     def assertResponseLength(self, value):  # noqa: N802

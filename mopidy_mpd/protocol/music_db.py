@@ -2,6 +2,7 @@ import functools
 import itertools
 
 from mopidy.models import Track
+
 from mopidy_mpd import exceptions, protocol, translator
 
 _LIST_MAPPING = {
@@ -41,7 +42,7 @@ _LIST_NAME_MAPPING = {
     "uri": "file",
 }
 
-_SEARCH_MAPPING = dict(_LIST_MAPPING, **{"any": "any"})
+_SEARCH_MAPPING = dict(_LIST_MAPPING, any="any")
 
 
 def _query_from_mpd_search_parameters(parameters, mapping):
@@ -80,9 +81,7 @@ def _album_as_track(album):
 
 
 def _artist_as_track(artist):
-    return Track(
-        uri=artist.uri, name="Artist: " + artist.name, artists=[artist]
-    )
+    return Track(uri=artist.uri, name="Artist: " + artist.name, artists=[artist])
 
 
 @protocol.commands.add("count")
@@ -101,8 +100,8 @@ def count(context, *args):
     """
     try:
         query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
-    except ValueError:
-        raise exceptions.MpdArgError("incorrect arguments")
+    except ValueError as exc:
+        raise exceptions.MpdArgError("incorrect arguments") from exc
     results = context.core.library.search(query=query, exact=True).get()
     result_tracks = _get_tracks(results)
     total_length = sum(t.length for t in result_tracks if t.length)
@@ -141,7 +140,7 @@ def find(context, *args):
     try:
         query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
-        return
+        return None
 
     results = context.core.library.search(query=query, exact=True).get()
     result_tracks = []
@@ -155,9 +154,7 @@ def find(context, *args):
     if "album" not in query:
         result_tracks += [_album_as_track(a) for a in _get_albums(results)]
     result_tracks += _get_tracks(results)
-    return translator.tracks_to_mpd_format(
-        result_tracks, context.session.tagtypes
-    )
+    return translator.tracks_to_mpd_format(result_tracks, context.session.tagtypes)
 
 
 @protocol.commands.add("findadd")
@@ -177,9 +174,7 @@ def findadd(context, *args):
 
     results = context.core.library.search(query=query, exact=True).get()
 
-    context.core.tracklist.add(
-        uris=[track.uri for track in _get_tracks(results)]
-    ).get()
+    context.core.tracklist.add(uris=[track.uri for track in _get_tracks(results)]).get()
 
 
 @protocol.commands.add("list")
@@ -279,10 +274,10 @@ def list_(context, *args):
         try:
             query = _query_from_mpd_search_parameters(params, _SEARCH_MAPPING)
         except exceptions.MpdArgError as exc:
-            exc.message = "Unknown filter type"  # noqa B306: Our own exception
+            exc.message = "Unknown filter type"  # B306: Our own exception
             raise
         except ValueError:
-            return
+            return None
 
     name = _LIST_NAME_MAPPING[field]
     result = context.core.library.get_distinct(field, query)
@@ -342,9 +337,7 @@ def listallinfo(context, uri=None):
             for tracks in lookup_future.get().values():
                 for track in tracks:
                     result.extend(
-                        translator.track_to_mpd_format(
-                            track, context.session.tagtypes
-                        )
+                        translator.track_to_mpd_format(track, context.session.tagtypes)
                     )
     return result
 
@@ -370,7 +363,7 @@ def listfiles(context, uri=None):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("lsinfo")
@@ -450,7 +443,7 @@ def search(context, *args):
     try:
         query = _query_from_mpd_search_parameters(args, _SEARCH_MAPPING)
     except ValueError:
-        return
+        return None
     results = context.core.library.search(query).get()
     artists = [_artist_as_track(a) for a in _get_artists(results)]
     albums = [_album_as_track(a) for a in _get_albums(results)]
@@ -480,9 +473,7 @@ def searchadd(context, *args):
 
     results = context.core.library.search(query).get()
 
-    context.core.tracklist.add(
-        uris=[track.uri for track in _get_tracks(results)]
-    ).get()
+    context.core.tracklist.add(uris=[track.uri for track in _get_tracks(results)]).get()
 
 
 @protocol.commands.add("searchaddpl")
@@ -560,4 +551,3 @@ def readcomments(context, uri):
         The meaning of these depends on the codec, and not all decoder plugins
         support it. For example, on Ogg files, this lists the Vorbis comments.
     """
-    pass

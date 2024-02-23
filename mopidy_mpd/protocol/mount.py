@@ -15,7 +15,7 @@ def mount(context, path, uri):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("unmount")
@@ -32,7 +32,7 @@ def unmount(context, path):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("listmounts")
@@ -55,7 +55,7 @@ def listmounts(context):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO
 
 
 @protocol.commands.add("listneighbors")
@@ -77,4 +77,4 @@ def listneighbors(context):
     .. versionadded:: 0.19
         New in MPD protocol version 0.19
     """
-    raise exceptions.MpdNotImplemented  # TODO
+    raise exceptions.MpdNotImplementedError  # TODO

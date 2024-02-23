@@ -9,7 +9,7 @@ class Mtime:
     def __call__(self, path):
         if self.fake is not None:
             return self.fake
-        return int(os.stat(path).st_mtime)
+        return int(os.stat(path).st_mtime)  # noqa: PTH116
 
     def set_fake_time(self, time):
         self.fake = time

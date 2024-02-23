@@ -1,9 +1,9 @@
 import logging
 
 import pykka
-
 from mopidy import exceptions, listener, zeroconf
 from mopidy.core import CoreListener
+
 from mopidy_mpd import network, session, uri_mapper
 
 logger = logging.getLogger(__name__)
@@ -54,18 +54,14 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
                 timeout=config["mpd"]["connection_timeout"],
             )
         except OSError as exc:
-            raise exceptions.FrontendError(f"MPD server startup failed: {exc}")
+            raise exceptions.FrontendError(f"MPD server startup failed: {exc}") from exc
 
-        logger.info(
-            f"MPD server running at {network.format_address(server.address)}"
-        )
+        logger.info(f"MPD server running at {network.format_address(server.address)}")
 
         return server
 
     def on_start(self):
-        if self.zeroconf_name and not network.is_unix_socket(
-            self.server.server_socket
-        ):
+        if self.zeroconf_name and not network.is_unix_socket(self.server.server_socket):
             self.zeroconf_service = zeroconf.Zeroconf(
                 name=self.zeroconf_name, stype="_mpd._tcp", port=self.port
             )
@@ -83,9 +79,7 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
     def on_event(self, event, **kwargs):
         if event not in _CORE_EVENTS_TO_IDLE_SUBSYSTEMS:
-            logger.warning(
-                "Got unexpected event: %s(%s)", event, ", ".join(kwargs)
-            )
+            logger.warning("Got unexpected event: %s(%s)", event, ", ".join(kwargs))
         else:
             self.send_idle(_CORE_EVENTS_TO_IDLE_SUBSYSTEMS[event])
 

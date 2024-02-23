@@ -1,10 +1,11 @@
+import pytest
 from mopidy.models import Ref, Track
 
 from tests import protocol
 
 
 class AddCommandsTest(protocol.BaseTestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         super().setUp()
 
         self.tracks = [
@@ -43,9 +44,7 @@ class AddCommandsTest(protocol.BaseTestCase):
         self.assertEqualResponse("ACK [50@0] {add} directory or file not found")
 
     def test_add_with_empty_uri_should_not_add_anything_and_ok(self):
-        self.backend.library.dummy_browse_result = {
-            "dummy:/": [self.refs["/a"]]
-        }
+        self.backend.library.dummy_browse_result = {"dummy:/": [self.refs["/a"]]}
 
         self.send_request('add ""')
         assert len(self.core.tracklist.get_tracks().get()) == 0
@@ -62,9 +61,7 @@ class AddCommandsTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_add_root_should_not_add_anything_and_ok(self):
-        self.backend.library.dummy_browse_result = {
-            "dummy:/": [self.refs["/a"]]
-        }
+        self.backend.library.dummy_browse_result = {"dummy:/": [self.refs["/a"]]}
 
         self.send_request('add "/"')
         assert len(self.core.tracklist.get_tracks().get()) == 0
@@ -105,7 +102,7 @@ class AddCommandsTest(protocol.BaseTestCase):
 
 
 class BasePopulatedTracklistTestCase(protocol.BaseTestCase):
-    def setUp(self):  # noqa: N802
+    def setUp(self):
         super().setUp()
         tracks = [Track(uri=f"dummy:/{x}", name=x) for x in "abcdeǂ"]
         self.backend.library.dummy_library = tracks
@@ -135,11 +132,11 @@ class DeleteCommandsTest(BasePopulatedTracklistTestCase):
         assert len(self.core.tracklist.get_tracks().get()) == 1
         self.assertInResponse("OK")
 
-    # TODO: check how this should work.
-    # def test_delete_open_upper_range(self):
-    #     self.send_request('delete ":8"')
-    #     self.assertEqual(len(self.core.tracklist.get_tracks().get()), 0)
-    #     self.assertInResponse('OK')
+    @pytest.mark.skip("Check how this should work")
+    def test_delete_open_upper_range(self):
+        self.send_request('delete ":8"')
+        assert len(self.core.tracklist.get_tracks().get()) == 0
+        self.assertInResponse("OK")
 
     def test_delete_closed_range(self):
         self.send_request('delete "1:3"')

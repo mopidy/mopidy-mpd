@@ -7,15 +7,11 @@ class StickersHandlerTest(protocol.BaseTestCase):
         self.assertEqualResponse("ACK [0@0] {sticker} Not implemented")
 
     def test_sticker_set(self):
-        self.send_request(
-            'sticker set "song" "file:///dev/urandom" "a_name" "a_value"'
-        )
+        self.send_request('sticker set "song" "file:///dev/urandom" "a_name" "a_value"')
         self.assertEqualResponse("ACK [0@0] {sticker} Not implemented")
 
     def test_sticker_delete_with_name(self):
-        self.send_request(
-            'sticker delete "song" "file:///dev/urandom" "a_name"'
-        )
+        self.send_request('sticker delete "song" "file:///dev/urandom" "a_name"')
         self.assertEqualResponse("ACK [0@0] {sticker} Not implemented")
 
     def test_sticker_delete_without_name(self):

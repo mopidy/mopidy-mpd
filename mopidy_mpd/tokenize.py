@@ -18,14 +18,13 @@ PARAM_RE = re.compile(
     r"""
     ^                               # Leading whitespace is not allowed
     (?:
-        ([^%(unprintable)s"']+)     # ord(char) < 0x20, not ", not '
+        ([^{unprintable}"']+)       # ord(char) < 0x20, not ", not '
         |                           # or
         "([^"\\]*(?:\\.[^"\\]*)*)"  # anything surrounded by quotes
     )
     (?:\s+|$)                       # trailing whitespace or EOS
     (.*)                            # Possibly a remainder to be parsed
-    """
-    % {"unprintable": "".join(map(chr, range(0x21)))},
+    """.format(unprintable="".join(map(chr, range(0x21)))),
     re.VERBOSE,
 )
 
@@ -64,7 +63,7 @@ def split(line):
     For examples see the tests for this function.
     """
     if not line.strip():
-        raise exceptions.MpdNoCommand("No command given")
+        raise exceptions.MpdNoCommandError("No command given")
     match = WORD_RE.match(line)
     if not match:
         raise exceptions.MpdUnknownError("Invalid word character")
@@ -87,9 +86,8 @@ def _determine_error_message(remainder):
     """Helper to emulate MPD errors."""
     # Following checks are simply to match MPD error messages:
     match = BAD_QUOTED_PARAM_RE.match(remainder)
-    if match:
-        if match.group(1):
-            return "Space expected after closing '\"'"
-        else:
-            return "Missing closing '\"'"
-    return "Invalid unquoted character"
+    if not match:
+        return "Invalid unquoted character"
+    if match.group(1):
+        return "Space expected after closing '\"'"
+    return "Missing closing '\"'"

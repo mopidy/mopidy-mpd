@@ -32,7 +32,7 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
 
     def test_notcommands_returns_only_config_and_kill_and_ok(self):
         response = self.send_request("notcommands")
-        assert 3 == len(response)
+        assert len(response) == 3
         self.assertInResponse("command: config")
         self.assertInResponse("command: kill")
         self.assertInResponse("OK")

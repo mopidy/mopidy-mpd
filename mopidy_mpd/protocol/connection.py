@@ -51,7 +51,6 @@ def ping(context):
 
         Does nothing but return ``OK``.
     """
-    pass
 
 
 @protocol.commands.add("tagtypes")
@@ -82,19 +81,20 @@ def tagtypes(context, *parameters):
     parameters = list(parameters)
     if parameters:
         subcommand = parameters.pop(0).lower()
-        if subcommand not in ("all", "clear", "disable", "enable"):
-            raise exceptions.MpdArgError("Unknown sub command")
-        elif subcommand == "all":
-            context.session.tagtypes.update(tagtype_list.TAGTYPE_LIST)
-        elif subcommand == "clear":
-            context.session.tagtypes.clear()
-        elif subcommand == "disable":
-            _validate_tagtypes(parameters)
-            context.session.tagtypes.difference_update(parameters)
-        elif subcommand == "enable":
-            _validate_tagtypes(parameters)
-            context.session.tagtypes.update(parameters)
-        return
+        match subcommand:
+            case "all":
+                context.session.tagtypes.update(tagtype_list.TAGTYPE_LIST)
+            case "clear":
+                context.session.tagtypes.clear()
+            case "disable":
+                _validate_tagtypes(parameters)
+                context.session.tagtypes.difference_update(parameters)
+            case "enable":
+                _validate_tagtypes(parameters)
+                context.session.tagtypes.update(parameters)
+            case _:
+                raise exceptions.MpdArgError("Unknown sub command")
+        return None
     return [("tagtype", tagtype) for tagtype in context.session.tagtypes]
 
 

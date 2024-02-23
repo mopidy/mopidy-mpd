@@ -1,19 +1,15 @@
 from unittest import mock
 
 from mopidy.models import Playlist, Track
-from mopidy_mpd.protocol import stored_playlists
 
+from mopidy_mpd.protocol import stored_playlists
 from tests import protocol
 
 
 class PlaylistsHandlerTest(protocol.BaseTestCase):
     def test_listplaylist(self):
         self.backend.playlists.set_dummy_playlists(
-            [
-                Playlist(
-                    name="name", uri="dummy:name", tracks=[Track(uri="dummy:a")]
-                )
-            ]
+            [Playlist(name="name", uri="dummy:name", tracks=[Track(uri="dummy:a")])]
         )
 
         self.send_request('listplaylist "name"')
@@ -23,11 +19,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
 
     def test_listplaylist_unicode(self):
         self.backend.playlists.set_dummy_playlists(
-            [
-                Playlist(
-                    name="nàmé", uri="dummy:nàmé", tracks=[Track(uri="dummy:à")]
-                )
-            ]
+            [Playlist(name="nàmé", uri="dummy:nàmé", tracks=[Track(uri="dummy:à")])]
         )
 
         self.send_request('listplaylist "nàmé"')
@@ -37,11 +29,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
 
     def test_listplaylist_without_quotes(self):
         self.backend.playlists.set_dummy_playlists(
-            [
-                Playlist(
-                    name="name", uri="dummy:name", tracks=[Track(uri="dummy:a")]
-                )
-            ]
+            [Playlist(name="name", uri="dummy:name", tracks=[Track(uri="dummy:a")])]
         )
 
         self.send_request("listplaylist name")
@@ -104,9 +92,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
     def test_listplaylistinfo_fails_if_no_playlist_is_found(self):
         self.send_request('listplaylistinfo "name"')
 
-        self.assertEqualResponse(
-            "ACK [50@0] {listplaylistinfo} No such playlist"
-        )
+        self.assertEqualResponse("ACK [50@0] {listplaylistinfo} No such playlist")
 
     def test_listplaylistinfo_duplicate(self):
         tracks = [
@@ -166,9 +152,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_listplaylists_replaces_newline_with_space(self):
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a\n", uri="dummy:")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a\n", uri="dummy:")])
 
         self.send_request("listplaylists")
 
@@ -177,9 +161,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_listplaylists_replaces_carriage_return_with_space(self):
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a\r", uri="dummy:")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a\r", uri="dummy:")])
 
         self.send_request("listplaylists")
 
@@ -188,9 +170,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_listplaylists_replaces_forward_slash_with_pipe(self):
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a/b", uri="dummy:")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a/b", uri="dummy:")])
 
         self.send_request("listplaylists")
 
@@ -217,12 +197,12 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('load "A-list"')
 
         tracks = self.core.tracklist.get_tracks().get()
-        assert 5 == len(tracks)
-        assert "dummy:a" == tracks[0].uri
-        assert "dummy:b" == tracks[1].uri
-        assert "dummy:c" == tracks[2].uri
-        assert "dummy:d" == tracks[3].uri
-        assert "dummy:ǫ" == tracks[4].uri
+        assert len(tracks) == 5
+        assert tracks[0].uri == "dummy:a"
+        assert tracks[1].uri == "dummy:b"
+        assert tracks[2].uri == "dummy:c"
+        assert tracks[3].uri == "dummy:d"
+        assert tracks[4].uri == "dummy:ǫ"
         self.assertInResponse("OK")
 
     def test_load_with_range_loads_part_of_playlist(self):
@@ -244,10 +224,10 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('load "A-list" "1:2"')
 
         tracks = self.core.tracklist.get_tracks().get()
-        assert 3 == len(tracks)
-        assert "dummy:a" == tracks[0].uri
-        assert "dummy:b" == tracks[1].uri
-        assert "dummy:d" == tracks[2].uri
+        assert len(tracks) == 3
+        assert tracks[0].uri == "dummy:a"
+        assert tracks[1].uri == "dummy:b"
+        assert tracks[2].uri == "dummy:d"
         self.assertInResponse("OK")
 
     def test_load_with_range_without_end_loads_rest_of_playlist(self):
@@ -269,17 +249,17 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('load "A-list" "1:"')
 
         tracks = self.core.tracklist.get_tracks().get()
-        assert 4 == len(tracks)
-        assert "dummy:a" == tracks[0].uri
-        assert "dummy:b" == tracks[1].uri
-        assert "dummy:d" == tracks[2].uri
-        assert "dummy:e" == tracks[3].uri
+        assert len(tracks) == 4
+        assert tracks[0].uri == "dummy:a"
+        assert tracks[1].uri == "dummy:b"
+        assert tracks[2].uri == "dummy:d"
+        assert tracks[3].uri == "dummy:e"
         self.assertInResponse("OK")
 
     def test_load_unknown_playlist_acks(self):
         self.send_request('load "unknown playlist"')
 
-        assert 0 == len(self.core.tracklist.get_tracks().get())
+        assert len(self.core.tracklist.get_tracks().get()) == 0
         self.assertEqualResponse("ACK [50@0] {load} No such playlist")
 
         # No invalid name check for load.
@@ -292,11 +272,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         ]
         self.backend.library.dummy_library = tracks
         self.backend.playlists.set_dummy_playlists(
-            [
-                Playlist(
-                    name="A-list", uri="dummy:a1", tracks=[Track(uri="dummy:a")]
-                )
-            ]
+            [Playlist(name="A-list", uri="dummy:a1", tracks=[Track(uri="dummy:a")])]
         )
 
         self.send_request('load "A-list"')
@@ -322,7 +298,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('playlistadd "name" "dummy:b"')
 
         self.assertInResponse("OK")
-        assert 2 == len(self.backend.playlists.get_items("dummy:a1").get())
+        assert len(self.backend.playlists.get_items("dummy:a1").get()) == 2
 
     def test_playlistadd_creates_playlist(self):
         tracks = [
@@ -351,7 +327,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('playlistclear "namé"')
 
         self.assertInResponse("OK")
-        assert 0 == len(self.backend.playlists.get_items("dummy:a1").get())
+        assert len(self.backend.playlists.get_items("dummy:a1").get()) == 0
 
     def test_playlistclear_creates_playlist(self):
         self.send_request('playlistclear "name"')
@@ -389,7 +365,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('playlistdelete "namé" "2"')
 
         self.assertInResponse("OK")
-        assert 2 == len(self.backend.playlists.get_items("dummy:a1").get())
+        assert len(self.backend.playlists.get_items("dummy:a1").get()) == 2
 
     def test_playlistdelete_save_fails(self):
         tracks = [
@@ -439,10 +415,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('playlistmove "namé" "2" "0"')
 
         self.assertInResponse("OK")
-        assert (
-            "dummy:c"
-            == self.backend.playlists.get_items("dummy:a1").get()[0].uri
-        )
+        assert self.backend.playlists.get_items("dummy:a1").get()[0].uri == "dummy:c"
 
     def test_playlistmove_save_fails(self):
         tracks = [
@@ -519,8 +492,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('rename "old_name" "new_name"')
 
         self.assertInResponse(
-            "ACK [0@0] {rename} Backend with "
-            'scheme "dummy" failed to save playlist'
+            "ACK [0@0] {rename} Backend with " 'scheme "dummy" failed to save playlist'
         )
 
     def test_rename_unknown_playlist_acks(self):
@@ -583,8 +555,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('save "name"')
 
         self.assertInResponse(
-            "ACK [0@0] {save} Backend with "
-            'scheme "dummy" failed to save playlist'
+            "ACK [0@0] {save} Backend with " 'scheme "dummy" failed to save playlist'
         )
 
     def test_save_invalid_name_acks(self):

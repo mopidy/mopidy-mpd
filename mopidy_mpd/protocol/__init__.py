@@ -29,7 +29,7 @@ def load_protocol_modules():
     The protocol modules must be imported to get them registered in
     :attr:`commands`.
     """
-    from . import (  # noqa
+    from . import (  # noqa: F401
         audio_output,
         channels,
         command_list,
@@ -121,7 +121,7 @@ class Commands:
 
     # TODO: consider removing auth_required and list_command in favour of
     # additional command instances to register in?
-    def add(self, name, auth_required=True, list_command=True, **validators):
+    def add(self, name, *, auth_required=True, list_command=True, **validators):  # noqa: C901
         """Create a decorator that registers a handler and validation rules.
 
         Additional keyword arguments are treated as converters/validators to
@@ -142,22 +142,24 @@ class Commands:
         :param bool list_command: If command should be listed in reflection.
         """
 
-        def wrapper(func):
+        def wrapper(func):  # noqa: C901
             if name in self.handlers:
                 raise ValueError(f"{name} already registered")
 
             spec = inspect.getfullargspec(func)
             defaults = dict(
-                zip(spec.args[-len(spec.defaults or []) :], spec.defaults or [])
+                zip(
+                    spec.args[-len(spec.defaults or []) :],
+                    spec.defaults or [],
+                    strict=False,
+                )
             )
 
             if not spec.args and not spec.varargs:
                 raise TypeError("Handler must accept at least one argument.")
 
             if len(spec.args) > 1 and spec.varargs:
-                raise TypeError(
-                    "*args may not be combined with regular arguments"
-                )
+                raise TypeError("*args may not be combined with regular arguments")
 
             if not set(validators.keys()).issubset(spec.args):
                 raise TypeError("Validator for non-existent arg passed")
@@ -173,18 +175,18 @@ class Commands:
                     ba = inspect.signature(func).bind(*args, **kwargs)
                     ba.apply_defaults()
                     callargs = ba.arguments
-                except TypeError:
+                except TypeError as exc:
                     raise exceptions.MpdArgError(
                         f'wrong number of arguments for "{name}"'
-                    )
+                    ) from exc
 
                 for key, value in callargs.items():
                     default = defaults.get(key, object())
                     if key in validators and value != default:
                         try:
                             callargs[key] = validators[key](value)
-                        except ValueError:
-                            raise exceptions.MpdArgError("incorrect arguments")
+                        except ValueError as exc:
+                            raise exceptions.MpdArgError("incorrect arguments") from exc
 
                 return func(**callargs)
 
@@ -206,9 +208,9 @@ class Commands:
         :type context: :class:`~mopidy_mpd.dispatcher.MpdContext`
         """
         if not tokens:
-            raise exceptions.MpdNoCommand()
+            raise exceptions.MpdNoCommandError
         if tokens[0] not in self.handlers:
-            raise exceptions.MpdUnknownCommand(command=tokens[0])
+            raise exceptions.MpdUnknownCommandError(command=tokens[0])
         return self.handlers[tokens[0]](context, *tokens[1:])
 
 

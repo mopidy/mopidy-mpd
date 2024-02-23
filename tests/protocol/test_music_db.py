@@ -2,8 +2,8 @@ import unittest
 from unittest import mock
 
 from mopidy.models import Album, Artist, Playlist, Ref, SearchResult, Track
-from mopidy_mpd.protocol import music_db, stored_playlists
 
+from mopidy_mpd.protocol import music_db, stored_playlists
 from tests import protocol
 
 # TODO: split into more modules for faster parallel tests?
@@ -104,9 +104,7 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
     def test_findadd(self):
         track = Track(uri="dummy:a", name="A")
         self.backend.library.dummy_library = [track]
-        self.backend.library.dummy_find_exact_result = SearchResult(
-            tracks=[track]
-        )
+        self.backend.library.dummy_find_exact_result = SearchResult(tracks=[track])
         assert self.core.tracklist.get_length().get() == 0
 
         self.send_request('findadd "title" "A"')
@@ -358,26 +356,18 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         self.assertEqualResponse("ACK [0@0] {listfiles} Not implemented")
 
     @mock.patch.object(stored_playlists, "_get_last_modified")
-    def test_lsinfo_without_path_returns_same_as_for_root(
-        self, last_modified_mock
-    ):
+    def test_lsinfo_without_path_returns_same_as_for_root(self, last_modified_mock):
         last_modified_mock.return_value = "2015-08-05T22:51:06Z"
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a", uri="dummy:/a")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a", uri="dummy:/a")])
 
         response1 = self.send_request("lsinfo")
         response2 = self.send_request('lsinfo "/"')
         assert response1 == response2
 
     @mock.patch.object(stored_playlists, "_get_last_modified")
-    def test_lsinfo_with_empty_path_returns_same_as_for_root(
-        self, last_modified_mock
-    ):
+    def test_lsinfo_with_empty_path_returns_same_as_for_root(self, last_modified_mock):
         last_modified_mock.return_value = "2015-08-05T22:51:06Z"
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a", uri="dummy:/a")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a", uri="dummy:/a")])
 
         response1 = self.send_request('lsinfo ""')
         response2 = self.send_request('lsinfo "/"')
@@ -386,9 +376,7 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
     @mock.patch.object(stored_playlists, "_get_last_modified")
     def test_lsinfo_for_root_includes_playlists(self, last_modified_mock):
         last_modified_mock.return_value = "2015-08-05T22:51:06Z"
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a", uri="dummy:/a")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a", uri="dummy:/a")])
 
         self.send_request('lsinfo "/"')
         self.assertInResponse("playlist: a")
@@ -497,14 +485,10 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
                 Ref.directory(uri="dummy:/foo", name="foo"),
             ]
         }
-        self.backend.playlists.set_dummy_playlists(
-            [Playlist(name="a", uri="dummy:/a")]
-        )
+        self.backend.playlists.set_dummy_playlists([Playlist(name="a", uri="dummy:/a")])
 
         response = self.send_request('lsinfo "/"')
-        assert response.index("directory: dummy") < response.index(
-            "playlist: a"
-        )
+        assert response.index("directory: dummy") < response.index("playlist: a")
 
     def test_lsinfo_duplicate(self):
         self.backend.library.dummy_browse_result = {
@@ -735,9 +719,7 @@ class MusicDatabaseFindTest(protocol.BaseTestCase):
 
 class MusicDatabaseListTest(protocol.BaseTestCase):
     def test_list(self):
-        self.backend.library.dummy_get_distinct_result = {
-            "artist": {"A Artist"}
-        }
+        self.backend.library.dummy_get_distinct_result = {"artist": {"A Artist"}}
         self.send_request('list "artist" "artist" "foo"')
 
         self.assertInResponse("Artist: A Artist")
@@ -749,9 +731,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_without_type_returns_ack(self):
         self.send_request("list")
-        self.assertEqualResponse(
-            'ACK [2@0] {list} too few arguments for "list"'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} too few arguments for "list"')
 
     def test_list_all_supported_fields(self):
         # Be nice to use pytest's parametrize here.
@@ -803,9 +783,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_artist_with_query_of_one_token(self):
         self.send_request('list "artist" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_artist_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "artist" "foo" "bar"')
@@ -864,9 +842,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_albumartist_with_query_of_one_token(self):
         self.send_request('list "albumartist" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_albumartist_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "albumartist" "foo" "bar"')
@@ -893,9 +869,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_list_albumartist_by_artist_and_album(self):
-        self.send_request(
-            'list "albumartist" "artist" "anartist" "album" "analbum"'
-        )
+        self.send_request('list "albumartist" "artist" "anartist" "album" "analbum"')
         self.assertInResponse("OK")
 
     def test_list_albumartist_without_filter_value(self):
@@ -930,9 +904,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_composer_with_query_of_one_token(self):
         self.send_request('list "composer" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_composer_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "composer" "foo" "bar"')
@@ -959,9 +931,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_list_composer_by_artist_and_album(self):
-        self.send_request(
-            'list "composer" "artist" "anartist" "album" "analbum"'
-        )
+        self.send_request('list "composer" "artist" "anartist" "album" "analbum"')
         self.assertInResponse("OK")
 
     def test_list_composer_without_filter_value(self):
@@ -996,9 +966,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_performer_with_query_of_one_token(self):
         self.send_request('list "performer" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_performer_with_unknown_field_in_query_returns_ack(self):
         self.send_request('list "performer" "foo" "bar"')
@@ -1025,9 +993,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_list_performer_by_artist_and_album(self):
-        self.send_request(
-            'list "performer" "artist" "anartist" "album" "analbum"'
-        )
+        self.send_request('list "performer" "artist" "anartist" "album" "analbum"')
         self.assertInResponse("OK")
 
     def test_list_performer_without_filter_value(self):
@@ -1136,9 +1102,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_date_with_query_of_one_token(self):
         self.send_request('list "date" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_date_by_artist(self):
         self.send_request('list "date" "artist" "anartist"')
@@ -1193,9 +1157,7 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
 
     def test_list_genre_with_query_of_one_token(self):
         self.send_request('list "genre" "anartist"')
-        self.assertEqualResponse(
-            'ACK [2@0] {list} should be "Album" for 3 arguments'
-        )
+        self.assertEqualResponse('ACK [2@0] {list} should be "Album" for 3 arguments')
 
     def test_list_genre_by_artist(self):
         self.send_request('list "genre" "artist" "anartist"')
