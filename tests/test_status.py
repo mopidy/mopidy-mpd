@@ -4,9 +4,9 @@ import pykka
 from mopidy import core
 from mopidy.core import PlaybackState
 from mopidy.models import Track
-
 from mopidy_mpd import dispatcher
 from mopidy_mpd.protocol import status
+
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 PAUSED = PlaybackState.PAUSED

@@ -3,8 +3,8 @@ from unittest import mock
 
 import pykka
 from mopidy import core
-
 from mopidy_mpd import session, uri_mapper
+
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 

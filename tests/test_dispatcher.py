@@ -4,10 +4,10 @@ import pykka
 import pytest
 from mopidy import core
 from mopidy.models import Ref
-
 from mopidy_mpd.dispatcher import MpdContext, MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
 from mopidy_mpd.uri_mapper import MpdUriMapper
+
 from tests import dummy_backend
 
 

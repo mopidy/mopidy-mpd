@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from mopidy_mpd.protocol.status import SUBSYSTEMS
+
 from tests import protocol
 
 
