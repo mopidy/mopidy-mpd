@@ -18,7 +18,7 @@ class MpdDispatcherTest(unittest.TestCase):
         self.backend = dummy_backend.create_proxy()
         self.dispatcher = MpdDispatcher(config=config)
 
-        self.core = core.Core.start(backends=[self.backend]).proxy()
+        self.core = core.Core.start(config=None, backends=[self.backend]).proxy()
 
     def tearDown(self):  # noqa: N802
         pykka.ActorRegistry.stop_all()
@@ -66,7 +66,7 @@ def backend_to_browse(a_track, b_track):
 
 @pytest.fixture
 def mpd_context(backend_to_browse):
-    mopidy_core = core.Core.start(backends=[backend_to_browse]).proxy()
+    mopidy_core = core.Core.start(config=None, backends=[backend_to_browse]).proxy()
     uri_map = MpdUriMapper(mopidy_core)
     return MpdContext(None, core=mopidy_core, uri_map=uri_map)
 
