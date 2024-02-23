@@ -1,5 +1,40 @@
 [build-system]
-requires = ["setuptools >= 30.3.0", "wheel"]
+requires = ["setuptools >= 66", "setuptools-scm >= 7.1"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "Mopidy-MPD"
+version = "4.0.0a1"
+description = "Mopidy extension for controlling Mopidy from MPD clients"
+readme = "README.rst"
+requires-python = ">= 3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Stein Magnus Jodal", email = "stein.magnus@jodal.no" }]
+classifiers = [
+	"Environment :: No Input/Output (Daemon)",
+	"Intended Audience :: End Users/Desktop",
+	"License :: OSI Approved :: Apache Software License",
+	"Operating System :: OS Independent",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
+	"Topic :: Multimedia :: Sound/Audio :: Players",
+]
+dependencies = ["mopidy >= 3.3.0", "pykka >= 4.0", "setuptools >= 66"]
+
+[project.optional-dependencies]
+lint = ["ruff"]
+test = ["pytest", "pytest-cov"]
+typing = ["pyright"]
+dev = ["mopidy-mpd[lint,test,typing]", "tox"]
+
+[project.urls]
+Source = "https://github.com/mopidy/mopidy-mpd"
+Issues = "https://github.com/mopidy/mopidy-mpd/issues"
+
+[project.entry-points."mopidy.ext"]
+mpd = "mopidy_mpd:Extension"
 
 
 [tool.ruff]
@@ -66,3 +101,6 @@ ignore = [
 	"SLF001",  # private-member-access
 	"TRY002",  # raise-vanilla-class
 ]
+
+
+[tool.setuptools_scm]
