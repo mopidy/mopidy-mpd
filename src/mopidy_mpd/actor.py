@@ -33,14 +33,12 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
         super().__init__()
 
         mpd_config = cast(types.MpdConfig, config.get("mpd", {}))
-
         self.hostname = network.format_hostname(mpd_config["hostname"])
         self.port = mpd_config["port"]
-        self.uri_map = uri_mapper.MpdUriMapper(core)
-
         self.zeroconf_name = mpd_config["zeroconf"]
         self.zeroconf_service = None
 
+        self.uri_map = uri_mapper.MpdUriMapper(core)
         self.server = self._setup_server(config, core)
 
     def _setup_server(self, config: Config, core: CoreProxy) -> network.Server:
@@ -48,14 +46,12 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
         try:
             server = network.Server(
-                self.hostname,
-                self.port,
+                config=config,
+                core=core,
+                uri_map=self.uri_map,
                 protocol=session.MpdSession,
-                protocol_kwargs={
-                    "config": config,
-                    "core": core,
-                    "uri_map": self.uri_map,
-                },
+                host=self.hostname,
+                port=self.port,
                 max_connections=mpd_config["max_connections"],
                 timeout=mpd_config["connection_timeout"],
             )

@@ -11,6 +11,7 @@ def test_on_start_logged(caplog):
     session.MpdSession(
         config=None,
         core=None,
+        uri_map=None,
         connection=connection,
     ).on_start()
 
@@ -23,6 +24,7 @@ def test_on_line_received_logged(caplog):
     mpd_session = session.MpdSession(
         config=None,
         core=None,
+        uri_map=None,
         connection=connection,
     )
     mpd_session.dispatcher = Mock(spec=dispatcher.MpdDispatcher)

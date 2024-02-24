@@ -11,19 +11,19 @@ from typing import (
 )
 
 from mopidy_mpd import exceptions, types
-from mopidy_mpd.uri_mapper import MpdUriMapper
 
 if TYPE_CHECKING:
     from collections.abc import Generator
 
     import pykka
+    from mopidy.config import Config
     from mopidy.core import CoreProxy
-    from mopidy.ext import Config
     from mopidy.models import Ref, Track
     from mopidy.types import Uri
 
     from mopidy_mpd.dispatcher import MpdDispatcher
     from mopidy_mpd.session import MpdSession
+    from mopidy_mpd.uri_mapper import MpdUriMapper
 
 
 logger = logging.getLogger(__name__)
@@ -50,22 +50,22 @@ class MpdContext:
     #: Mapping of URIs to MPD names.
     uri_map: MpdUriMapper
 
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         config: Config,
         core: CoreProxy,
+        uri_map: MpdUriMapper,
         session: MpdSession,
         dispatcher: MpdDispatcher,
     ) -> None:
         self.core = core
+        self.uri_map = uri_map
         self.session = session
         self.dispatcher = dispatcher
 
         if config is not None:
-            mpd_config = cast(types.MpdConfig, config["mpd"])
+            mpd_config = cast(types.MpdConfig, config.get("mpd", {}))
             self.password = mpd_config["password"]
-
-        self.uri_map = MpdUriMapper(core)
 
     @overload
     def browse(

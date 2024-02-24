@@ -3,6 +3,7 @@ from typing import cast
 
 import pykka
 from mopidy.core import Core, CoreProxy
+from mopidy_mpd import uri_mapper
 from mopidy_mpd.dispatcher import MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
 
@@ -19,6 +20,7 @@ class MpdDispatcherTest(unittest.TestCase):
         self.dispatcher = MpdDispatcher(
             config=config,
             core=self.core,
+            uri_map=uri_mapper.MpdUriMapper(self.core),
             session=None,
         )
 

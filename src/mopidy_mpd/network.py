@@ -19,8 +19,12 @@ if TYPE_CHECKING:
     from collections.abc import Generator
     from types import TracebackType
 
-    from mopidy_mpd.session import MpdSession
+    from mopidy.config import Config
+    from mopidy.core import CoreProxy
+
+    from mopidy_mpd.session import MpdSession, MpdSessionKwargs
     from mopidy_mpd.types import SocketAddress
+    from mopidy_mpd.uri_mapper import MpdUriMapper
 
 CONTROL_CHARS = dict.fromkeys(range(32))
 
@@ -117,20 +121,25 @@ def format_hostname(hostname: str) -> str:
 
 
 class Server:
-
     """Setup listener and register it with GLib's event loop."""
 
     def __init__(  # noqa: PLR0913
         self,
+        *,
+        config: Config,
+        core: CoreProxy,
+        uri_map: MpdUriMapper,
+        protocol: type[MpdSession],
         host: str,
         port: int,
-        protocol: type[MpdSession],
-        protocol_kwargs: dict[str, Any] | None = None,
         max_connections: int = 5,
         timeout: int = 30,
     ) -> None:
+        self.config = config
+        self.core = core
+        self.uri_map = uri_map
         self.protocol = protocol
-        self.protocol_kwargs = protocol_kwargs or {}
+
         self.max_connections = max_connections
         self.timeout = timeout
         self.server_socket = self.create_server_socket(host, port)
@@ -218,7 +227,15 @@ class Server:
             sock.close()
 
     def init_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
-        Connection(self.protocol, self.protocol_kwargs, sock, addr, self.timeout)
+        Connection(
+            config=self.config,
+            core=self.core,
+            uri_map=self.uri_map,
+            protocol=self.protocol,
+            sock=sock,
+            addr=addr,
+            timeout=self.timeout,
+        )
 
 
 class Connection:
@@ -235,8 +252,11 @@ class Connection:
 
     def __init__(  # noqa: PLR0913
         self,
+        *,
+        config: Config,
+        core: CoreProxy,
+        uri_map: MpdUriMapper,
         protocol: type[MpdSession],
-        protocol_kwargs: dict[str, Any],
         sock: socket.socket,
         addr: SocketAddress,
         timeout: int,
@@ -247,7 +267,6 @@ class Connection:
 
         self._sock = sock
         self.protocol = protocol
-        self.protocol_kwargs = protocol_kwargs
         self.timeout = timeout
 
         self.send_lock = threading.Lock()
@@ -259,7 +278,13 @@ class Connection:
         self.send_id = None
         self.timeout_id = None
 
-        self.actor_ref = self.protocol.start(self, **self.protocol_kwargs)
+        protocol_kwargs: MpdSessionKwargs = {
+            "config": config,
+            "core": core,
+            "uri_map": uri_map,
+            "connection": self,
+        }
+        self.actor_ref = self.protocol.start(**protocol_kwargs)
 
         self.enable_recv()
         self.enable_timeout()

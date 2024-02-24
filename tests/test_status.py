@@ -5,7 +5,7 @@ import pykka
 from mopidy import core
 from mopidy.core import PlaybackState
 from mopidy.models import Track
-from mopidy_mpd import dispatcher
+from mopidy_mpd import dispatcher, uri_mapper
 from mopidy_mpd.protocol import status
 
 from tests import dummy_audio, dummy_backend, dummy_mixer
@@ -42,6 +42,7 @@ class StatusHandlerTest(unittest.TestCase):
         self.dispatcher = dispatcher.MpdDispatcher(
             config=config,
             core=self.core,
+            uri_map=uri_mapper.MpdUriMapper(self.core),
             session=None,
         )
         self.context = self.dispatcher.context

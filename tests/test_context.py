@@ -5,6 +5,7 @@ import pytest
 from mopidy.backend import BackendProxy
 from mopidy.core import Core, CoreProxy
 from mopidy.models import Ref
+from mopidy_mpd import uri_mapper
 from mopidy_mpd.context import MpdContext
 
 from tests import dummy_backend
@@ -44,6 +45,7 @@ def mpd_context(backend_to_browse: BackendProxy) -> MpdContext:
     return MpdContext(
         config=None,
         core=core,
+        uri_map=uri_mapper.MpdUriMapper(core),
         dispatcher=None,
         session=None,
     )

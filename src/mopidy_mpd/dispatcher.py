@@ -15,10 +15,11 @@ import pykka
 from mopidy_mpd import context, exceptions, protocol, tokenize, types
 
 if TYPE_CHECKING:
+    from mopidy.config import Config
     from mopidy.core import CoreProxy
-    from mopidy.ext import Config
 
     from mopidy_mpd.session import MpdSession
+    from mopidy_mpd.uri_mapper import MpdUriMapper
 
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class MpdDispatcher:
         self,
         config: Config,
         core: CoreProxy,
+        uri_map: MpdUriMapper,
         session: MpdSession,
     ) -> None:
         self.config = config
@@ -67,6 +69,7 @@ class MpdDispatcher:
         self.context = context.MpdContext(
             config=config,
             core=core,
+            uri_map=uri_map,
             session=session,
             dispatcher=self,
         )

@@ -4,7 +4,7 @@ from unittest import mock
 
 import pykka
 from mopidy import core
-from mopidy_mpd import session
+from mopidy_mpd import session, uri_mapper
 
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
@@ -28,7 +28,11 @@ class BaseTestCase(unittest.TestCase):
     def get_config(self):
         return {
             "core": {"max_tracklist_length": 10000},
-            "mpd": {"password": None, "default_playlist_scheme": "dummy"},
+            "mpd": {
+                "command_blacklist": [],
+                "default_playlist_scheme": "dummy",
+                "password": None,
+            },
         }
 
     def setUp(self):
@@ -53,6 +57,7 @@ class BaseTestCase(unittest.TestCase):
         self.session = session.MpdSession(
             config=self.get_config(),
             core=self.core,
+            uri_map=uri_mapper.MpdUriMapper(self.core),
             connection=self.connection,
         )
         self.dispatcher = self.session.dispatcher
