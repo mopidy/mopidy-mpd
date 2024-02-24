@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
@@ -38,8 +37,6 @@ class MpdDispatcher:
     finds the correct handler, processes the request, and sends the response
     back to the MPD session.
     """
-
-    _noidle = re.compile(r"^noidle$")
 
     #: The active subsystems that have pending events.
     subsystem_events: set[str]
@@ -192,16 +189,16 @@ class MpdDispatcher:
         response: Response,
         filter_chain: list[Filter],
     ) -> Response:
-        if self._is_currently_idle() and not self._noidle.match(request):
+        if self._is_currently_idle() and request != "noidle":
             logger.debug(
-                "Client sent us %s, only %s is allowed while in " "the idle state",
+                "Client sent us %s, only %s is allowed while in the idle state",
                 repr(request),
                 repr("noidle"),
             )
             self.session.close()
             return Response([])
 
-        if not self._is_currently_idle() and self._noidle.match(request):
+        if not self._is_currently_idle() and request == "noidle":
             return Response([])  # noidle was called before idle
 
         response = self._call_next_filter(request, response, filter_chain)
