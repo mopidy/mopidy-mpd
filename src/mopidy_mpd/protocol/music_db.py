@@ -511,21 +511,21 @@ def searchaddpl(context: MpdContext, *args: str) -> None:
     parameters = list(args)
     if not parameters:
         raise exceptions.MpdArgError("incorrect arguments")
+
     playlist_name = parameters.pop(0)
+    uri = context.uri_map.playlist_uri_from_name(playlist_name)
+    if uri:
+        playlist = context.core.playlists.lookup(uri).get()
+    else:
+        playlist = context.core.playlists.create(playlist_name).get()
+    if not playlist:
+        return  # TODO: Raise error about failed playlist creation?
+
     try:
         query = _query_for_search(parameters)
     except ValueError:
         return
     results = context.core.library.search(query).get()
-
-    uri = context.lookup_playlist_uri_from_name(playlist_name)
-    if uri is None:
-        return  # TODO: Raise error?
-    playlist = context.core.playlists.lookup(uri).get()
-    if not playlist:
-        playlist = context.core.playlists.create(playlist_name).get()
-    if not playlist:
-        return  # TODO: Raise error about failed playlist creation?
     tracks = list(playlist.tracks) + _get_tracks(results)
     playlist = playlist.replace(tracks=tracks)
     context.core.playlists.save(playlist)

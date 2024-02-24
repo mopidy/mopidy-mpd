@@ -43,7 +43,7 @@ def _get_playlist(
     context: MpdContext, name: str, *, must_exist: bool
 ) -> Playlist | None:
     playlist = None
-    uri = context.lookup_playlist_uri_from_name(name)
+    uri = context.uri_map.playlist_uri_from_name(name)
     if uri:
         playlist = context.core.playlists.lookup(uri).get()
     if must_exist and playlist is None:
@@ -125,7 +125,7 @@ def listplaylists(context: MpdContext) -> protocol.ResultList:
     for playlist_ref in context.core.playlists.as_list().get():
         if not playlist_ref.name:
             continue
-        name = context.lookup_playlist_name_from_uri(playlist_ref.uri)
+        name = context.uri_map.playlist_name_from_uri(playlist_ref.uri)
         if name is None:
             continue
         result.append(("playlist", name))
@@ -383,7 +383,7 @@ def rm(context: MpdContext, name: str) -> None:
         Removes the playlist ``NAME.m3u`` from the playlist directory.
     """
     _check_playlist_name(name)
-    uri = context.lookup_playlist_uri_from_name(name)
+    uri = context.uri_map.playlist_uri_from_name(name)
     if not uri:
         raise exceptions.MpdNoExistError("No such playlist")
     context.core.playlists.delete(uri).get()

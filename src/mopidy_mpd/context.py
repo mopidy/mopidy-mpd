@@ -53,7 +53,8 @@ class MpdContext:
     #: The subsystems that we want to be notified about in idle mode.
     subscriptions: set[str]
 
-    _uri_map: MpdUriMapper
+    #: Mapping of URIs to MPD names.
+    uri_map: MpdUriMapper
 
     def __init__(
         self,
@@ -71,19 +72,7 @@ class MpdContext:
             self.password = mpd_config["password"]
         self.events = set()
         self.subscriptions = set()
-        self._uri_map = MpdUriMapper(core)
-
-    def lookup_playlist_uri_from_name(self, name: str) -> Uri | None:
-        """
-        Helper function to retrieve a playlist from its unique MPD name.
-        """
-        return self._uri_map.playlist_uri_from_name(name)
-
-    def lookup_playlist_name_from_uri(self, uri: Uri) -> str | None:
-        """
-        Helper function to retrieve the unique MPD playlist name from its uri.
-        """
-        return self._uri_map.playlist_name_from_uri(uri)
+        self.uri_map = MpdUriMapper(core)
 
     @overload
     def browse(
@@ -125,7 +114,7 @@ class MpdContext:
         path_parts: list[str] = re.findall(r"[^/]+", path or "")
         root_path: str = "/".join(["", *path_parts])
 
-        uri = self._uri_map.uri_from_name(root_path)
+        uri = self.uri_map.uri_from_name(root_path)
         if uri is None:
             for part in path_parts:
                 for ref in self.core.library.browse(uri).get():
@@ -134,7 +123,7 @@ class MpdContext:
                         break
                 else:
                     raise exceptions.MpdNoExistError("Not found")
-            root_path = self._uri_map.insert(root_path, uri)
+            root_path = self.uri_map.insert(root_path, uri)
 
         if recursive:
             yield (root_path, None)
@@ -147,7 +136,7 @@ class MpdContext:
                     continue
 
                 path = "/".join([base_path, ref.name.replace("/", "")])
-                path = self._uri_map.insert(path, ref.uri)
+                path = self.uri_map.insert(path, ref.uri)
 
                 if ref.type == ref.TRACK:
                     if lookup:
