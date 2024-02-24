@@ -47,12 +47,6 @@ class MpdContext:
     #: The MPD password.
     password: str | None = None
 
-    #: The active subsystems that have pending events.
-    events: set[str]
-
-    #: The subsystems that we want to be notified about in idle mode.
-    subscriptions: set[str]
-
     #: Mapping of URIs to MPD names.
     uri_map: MpdUriMapper
 
@@ -70,8 +64,7 @@ class MpdContext:
         if config is not None:
             mpd_config = cast(types.MpdConfig, config["mpd"])
             self.password = mpd_config["password"]
-        self.events = set()
-        self.subscriptions = set()
+
         self.uri_map = MpdUriMapper(core)
 
     @overload

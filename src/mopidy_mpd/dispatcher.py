@@ -41,6 +41,12 @@ class MpdDispatcher:
 
     _noidle = re.compile(r"^noidle$")
 
+    #: The active subsystems that have pending events.
+    subsystem_events: set[str]
+
+    #: The subsystems that we want to be notified about in idle mode.
+    subsystem_subscriptions: set[str]
+
     def __init__(
         self,
         config: Config,
@@ -49,11 +55,17 @@ class MpdDispatcher:
     ) -> None:
         self.config = config
         self.mpd_config = cast(types.MpdConfig, config.get("mpd", {}) if config else {})
+
         self.authenticated = False
+
         self.command_list_receiving = False
         self.command_list_ok = False
         self.command_list = []
         self.command_list_index = None
+
+        self.subsystem_events = set()
+        self.subsystem_subscriptions = set()
+
         self.context = context.MpdContext(
             config=config,
             core=core,
@@ -80,10 +92,10 @@ class MpdDispatcher:
         return self._call_next_filter(request, response, filter_chain)
 
     def handle_idle(self, subsystem: str) -> None:
-        # TODO: validate against mopidy_mpd/protocol/status.SUBSYSTEMS
-        self.context.events.add(subsystem)
+        # TODO: validate against mopidy_mpd.protocol.status.SUBSYSTEMS
+        self.subsystem_events.add(subsystem)
 
-        subsystems = self.context.subscriptions.intersection(self.context.events)
+        subsystems = self.subsystem_subscriptions.intersection(self.subsystem_events)
         if not subsystems:
             return
 
@@ -91,8 +103,8 @@ class MpdDispatcher:
         for subsystem in subsystems:
             response.append(f"changed: {subsystem}")
         response.append("OK")
-        self.context.subscriptions = set()
-        self.context.events = set()
+        self.subsystem_events = set()
+        self.subsystem_subscriptions = set()
         self.context.session.send_lines(response)
 
     def _call_next_filter(
@@ -199,7 +211,7 @@ class MpdDispatcher:
         return response
 
     def _is_currently_idle(self) -> bool:
-        return bool(self.context.subscriptions)
+        return bool(self.subsystem_subscriptions)
 
     # --- Filter: add OK
 

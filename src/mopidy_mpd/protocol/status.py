@@ -101,16 +101,18 @@ def idle(context: MpdContext, *args: str) -> protocol.Result:
     subsystems = list(args) if args else SUBSYSTEMS
 
     for subsystem in subsystems:
-        context.subscriptions.add(subsystem)
+        context.dispatcher.subsystem_subscriptions.add(subsystem)
 
-    active = context.subscriptions.intersection(context.events)
+    active = context.dispatcher.subsystem_subscriptions.intersection(
+        context.dispatcher.subsystem_events
+    )
     if not active:
         context.session.prevent_timeout = True
         return None
 
     response = []
-    context.events = set()
-    context.subscriptions = set()
+    context.dispatcher.subsystem_events = set()
+    context.dispatcher.subsystem_subscriptions = set()
 
     for subsystem in active:
         response.append(f"changed: {subsystem}")
@@ -120,10 +122,10 @@ def idle(context: MpdContext, *args: str) -> protocol.Result:
 @protocol.commands.add("noidle", list_command=False)
 def noidle(context: MpdContext) -> None:
     """See :meth:`_status_idle`."""
-    if not context.subscriptions:
+    if not context.dispatcher.subsystem_subscriptions:
         return
-    context.subscriptions = set()
-    context.events = set()
+    context.dispatcher.subsystem_subscriptions = set()
+    context.dispatcher.subsystem_events = set()
     context.session.prevent_timeout = False
 
 
