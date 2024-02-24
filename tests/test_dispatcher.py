@@ -8,7 +8,6 @@ from mopidy.core import Core, CoreProxy
 from mopidy.models import Ref
 from mopidy_mpd.dispatcher import MpdContext, MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
-from mopidy_mpd.uri_mapper import MpdUriMapper
 
 from tests import dummy_backend
 
@@ -20,7 +19,11 @@ class MpdDispatcherTest(unittest.TestCase):
         self.core = cast(
             CoreProxy, Core.start(config=None, backends=[self.backend]).proxy()
         )
-        self.dispatcher = MpdDispatcher(config=config, core=self.core)
+        self.dispatcher = MpdDispatcher(
+            config=config,
+            core=self.core,
+            session=None,
+        )
 
     def tearDown(self):
         pykka.ActorRegistry.stop_all()
@@ -78,8 +81,10 @@ def mpd_context(backend_to_browse: BackendProxy) -> MpdContext:
         Core.start(config=None, backends=[backend_to_browse]).proxy(),
     )
     return MpdContext(
+        config=None,
         core=core,
-        uri_map=MpdUriMapper(core),
+        dispatcher=None,
+        session=None,
     )
 
 

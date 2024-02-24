@@ -17,6 +17,7 @@ from typing import (
 import pykka
 
 from mopidy_mpd import exceptions, protocol, tokenize, types
+from mopidy_mpd.uri_mapper import MpdUriMapper
 
 if TYPE_CHECKING:
     from mopidy.core import CoreProxy
@@ -25,7 +26,6 @@ if TYPE_CHECKING:
     from mopidy.types import Uri
 
     from mopidy_mpd.session import MpdSession
-    from mopidy_mpd.uri_mapper import MpdUriMapper
 
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,6 @@ class MpdDispatcher:
         config: Config,
         core: CoreProxy,
         session: MpdSession,
-        uri_map: MpdUriMapper,
     ) -> None:
         self.config = config
         self.mpd_config = cast(types.MpdConfig, config.get("mpd", {}) if config else {})
@@ -66,7 +65,6 @@ class MpdDispatcher:
             dispatcher=self,
             session=session,
             config=config,
-            uri_map=uri_map,
         )
 
     def handle_request(
@@ -76,7 +74,7 @@ class MpdDispatcher:
     ) -> Response:
         """Dispatch incoming requests to the correct handler."""
         self.command_list_index = current_command_list_index
-        response: Response = []
+        response: Response = Response([])
         filter_chain: list[Filter] = [
             self._catch_mpd_ack_errors_filter,
             self._authenticate_filter,
@@ -159,7 +157,7 @@ class MpdDispatcher:
     ) -> Response:
         if self._is_receiving_command_list(request):
             self.command_list.append(request)
-            return []
+            return Response([])
 
         response = self._call_next_filter(request, response, filter_chain)
         if (
@@ -194,15 +192,15 @@ class MpdDispatcher:
                 repr("noidle"),
             )
             self.context.session.close()
-            return []
+            return Response([])
 
         if not self._is_currently_idle() and self._noidle.match(request):
-            return []  # noidle was called before idle
+            return Response([])  # noidle was called before idle
 
         response = self._call_next_filter(request, response, filter_chain)
 
         if self._is_currently_idle():
-            return []
+            return Response([])
 
         return response
 
@@ -302,8 +300,6 @@ class MpdContext:
     #: The Mopidy core API.
     core: CoreProxy
 
-    _uri_map: MpdUriMapper
-
     #: The current dispatcher instance.
     dispatcher: MpdDispatcher
 
@@ -319,16 +315,16 @@ class MpdContext:
     #: The subsystems that we want to be notified about in idle mode.
     subscriptions: set[str]
 
-    def __init__(  # noqa: PLR0913
+    _uri_map: MpdUriMapper
+
+    def __init__(
         self,
         config: Config,
         core: CoreProxy,
-        uri_map: MpdUriMapper,
         dispatcher: MpdDispatcher,
         session: MpdSession,
     ) -> None:
         self.core = core
-        self._uri_map = uri_map
         self.dispatcher = dispatcher
         self.session = session
         if config is not None:
@@ -336,6 +332,7 @@ class MpdContext:
             self.password = mpd_config["password"]
         self.events = set()
         self.subscriptions = set()
+        self._uri_map = MpdUriMapper(core)
 
     def lookup_playlist_uri_from_name(self, name: str) -> Uri | None:
         """

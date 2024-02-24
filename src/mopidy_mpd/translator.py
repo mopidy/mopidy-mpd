@@ -41,7 +41,7 @@ def track_to_mpd_format(  # noqa: C901, PLR0912
         logger.warning("Ignoring track without uri")
         return []
 
-    result: protocol.Result = [
+    result: list[protocol.ResultTuple] = [
         ("file", track.uri),
         ("Time", track.length and (track.length // 1000) or 0),
         *multi_tag_list(track.artists, "name", "Artist"),
@@ -104,13 +104,17 @@ def track_to_mpd_format(  # noqa: C901, PLR0912
     if track.album and track.album.uri:
         result.append(("X-AlbumUri", track.album.uri))
 
-    return [element for element in result if _has_value(tagtypes, *element)]
+    return [
+        (tagtype, value)
+        for (tagtype, value) in result
+        if _has_value(tagtypes, tagtype, value)
+    ]
 
 
 def _has_value(
     tagtypes: set[str],
     tagtype: str,
-    value: str | int,
+    value: protocol.ResultValue,
 ) -> bool:
     """
     Determine whether to add the tagtype to the output or not. The tagtype must
@@ -149,7 +153,7 @@ def multi_tag_list(
     models: Iterable[Artist | Album | Track],
     attribute: str,
     tag: str,
-) -> protocol.ResultList:
+) -> list[protocol.ResultTuple]:
     """
     Format multiple objects for output to MPD client in a list with one tag per
     value.

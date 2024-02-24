@@ -1,4 +1,5 @@
 import unittest
+from typing import cast
 
 import pykka
 from mopidy import core
@@ -19,20 +20,30 @@ STOPPED = PlaybackState.STOPPED
 
 class StatusHandlerTest(unittest.TestCase):
     def setUp(self):
-        config = {"core": {"max_tracklist_length": 10000}}
+        config = {
+            "core": {"max_tracklist_length": 10000},
+            "mpd": {"password": None},
+        }
 
         self.audio = dummy_audio.create_proxy()
         self.mixer = dummy_mixer.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        self.core = core.Core.start(
-            config,
-            audio=self.audio,
-            mixer=self.mixer,
-            backends=[self.backend],
-        ).proxy()
+        self.core = cast(
+            core.CoreProxy,
+            core.Core.start(
+                config,
+                audio=self.audio,
+                mixer=self.mixer,
+                backends=[self.backend],
+            ).proxy(),
+        )
 
-        self.dispatcher = dispatcher.MpdDispatcher(core=self.core)
+        self.dispatcher = dispatcher.MpdDispatcher(
+            config=config,
+            core=self.core,
+            session=None,
+        )
         self.context = self.dispatcher.context
 
     def tearDown(self):

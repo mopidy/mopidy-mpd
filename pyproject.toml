@@ -21,7 +21,12 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"Topic :: Multimedia :: Sound/Audio :: Players",
 ]
-dependencies = ["mopidy >= 4.0.0a1", "pykka >= 4.0", "setuptools >= 66"]
+dependencies = [
+	"mopidy >= 4.0.0a1",
+	"pygobject >= 3.42",
+	"pykka >= 4.0",
+	"setuptools >= 66",
+]
 
 [project.optional-dependencies]
 lint = ["ruff"]

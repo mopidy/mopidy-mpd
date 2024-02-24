@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from mopidy.core import CoreProxy
     from mopidy.ext import Config
 
-    from mopidy_mpd.uri_mapper import MpdUriMapper
 
 logger = logging.getLogger(__name__)
 
@@ -26,17 +25,15 @@ class MpdSession(network.LineProtocol):
 
     def __init__(
         self,
+        config: Config,
+        core: CoreProxy,
         connection: network.Connection,
-        config: Config | None = None,
-        core: CoreProxy | None = None,
-        uri_map: MpdUriMapper | None = None,
     ) -> None:
         super().__init__(connection)
         self.dispatcher = dispatcher.MpdDispatcher(
             session=self,
             config=config,
             core=core,
-            uri_map=uri_map,
         )
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
 

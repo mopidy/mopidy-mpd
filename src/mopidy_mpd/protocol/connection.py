@@ -61,7 +61,7 @@ def ping(context: MpdContext) -> None:
 
 
 @protocol.commands.add("tagtypes")
-def tagtypes(context: MpdContext, *parameters: list[str]) -> protocol.Result:
+def tagtypes(context: MpdContext, *args: str) -> protocol.Result:
     """
     *mpd.readthedocs.io, connection settings section:*
 
@@ -85,7 +85,7 @@ def tagtypes(context: MpdContext, *parameters: list[str]) -> protocol.Result:
 
         Announce that this client is interested in all tag types.
     """
-    parameters = list(parameters)
+    parameters = list(args)
     if parameters:
         subcommand = parameters.pop(0).lower()
         match subcommand:

@@ -7,6 +7,7 @@ from mopidy.models import Album, Artist, SearchResult, Track
 from mopidy.types import DistinctField, Query, SearchField, Uri
 
 from mopidy_mpd import exceptions, protocol, translator
+from mopidy_mpd.protocol import stored_playlists
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -317,7 +318,7 @@ def listall(context: MpdContext, uri: str | None = None) -> protocol.Result:
     .. warning:: This command is disabled by default in Mopidy installs.
     """
     result = []
-    for path, track_ref in context.browse(uri, lookup=False):
+    for path, track_ref in context.browse(uri, recursive=True, lookup=False):
         if not track_ref:
             result.append(("directory", path.lstrip("/")))
         else:
@@ -346,7 +347,7 @@ def listallinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
     .. warning:: This command is disabled by default in Mopidy installs.
     """
     result: protocol.ResultList = []
-    for path, lookup_future in context.browse(uri, lookup=True):
+    for path, lookup_future in context.browse(uri, recursive=True, lookup=True):
         if not lookup_future:
             result.append(("directory", path.lstrip("/")))
         else:
@@ -399,7 +400,7 @@ def lsinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
     directories located at the root level, for both ``lsinfo``, ``lsinfo
     ""``, and ``lsinfo "/"``.
     """
-    result = []
+    result: protocol.ResultList = []
     for path, lookup_future in context.browse(uri, recursive=False, lookup=True):
         if not lookup_future:
             result.append(("directory", path.lstrip("/")))
@@ -413,7 +414,7 @@ def lsinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
                     )
 
     if uri in (None, "", "/"):
-        result.extend(protocol.stored_playlists.listplaylists(context))
+        result.extend(stored_playlists.listplaylists(context))
 
     return result
 

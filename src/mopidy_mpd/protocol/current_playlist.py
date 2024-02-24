@@ -35,7 +35,7 @@ def add(context: MpdContext, uri: Uri) -> None:
 
     try:
         uris = []
-        for _path, ref in context.browse(uri, lookup=False):
+        for _path, ref in context.browse(uri, recursive=True, lookup=False):
             if ref:
                 uris.append(ref.uri)
     except exceptions.MpdNoExistError as exc:
@@ -303,12 +303,13 @@ def plchanges(context: MpdContext, version: int) -> protocol.Result:
 
         tl_track = context.core.playback.get_current_tl_track().get()
         position = context.core.tracklist.index(tl_track).get()
-        return translator.track_to_mpd_format(
-            tl_track,
-            context.session.tagtypes,
-            position=position,
-            stream_title=stream_title,
-        )
+        if tl_track is not None and position is not None:
+            return translator.track_to_mpd_format(
+                tl_track,
+                context.session.tagtypes,
+                position=position,
+                stream_title=stream_title,
+            )
 
     return None
 

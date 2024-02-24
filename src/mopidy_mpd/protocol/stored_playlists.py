@@ -95,7 +95,7 @@ def listplaylistinfo(context: MpdContext, name: str) -> protocol.Result:
 
 
 @protocol.commands.add("listplaylists")
-def listplaylists(context: MpdContext) -> protocol.Result:
+def listplaylists(context: MpdContext) -> protocol.ResultList:
     """
     *musicpd.org, stored playlists section:*
 
@@ -121,11 +121,13 @@ def listplaylists(context: MpdContext) -> protocol.Result:
       ignore playlists without names, which isn't very useful anyway.
     """
     last_modified = _get_last_modified()
-    result = []
+    result: protocol.ResultList = []
     for playlist_ref in context.core.playlists.as_list().get():
         if not playlist_ref.name:
             continue
         name = context.lookup_playlist_name_from_uri(playlist_ref.uri)
+        if name is None:
+            continue
         result.append(("playlist", name))
         result.append(("Last-Modified", last_modified))
     return result
@@ -220,7 +222,7 @@ def _create_playlist(context: MpdContext, name: str, tracks: Iterable[Track]) ->
     """
     Creates new playlist using backend appropriate for the given tracks
     """
-    uri_schemes = {urlparse(t.uri).scheme for t in tracks}
+    uri_schemes = {UriScheme(urlparse(t.uri).scheme) for t in tracks}
     for scheme in uri_schemes:
         new_playlist = context.core.playlists.create(name, scheme).get()
         if new_playlist is None:
@@ -295,7 +297,9 @@ def playlistdelete(context: MpdContext, name: str, songpos: int) -> None:
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylistError(urlparse(playlist.uri).scheme)
+        raise exceptions.MpdFailedToSavePlaylistError(
+            UriScheme(urlparse(playlist.uri).scheme)
+        )
 
 
 @protocol.commands.add("playlistmove", from_pos=protocol.UINT, to_pos=protocol.UINT)
@@ -334,7 +338,9 @@ def playlistmove(context: MpdContext, name: str, from_pos: int, to_pos: int) -> 
     playlist = playlist.replace(tracks=tracks)
     saved_playlist = context.core.playlists.save(playlist).get()
     if saved_playlist is None:
-        raise exceptions.MpdFailedToSavePlaylistError(urlparse(playlist.uri).scheme)
+        raise exceptions.MpdFailedToSavePlaylistError(
+            UriScheme(urlparse(playlist.uri).scheme)
+        )
 
 
 @protocol.commands.add("rename")
@@ -357,10 +363,11 @@ def rename(context: MpdContext, old_name: str, new_name: str) -> None:
 
     # Create copy of the playlist and remove original
     uri_scheme = UriScheme(urlparse(old_playlist.uri).scheme)
-    new_playlist = context.core.playlists.create(new_name, uri_scheme).get()
-    new_playlist = new_playlist.replace(tracks=old_playlist.tracks)
-    saved_playlist = context.core.playlists.save(new_playlist).get()
-
+    empty_playlist = context.core.playlists.create(new_name, uri_scheme).get()
+    if empty_playlist is None:
+        raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
+    filled_playlist = empty_playlist.replace(tracks=old_playlist.tracks)
+    saved_playlist = context.core.playlists.save(filled_playlist).get()
     if saved_playlist is None:
         raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
     context.core.playlists.delete(old_playlist.uri).get()

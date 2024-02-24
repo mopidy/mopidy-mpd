@@ -329,7 +329,7 @@ def replay_gain_mode(context: MpdContext, mode: str) -> Never:
 
 
 @protocol.commands.add("replay_gain_status")
-def replay_gain_status(context: MpdContext) -> str:
+def replay_gain_status(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, playback section:*
 
@@ -338,7 +338,7 @@ def replay_gain_status(context: MpdContext) -> str:
         Prints replay gain options. Currently, only the variable
         ``replay_gain_mode`` is returned.
     """
-    return "replay_gain_mode: off"  # TODO
+    return ("replay_gain_mode", "off")  # TODO
 
 
 @protocol.commands.add("seek", songpos=protocol.UINT, seconds=protocol.UFLOAT)

@@ -1,9 +1,10 @@
 import unittest
+from typing import cast
 from unittest import mock
 
 import pykka
 from mopidy import core
-from mopidy_mpd import session, uri_mapper
+from mopidy_mpd import session
 
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
@@ -38,20 +39,21 @@ class BaseTestCase(unittest.TestCase):
         self.audio = dummy_audio.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        self.core = core.Core.start(
-            self.get_config(),
-            audio=self.audio,
-            mixer=self.mixer,
-            backends=[self.backend],
-        ).proxy()
+        self.core = cast(
+            core.CoreProxy,
+            core.Core.start(
+                self.get_config(),
+                audio=self.audio,
+                mixer=self.mixer,
+                backends=[self.backend],
+            ).proxy(),
+        )
 
-        self.uri_map = uri_mapper.MpdUriMapper(self.core)
         self.connection = MockConnection()
         self.session = session.MpdSession(
-            self.connection,
             config=self.get_config(),
             core=self.core,
-            uri_map=self.uri_map,
+            connection=self.connection,
         )
         self.dispatcher = self.session.dispatcher
         self.context = self.dispatcher.context

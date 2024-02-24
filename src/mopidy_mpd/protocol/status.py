@@ -63,7 +63,7 @@ def currentsong(context: MpdContext) -> protocol.Result:
 
 
 @protocol.commands.add("idle")
-def idle(context: MpdContext, *subsystems: list[str]) -> protocol.Result:
+def idle(context: MpdContext, *args: str) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
@@ -98,8 +98,7 @@ def idle(context: MpdContext, *subsystems: list[str]) -> protocol.Result:
     """
     # TODO: test against valid subsystems
 
-    if not subsystems:
-        subsystems = SUBSYSTEMS
+    subsystems = list(args) if args else SUBSYSTEMS
 
     for subsystem in subsystems:
         context.subscriptions.add(subsystem)
