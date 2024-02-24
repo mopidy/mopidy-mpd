@@ -1,7 +1,12 @@
+from __future__ import annotations
+
 import unittest
+from typing import TYPE_CHECKING
 
 from mopidy_mpd import exceptions, protocol
-from mopidy_mpd.dispatcher import MpdContext
+
+if TYPE_CHECKING:
+    from mopidy_mpd.context import MpdContext
 
 
 class TestConverts(unittest.TestCase):

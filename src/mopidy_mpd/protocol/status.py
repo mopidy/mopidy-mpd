@@ -10,7 +10,7 @@ if TYPE_CHECKING:
     from mopidy.models import Track
     from mopidy.types import DurationMs
 
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 #: Subsystems that can be registered with idle command.

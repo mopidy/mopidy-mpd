@@ -6,7 +6,7 @@ from mopidy_mpd import exceptions, protocol
 from mopidy_mpd.protocol import tagtype_list
 
 if TYPE_CHECKING:
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("close", auth_required=False)

@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 from mopidy_mpd import exceptions
 
 if TYPE_CHECKING:
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 #: The MPD protocol uses UTF-8 for encoding all data.
 ENCODING = "utf-8"

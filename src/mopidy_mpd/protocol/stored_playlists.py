@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
     from mopidy.models import Playlist, Track
 
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 logger = logging.getLogger(__name__)
 

@@ -31,9 +31,9 @@ class MpdSession(network.LineProtocol):
     ) -> None:
         super().__init__(connection)
         self.dispatcher = dispatcher.MpdDispatcher(
-            session=self,
             config=config,
             core=core,
+            session=self,
         )
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
 

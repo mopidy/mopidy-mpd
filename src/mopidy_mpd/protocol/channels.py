@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Never
 from mopidy_mpd import exceptions, protocol
 
 if TYPE_CHECKING:
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("subscribe")

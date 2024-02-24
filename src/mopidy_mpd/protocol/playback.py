@@ -8,7 +8,7 @@ from mopidy.types import DurationMs, Percentage
 from mopidy_mpd import exceptions, protocol
 
 if TYPE_CHECKING:
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("consume", state=protocol.BOOL)

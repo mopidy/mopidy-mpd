@@ -7,7 +7,7 @@ from mopidy_mpd import exceptions, protocol
 if TYPE_CHECKING:
     from mopidy.types import Uri
 
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("sticker", list_command=False)

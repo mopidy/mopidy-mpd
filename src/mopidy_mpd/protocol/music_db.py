@@ -12,7 +12,7 @@ from mopidy_mpd.protocol import stored_playlists
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
 
-    from mopidy_mpd.dispatcher import MpdContext
+    from mopidy_mpd.context import MpdContext
 
 
 _LIST_MAPPING: dict[str, DistinctField] = {
