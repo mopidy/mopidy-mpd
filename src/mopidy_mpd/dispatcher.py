@@ -55,6 +55,7 @@ class MpdDispatcher:
     ) -> None:
         self.config = config
         self.mpd_config = cast(types.MpdConfig, config.get("mpd", {}) if config else {})
+        self.session = session
 
         self.authenticated = False
 
@@ -105,7 +106,7 @@ class MpdDispatcher:
         response.append("OK")
         self.subsystem_events = set()
         self.subsystem_subscriptions = set()
-        self.context.session.send_lines(response)
+        self.session.send_lines(response)
 
     def _call_next_filter(
         self, request: str, response: Response, filter_chain: list[Filter]
@@ -197,7 +198,7 @@ class MpdDispatcher:
                 repr(request),
                 repr("noidle"),
             )
-            self.context.session.close()
+            self.session.close()
             return Response([])
 
         if not self._is_currently_idle() and self._noidle.match(request):
