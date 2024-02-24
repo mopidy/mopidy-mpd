@@ -227,7 +227,7 @@ class MpdDispatcher:
     ) -> Response:
         try:
             result = self._call_handler(request)
-            response = self._format_response(result)
+            response = _format_response(result)
             return self._call_next_filter(request, response, filter_chain)
         except pykka.ActorDeadError as exc:
             logger.warning("Tried to communicate with dead actor.")
@@ -250,36 +250,40 @@ class MpdDispatcher:
                 exc.command = tokens[0]
             raise
 
-    def _format_response(self, result: protocol.Result) -> Response:
-        response = Response([])
-        for element in self._listify_result(result):
-            response.extend(self._format_lines(element))
-        return response
 
-    def _listify_result(self, result: protocol.Result) -> protocol.ResultList:
-        match result:
-            case None:
-                return []
-            case list():
-                return self._flatten(result)
-            case _:
-                return [result]
+def _format_response(result: protocol.Result) -> Response:
+    response = Response([])
+    for element in _listify_result(result):
+        response.extend(_format_lines(element))
+    return response
 
-    def _flatten(self, lst: protocol.ResultList) -> protocol.ResultList:
-        result: protocol.ResultList = []
-        for element in lst:
-            if isinstance(element, list):
-                result.extend(self._flatten(element))
-            else:
-                result.append(element)
-        return result
 
-    def _format_lines(
-        self, element: protocol.ResultDict | protocol.ResultTuple | str
-    ) -> Response:
-        if isinstance(element, dict):
-            return Response([f"{key}: {value}" for (key, value) in element.items()])
-        if isinstance(element, tuple):
-            (key, value) = element
-            return Response([f"{key}: {value}"])
-        return Response([element])
+def _listify_result(result: protocol.Result) -> protocol.ResultList:
+    match result:
+        case None:
+            return []
+        case list():
+            return _flatten(result)
+        case _:
+            return [result]
+
+
+def _flatten(lst: protocol.ResultList) -> protocol.ResultList:
+    result: protocol.ResultList = []
+    for element in lst:
+        if isinstance(element, list):
+            result.extend(_flatten(element))
+        else:
+            result.append(element)
+    return result
+
+
+def _format_lines(
+    element: protocol.ResultDict | protocol.ResultTuple | str,
+) -> Response:
+    if isinstance(element, dict):
+        return Response([f"{key}: {value}" for (key, value) in element.items()])
+    if isinstance(element, tuple):
+        (key, value) = element
+        return Response([f"{key}: {value}"])
+    return Response([element])
