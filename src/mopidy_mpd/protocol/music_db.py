@@ -414,7 +414,15 @@ def lsinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
                     )
 
     if uri in (None, "", "/"):
-        result.extend(stored_playlists.listplaylists(context))
+        result.extend(
+            # We know that `listplaylists`` returns this specific variant of
+            # `protocol.Result``, but this information disappears because of the
+            # typing of the `protocol.commands.add()`` decorator.
+            cast(
+                protocol.ResultList,
+                stored_playlists.listplaylists(context),
+            )
+        )
 
     return result
 
