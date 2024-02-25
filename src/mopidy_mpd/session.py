@@ -3,11 +3,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, NoReturn, TypedDict
 
-from mopidy_mpd import dispatcher, formatting, network, protocol
+from mopidy_mpd import dispatcher, formatting, network, protocol, types
 from mopidy_mpd.protocol import tagtype_list
 
 if TYPE_CHECKING:
-    from mopidy.config import Config
     from mopidy.core import CoreProxy
 
     from mopidy_mpd.uri_mapper import MpdUriMapper
@@ -17,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class MpdSessionKwargs(TypedDict):
-    config: Config
+    config: types.Config
     core: CoreProxy
     uri_map: MpdUriMapper
     connection: network.Connection
@@ -35,7 +34,7 @@ class MpdSession(network.LineProtocol):
     def __init__(
         self,
         *,
-        config: Config,
+        config: types.Config,
         core: CoreProxy,
         uri_map: MpdUriMapper,
         connection: network.Connection,

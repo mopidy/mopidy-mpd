@@ -1,9 +1,8 @@
 import logging
-from typing import Any, cast
+from typing import Any
 
 import pykka
 from mopidy import exceptions, listener, zeroconf
-from mopidy.config import Config
 from mopidy.core import CoreListener, CoreProxy
 
 from mopidy_mpd import network, session, types, uri_mapper
@@ -29,21 +28,18 @@ _CORE_EVENTS_TO_IDLE_SUBSYSTEMS = {
 
 
 class MpdFrontend(pykka.ThreadingActor, CoreListener):
-    def __init__(self, config: Config, core: CoreProxy) -> None:
+    def __init__(self, config: types.Config, core: CoreProxy) -> None:
         super().__init__()
 
-        mpd_config = cast(types.MpdConfig, config.get("mpd", {}))
-        self.hostname = network.format_hostname(mpd_config["hostname"])
-        self.port = mpd_config["port"]
-        self.zeroconf_name = mpd_config["zeroconf"]
+        self.hostname = network.format_hostname(config["mpd"]["hostname"])
+        self.port = config["mpd"]["port"]
+        self.zeroconf_name = config["mpd"]["zeroconf"]
         self.zeroconf_service = None
 
         self.uri_map = uri_mapper.MpdUriMapper(core)
         self.server = self._setup_server(config, core)
 
-    def _setup_server(self, config: Config, core: CoreProxy) -> network.Server:
-        mpd_config = cast(types.MpdConfig, config.get("mpd", {}))
-
+    def _setup_server(self, config: types.Config, core: CoreProxy) -> network.Server:
         try:
             server = network.Server(
                 config=config,
@@ -52,8 +48,8 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
                 protocol=session.MpdSession,
                 host=self.hostname,
                 port=self.port,
-                max_connections=mpd_config["max_connections"],
-                timeout=mpd_config["connection_timeout"],
+                max_connections=config["mpd"]["max_connections"],
+                timeout=config["mpd"]["connection_timeout"],
             )
         except OSError as exc:
             raise exceptions.FrontendError(f"MPD server startup failed: {exc}") from exc

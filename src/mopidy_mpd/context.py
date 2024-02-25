@@ -6,7 +6,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
-    cast,
     overload,
 )
 
@@ -16,7 +15,6 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
     import pykka
-    from mopidy.config import Config
     from mopidy.core import CoreProxy
     from mopidy.models import Ref, Track
     from mopidy.types import Uri
@@ -35,6 +33,9 @@ class MpdContext:
     give the command handlers access to important parts of Mopidy.
     """
 
+    #: The Mopidy config.
+    config: types.Config
+
     #: The Mopidy core API.
     core: CoreProxy
 
@@ -44,28 +45,22 @@ class MpdContext:
     #: The current dispatcher instance.
     dispatcher: MpdDispatcher
 
-    #: The MPD password.
-    password: str | None = None
-
     #: Mapping of URIs to MPD names.
     uri_map: MpdUriMapper
 
     def __init__(  # noqa: PLR0913
         self,
-        config: Config,
+        config: types.Config,
         core: CoreProxy,
         uri_map: MpdUriMapper,
         session: MpdSession,
         dispatcher: MpdDispatcher,
     ) -> None:
+        self.config = config
         self.core = core
         self.uri_map = uri_map
         self.session = session
         self.dispatcher = dispatcher
-
-        if config is not None:
-            mpd_config = cast(types.MpdConfig, config.get("mpd", {}))
-            self.password = mpd_config["password"]
 
     @overload
     def browse(

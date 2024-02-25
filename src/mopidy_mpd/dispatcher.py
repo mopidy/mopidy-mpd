@@ -7,7 +7,6 @@ from typing import (
     NewType,
     TypeAlias,
     TypeVar,
-    cast,
 )
 
 import pykka
@@ -15,7 +14,6 @@ import pykka
 from mopidy_mpd import context, exceptions, protocol, tokenize, types
 
 if TYPE_CHECKING:
-    from mopidy.config import Config
     from mopidy.core import CoreProxy
 
     from mopidy_mpd.session import MpdSession
@@ -47,13 +45,12 @@ class MpdDispatcher:
 
     def __init__(
         self,
-        config: Config,
+        config: types.Config,
         core: CoreProxy,
         uri_map: MpdUriMapper,
         session: MpdSession,
     ) -> None:
         self.config = config
-        self.mpd_config = cast(types.MpdConfig, config.get("mpd", {}) if config else {})
         self.session = session
 
         self.authenticated = False
@@ -249,7 +246,7 @@ class MpdDispatcher:
     def _call_handler(self, request: str) -> protocol.Result:
         tokens = tokenize.split(request)
         # TODO: check that blacklist items are valid commands?
-        blacklist = self.mpd_config.get("command_blacklist", [])
+        blacklist = self.config["mpd"]["command_blacklist"]
         if tokens and tokens[0] in blacklist:
             logger.warning("MPD client used blacklisted command: %s", tokens[0])
             raise exceptions.MpdDisabledError(command=tokens[0])

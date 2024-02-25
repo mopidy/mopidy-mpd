@@ -19,9 +19,9 @@ if TYPE_CHECKING:
     from collections.abc import Generator
     from types import TracebackType
 
-    from mopidy.config import Config
     from mopidy.core import CoreProxy
 
+    from mopidy_mpd import types
     from mopidy_mpd.session import MpdSession, MpdSessionKwargs
     from mopidy_mpd.types import SocketAddress
     from mopidy_mpd.uri_mapper import MpdUriMapper
@@ -126,7 +126,7 @@ class Server:
     def __init__(  # noqa: PLR0913
         self,
         *,
-        config: Config,
+        config: types.Config,
         core: CoreProxy,
         uri_map: MpdUriMapper,
         protocol: type[MpdSession],
@@ -253,7 +253,7 @@ class Connection:
     def __init__(  # noqa: PLR0913
         self,
         *,
-        config: Config,
+        config: types.Config,
         core: CoreProxy,
         uri_map: MpdUriMapper,
         protocol: type[MpdSession],
