@@ -12,7 +12,6 @@ implement our own MPD server which is compatible with the numerous existing
 
 from __future__ import annotations
 
-import functools
 import inspect
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, TypeAlias
@@ -37,7 +36,7 @@ ResultDict: TypeAlias = dict[str, ResultValue]
 ResultTuple: TypeAlias = tuple[str, ResultValue]
 ResultList: TypeAlias = list[ResultTuple | ResultDict]
 Result: TypeAlias = None | ResultDict | ResultTuple | ResultList
-Handler: TypeAlias = Callable[..., Result]
+HandlerFunc: TypeAlias = Callable[..., Result]
 
 
 def load_protocol_modules() -> None:
@@ -125,7 +124,6 @@ def RANGE(value: str) -> slice:  # noqa: N802
 
 
 class Commands:
-
     """Collection of MPD commands to expose to users.
 
     Normally used through the global instance which command handlers have been
@@ -133,18 +131,18 @@ class Commands:
     """
 
     def __init__(self) -> None:
-        self.handlers = {}
+        self.handlers: dict[str, Handler] = {}
 
     # TODO: consider removing auth_required and list_command in favour of
     # additional command instances to register in?
-    def add(  # noqa: C901
+    def add(
         self,
         name: str,
         *,
         auth_required: bool = True,
         list_command: bool = True,
         **validators: Callable[[str], Any],
-    ) -> Callable[[Handler], Handler]:
+    ) -> Callable[[HandlerFunc], HandlerFunc]:
         """Create a decorator that registers a handler and validation rules.
 
         Additional keyword arguments are treated as converters/validators to
@@ -165,58 +163,16 @@ class Commands:
         :param list_command: If command should be listed in reflection.
         """
 
-        def wrapper(func: Handler) -> Handler:  # noqa: C901
+        def wrapper(func: HandlerFunc) -> HandlerFunc:
             if name in self.handlers:
                 raise ValueError(f"{name} already registered")
-
-            spec = inspect.getfullargspec(func)
-            defaults = dict(
-                zip(
-                    spec.args[-len(spec.defaults or []) :],
-                    spec.defaults or [],
-                    strict=False,
-                )
+            self.handlers[name] = Handler(
+                name=name,
+                func=func,
+                auth_required=auth_required,
+                list_command=list_command,
+                validators=validators,
             )
-
-            if not spec.args and not spec.varargs:
-                raise TypeError("Handler must accept at least one argument.")
-
-            if len(spec.args) > 1 and spec.varargs:
-                raise TypeError("*args may not be combined with regular arguments")
-
-            if not set(validators.keys()).issubset(spec.args):
-                raise TypeError("Validator for non-existent arg passed")
-
-            if spec.varkw or spec.kwonlyargs:
-                raise TypeError("Keyword arguments are not permitted")
-
-            @functools.wraps(func)
-            def validate(*args: Any, **kwargs: Any) -> Result:
-                if spec.varargs:
-                    return func(*args, **kwargs)
-
-                try:
-                    ba = inspect.signature(func).bind(*args, **kwargs)
-                    ba.apply_defaults()
-                    callargs = ba.arguments
-                except TypeError as exc:
-                    raise exceptions.MpdArgError(
-                        f'wrong number of arguments for "{name}"'
-                    ) from exc
-
-                for key, value in callargs.items():
-                    default = defaults.get(key, object())
-                    if key in validators and value != default:
-                        try:
-                            callargs[key] = validators[key](value)
-                        except ValueError as exc:
-                            raise exceptions.MpdArgError("incorrect arguments") from exc
-
-                return func(**callargs)
-
-            validate.auth_required = auth_required
-            validate.list_command = list_command
-            self.handlers[name] = validate
             return func
 
         return wrapper
@@ -245,3 +201,66 @@ class Commands:
 
 #: Global instance to install commands into
 commands = Commands()
+
+
+class Handler:
+    def __init__(  # noqa: PLR0913
+        self,
+        *,
+        name: str,
+        func: HandlerFunc,
+        auth_required: bool,
+        list_command: bool,
+        validators: dict[str, Callable[[str], Any]],
+    ) -> None:
+        self.name = name
+        self.func = func
+        self.auth_required = auth_required
+        self.list_command = list_command
+        self.validators = validators
+
+        self.spec = inspect.getfullargspec(func)
+
+        if not self.spec.args and not self.spec.varargs:
+            raise TypeError("Handler must accept at least one argument.")
+
+        if len(self.spec.args) > 1 and self.spec.varargs:
+            raise TypeError("*args may not be combined with regular arguments")
+
+        if not set(self.validators.keys()).issubset(self.spec.args):
+            raise TypeError("Validator for non-existent arg passed")
+
+        if self.spec.varkw or self.spec.kwonlyargs:
+            raise TypeError("Keyword arguments are not permitted")
+
+        self.defaults = dict(
+            zip(
+                self.spec.args[-len(self.spec.defaults or []) :],
+                self.spec.defaults or [],
+                strict=False,
+            )
+        )
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Result:
+        if self.spec.varargs:
+            return self.func(*args, **kwargs)
+
+        try:
+            ba = inspect.signature(self.func).bind(*args, **kwargs)
+            ba.apply_defaults()
+            callargs = ba.arguments
+        except TypeError as exc:
+            raise exceptions.MpdArgError(
+                f'wrong number of arguments for "{self.name}"'
+            ) from exc
+
+        for key, value in callargs.items():
+            if value == self.defaults.get(key, object()):
+                continue
+            if validator := self.validators.get(key):
+                try:
+                    callargs[key] = validator(value)
+                except ValueError as exc:
+                    raise exceptions.MpdArgError("incorrect arguments") from exc
+
+        return self.func(**callargs)
