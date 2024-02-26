@@ -181,7 +181,7 @@ class Server:
         if unix_socket_path is not None:
             os.unlink(unix_socket_path)  # noqa: PTH108
 
-    def register_server_socket(self, fileno: int) -> Any:
+    def register_server_socket(self, fileno: int) -> int:
         return GLib.io_add_watch(fileno, GLib.IO_IN, self.handle_connection)
 
     def handle_connection(self, _fd: int, _flags: int) -> bool:
@@ -274,9 +274,9 @@ class Connection:
 
         self.stopping = False
 
-        self.recv_id = None
-        self.send_id = None
-        self.timeout_id = None
+        self.recv_id: int | None = None
+        self.send_id: int | None = None
+        self.timeout_id: int | None = None
 
         protocol_kwargs: MpdSessionKwargs = {
             "config": config,
