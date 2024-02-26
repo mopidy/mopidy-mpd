@@ -171,7 +171,7 @@ Credits
 =======
 
 - Original authors:
-  `Stein Magnus Jodal <https://github.com/mopidy>`__ and
+  `Stein Magnus Jodal <https://github.com/jodal>`__ and
   `Thomas Adamcik <https://github.com/adamcik>`__
   for the Mopidy-MPD extension in Mopidy core.
 - Current maintainer: None. Maintainer wanted, see section above.
