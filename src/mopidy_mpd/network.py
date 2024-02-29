@@ -329,7 +329,7 @@ class Connection:
 
     def enable_timeout(self) -> None:
         """Reactivate timeout mechanism."""
-        if self.timeout is None or self.timeout <= 0:
+        if self.timeout <= 0:
             return
 
         self.disable_timeout()

@@ -341,7 +341,7 @@ def plchangesposid(context: MpdContext, version: int) -> protocol.Result:
 
 
 @protocol.commands.add("prio", priority=protocol.UINT, position=protocol.RANGE)
-def prio(context: MpdContext, priority: int, position: int) -> protocol.Result:
+def prio(context: MpdContext, priority: int, position: slice) -> protocol.Result:
     """
     *musicpd.org, current playlist section:*
 

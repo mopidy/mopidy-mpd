@@ -106,7 +106,7 @@ class MpdDispatcher:
         self.session.send_lines(response)
 
     def _call_next_filter(
-        self, request: str, response: Response, filter_chain: list[Filter]
+        self, request: Request, response: Response, filter_chain: list[Filter]
     ) -> Response:
         if filter_chain:
             next_filter = filter_chain.pop(0)
@@ -175,10 +175,10 @@ class MpdDispatcher:
             response = Response(response[:-1])
         return response
 
-    def _is_receiving_command_list(self, request: str) -> bool:
+    def _is_receiving_command_list(self, request: Request) -> bool:
         return self.command_list_receiving and request != "command_list_end"
 
-    def _is_processing_command_list(self, request: str) -> bool:
+    def _is_processing_command_list(self, request: Request) -> bool:
         return self.command_list_index is not None and request != "command_list_end"
 
     # --- Filter: idle
@@ -243,7 +243,7 @@ class MpdDispatcher:
             logger.warning("Tried to communicate with dead actor.")
             raise exceptions.MpdSystemError(str(exc)) from exc
 
-    def _call_handler(self, request: str) -> protocol.Result:
+    def _call_handler(self, request: Request) -> protocol.Result:
         tokens = tokenize.split(request)
         # TODO: check that blacklist items are valid commands?
         blacklist = self.config["mpd"]["command_blacklist"]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Never, cast
+from typing import TYPE_CHECKING, cast
 
 from mopidy.models import Album, Artist, SearchResult, Track
 from mopidy.types import DistinctField, Query, SearchField, Uri
@@ -360,7 +360,7 @@ def listallinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
 
 
 @protocol.commands.add("listfiles")
-def listfiles(context: MpdContext, uri: str | None = None) -> Never:
+def listfiles(context: MpdContext, uri: str | None = None) -> protocol.Result:
     """
     *musicpd.org, music database section:*
 
@@ -521,6 +521,11 @@ def searchaddpl(context: MpdContext, *args: str) -> None:
         raise exceptions.MpdArgError("incorrect arguments")
 
     playlist_name = parameters.pop(0)
+    try:
+        query = _query_for_search(parameters)
+    except ValueError:
+        return
+
     uri = context.uri_map.playlist_uri_from_name(playlist_name)
     if uri:
         playlist = context.core.playlists.lookup(uri).get()
@@ -529,10 +534,6 @@ def searchaddpl(context: MpdContext, *args: str) -> None:
     if not playlist:
         return  # TODO: Raise error about failed playlist creation?
 
-    try:
-        query = _query_for_search(parameters)
-    except ValueError:
-        return
     results = context.core.library.search(query).get()
     tracks = list(playlist.tracks) + _get_tracks(results)
     playlist = playlist.replace(tracks=tracks)
@@ -561,7 +562,7 @@ def update(context: MpdContext, uri: Uri | None = None) -> protocol.Result:
 
 # TODO: add at least reflection tests before adding NotImplemented version
 # @protocol.commands.add('readcomments')
-def readcomments(context: MpdContext, uri: Uri | None = None) -> None:
+def readcomments(context: MpdContext, uri: Uri) -> None:
     """
     *musicpd.org, music database section:*
 

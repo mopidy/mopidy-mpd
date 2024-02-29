@@ -26,7 +26,8 @@ def track_to_mpd_format(  # noqa: C901, PLR0912
     """
     Format track for output to MPD client.
 
-    :param track: the track
+    :param obj: the track
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param position: track's position in playlist
     :param stream_title: the current streams title
     """
@@ -120,7 +121,7 @@ def _has_value(
     Determine whether to add the tagtype to the output or not. The tagtype must
     be in the list of tagtypes configured for the client.
 
-    :param tagtypes: the MPD tagtypes configured for the client
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param tagtype: the MPD tagtype
     :param value: the tag value
     """
@@ -183,8 +184,10 @@ def tracks_to_mpd_format(
     Optionally limit output to the slice ``[start:end]`` of the list.
 
     :param tracks: the tracks
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param start: position of first track to include in output
-    :param end: position after last track to include in output
+    :param end: position after last track to include in output, or ``None`` for
+      end of list
     """
     if end is None:
         end = len(tracks)
@@ -210,6 +213,7 @@ def playlist_to_mpd_format(
     Format playlist for output to MPD client.
 
     :param playlist: the playlist
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param start: position of first track to include in output
     :param end: position after last track to include in output
     """

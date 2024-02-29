@@ -326,20 +326,12 @@ class ConnectionTest(unittest.TestCase):
         network.Connection.enable_timeout(self.mock)
         assert GLib.timeout_add_seconds.call_count == 0
 
-        self.mock.timeout = None
-        network.Connection.enable_timeout(self.mock)
-        assert GLib.timeout_add_seconds.call_count == 0
-
     def test_enable_timeout_does_not_call_disable_for_invalid_timeout(self):
         self.mock.timeout = 0
         network.Connection.enable_timeout(self.mock)
         assert self.mock.disable_timeout.call_count == 0
 
         self.mock.timeout = -1
-        network.Connection.enable_timeout(self.mock)
-        assert self.mock.disable_timeout.call_count == 0
-
-        self.mock.timeout = None
         network.Connection.enable_timeout(self.mock)
         assert self.mock.disable_timeout.call_count == 0
 

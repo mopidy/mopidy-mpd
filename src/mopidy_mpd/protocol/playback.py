@@ -232,12 +232,13 @@ def playid(context: MpdContext, tlid: int) -> None:
       replacement, starts playback at the first track.
     """
     if tlid == -1:
-        return _play_minus_one(context)
+        _play_minus_one(context)
+        return
 
     tl_tracks = context.core.tracklist.filter({"tlid": [tlid]}).get()
     if not tl_tracks:
         raise exceptions.MpdNoExistError("No such song")
-    return context.core.playback.play(tlid=tl_tracks[0].tlid).get()
+    context.core.playback.play(tlid=tl_tracks[0].tlid).get()
 
 
 @protocol.commands.add("previous")

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Never
+from typing import TYPE_CHECKING
 
 from mopidy.core import PlaybackState
 
@@ -27,7 +27,7 @@ SUBSYSTEMS = [
 
 
 @protocol.commands.add("clearerror")
-def clearerror(context: MpdContext) -> Never:
+def clearerror(context: MpdContext) -> protocol.Result:
     """
     *musicpd.org, status section:*
 
