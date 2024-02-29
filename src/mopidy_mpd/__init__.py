@@ -11,10 +11,10 @@ class Extension(ext.Extension):
     ext_name = "mpd"
     version = __version__
 
-    def get_default_config(self):
+    def get_default_config(self) -> str:
         return config.read(pathlib.Path(__file__).parent / "ext.conf")
 
-    def get_config_schema(self):
+    def get_config_schema(self) -> config.ConfigSchema:
         schema = super().get_config_schema()
         schema["hostname"] = config.Hostname()
         schema["port"] = config.Port(optional=True)
@@ -26,7 +26,7 @@ class Extension(ext.Extension):
         schema["default_playlist_scheme"] = config.String()
         return schema
 
-    def setup(self, registry):
+    def setup(self, registry: ext.Registry) -> None:
         from .actor import MpdFrontend
 
         registry.add("frontend", MpdFrontend)

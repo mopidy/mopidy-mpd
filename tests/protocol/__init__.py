@@ -1,4 +1,5 @@
 import unittest
+from typing import cast
 from unittest import mock
 
 import pykka
@@ -27,7 +28,11 @@ class BaseTestCase(unittest.TestCase):
     def get_config(self):
         return {
             "core": {"max_tracklist_length": 10000},
-            "mpd": {"password": None, "default_playlist_scheme": "dummy"},
+            "mpd": {
+                "command_blacklist": [],
+                "default_playlist_scheme": "dummy",
+                "password": None,
+            },
         }
 
     def setUp(self):
@@ -38,20 +43,22 @@ class BaseTestCase(unittest.TestCase):
         self.audio = dummy_audio.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        self.core = core.Core.start(
-            self.get_config(),
-            audio=self.audio,
-            mixer=self.mixer,
-            backends=[self.backend],
-        ).proxy()
+        self.core = cast(
+            core.CoreProxy,
+            core.Core.start(
+                self.get_config(),
+                audio=self.audio,
+                mixer=self.mixer,
+                backends=[self.backend],
+            ).proxy(),
+        )
 
-        self.uri_map = uri_mapper.MpdUriMapper(self.core)
         self.connection = MockConnection()
         self.session = session.MpdSession(
-            self.connection,
             config=self.get_config(),
             core=self.core,
-            uri_map=self.uri_map,
+            uri_map=uri_mapper.MpdUriMapper(self.core),
+            connection=self.connection,
         )
         self.dispatcher = self.session.dispatcher
         self.context = self.dispatcher.context

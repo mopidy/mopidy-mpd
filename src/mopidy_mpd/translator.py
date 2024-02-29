@@ -1,35 +1,48 @@
+from __future__ import annotations
+
 import datetime
 import logging
+from typing import TYPE_CHECKING
 
-from mopidy.models import TlTrack
+from mopidy.models import Album, Artist, Playlist, TlTrack, Track
 
 from mopidy_mpd.protocol import tagtype_list
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
+    from mopidy_mpd import protocol
 
 logger = logging.getLogger(__name__)
 
 
-def track_to_mpd_format(track, tagtypes, *, position=None, stream_title=None):  # noqa: C901, PLR0912
+def track_to_mpd_format(  # noqa: C901, PLR0912
+    obj: Track | TlTrack,
+    tagtypes: set[str],
+    *,
+    position: int | None = None,
+    stream_title: str | None = None,
+) -> protocol.ResultList:
     """
     Format track for output to MPD client.
 
-    :param track: the track
-    :type track: :class:`mopidy.models.Track` or :class:`mopidy.models.TlTrack`
+    :param obj: the track
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param position: track's position in playlist
-    :type position: integer
     :param stream_title: the current streams title
-    :type position: string
-    :rtype: list of two-tuples
     """
-    if isinstance(track, TlTrack):
-        (tlid, track) = track
-    else:
-        (tlid, track) = (None, track)  # noqa: PLW0127
+    match obj:
+        case TlTrack() as tl_track:
+            tlid = tl_track.tlid
+            track = tl_track.track
+        case Track() as track:
+            tlid = None
 
     if not track.uri:
         logger.warning("Ignoring track without uri")
         return []
 
-    result = [
+    result: list[protocol.ResultTuple] = [
         ("file", track.uri),
         ("Time", track.length and (track.length // 1000) or 0),
         *multi_tag_list(track.artists, "name", "Artist"),
@@ -92,20 +105,25 @@ def track_to_mpd_format(track, tagtypes, *, position=None, stream_title=None):  
     if track.album and track.album.uri:
         result.append(("X-AlbumUri", track.album.uri))
 
-    return [element for element in result if _has_value(tagtypes, *element)]
+    return [
+        (tagtype, value)
+        for (tagtype, value) in result
+        if _has_value(tagtypes, tagtype, value)
+    ]
 
 
-def _has_value(tagtypes, tagtype, value):
+def _has_value(
+    tagtypes: set[str],
+    tagtype: str,
+    value: protocol.ResultValue,
+) -> bool:
     """
     Determine whether to add the tagtype to the output or not. The tagtype must
     be in the list of tagtypes configured for the client.
 
-    :param tagtypes: the MPD tagtypes configured for the client
-    :type tagtypes: set of strings
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param tagtype: the MPD tagtype
-    :type tagtype: string
     :param value: the tag value
-    :rtype: bool
     """
     if tagtype in tagtype_list.TAGTYPE_LIST:
         if tagtype not in tagtypes:
@@ -114,16 +132,15 @@ def _has_value(tagtypes, tagtype, value):
     return True
 
 
-def concat_multi_values(models, attribute):
+def concat_multi_values(
+    models: Iterable[Artist | Album | Track],
+    attribute: str,
+) -> str:
     """
     Format Mopidy model values for output to MPD client.
 
     :param models: the models
-    :type models: array of :class:`mopidy.models.Artist`,
-        :class:`mopidy.models.Album` or :class:`mopidy.models.Track`
     :param attribute: the attribute to use
-    :type attribute: string
-    :rtype: string
     """
     # Don't sort the values. MPD doesn't appear to (or if it does it's not
     # strict alphabetical). If we just use them in the order in which they come
@@ -133,60 +150,71 @@ def concat_multi_values(models, attribute):
     )
 
 
-def multi_tag_list(objects, attribute, tag):
+def multi_tag_list(
+    models: Iterable[Artist | Album | Track],
+    attribute: str,
+    tag: str,
+) -> list[protocol.ResultTuple]:
     """
     Format multiple objects for output to MPD client in a list with one tag per
     value.
 
-    :param objects: the model objects
-    :type objects: array of :class:`mopidy.models.Artist`,
-        :class:`mopidy.models.Album`, or :class:`mopidy.models.Track`
+    :param models: the model objects
     :param attribute: the attribute to use
-    :type attribute: string
     :param tag: the name of the tag
-    :type tag: string
-    :rtype: list of tuples of string and attribute value
     """
 
     return [
         (tag, getattr(obj, attribute))
-        for obj in objects
+        for obj in models
         if getattr(obj, attribute, None) is not None
     ]
 
 
-def tracks_to_mpd_format(tracks, tagtypes, *, start=0, end=None):
+def tracks_to_mpd_format(
+    tracks: Sequence[Track | TlTrack],
+    tagtypes: set[str],
+    *,
+    start: int = 0,
+    end: int | None = None,
+) -> protocol.ResultList:
     """
     Format list of tracks for output to MPD client.
 
     Optionally limit output to the slice ``[start:end]`` of the list.
 
     :param tracks: the tracks
-    :type tracks: list of :class:`mopidy.models.Track` or
-        :class:`mopidy.models.TlTrack`
+    :param tagtypes: the MPD tagtypes enabled by the client
     :param start: position of first track to include in output
-    :type start: int (positive or negative)
-    :param end: position after last track to include in output
-    :type end: int (positive or negative) or :class:`None` for end of list
-    :rtype: list of lists of two-tuples
+    :param end: position after last track to include in output, or ``None`` for
+      end of list
     """
     if end is None:
         end = len(tracks)
     tracks = tracks[start:end]
     positions = range(start, end)
     assert len(tracks) == len(positions)
-    result = []
-    for track, position in zip(tracks, positions, strict=False):
+    result: protocol.ResultList = []
+    for track, position in zip(tracks, positions, strict=True):
         formatted_track = track_to_mpd_format(track, tagtypes, position=position)
         if formatted_track:
-            result.append(formatted_track)
+            result.extend(formatted_track)
     return result
 
 
-def playlist_to_mpd_format(playlist, tagtypes, *, start=0, end=None):
+def playlist_to_mpd_format(
+    playlist: Playlist,
+    tagtypes: set[str],
+    *,
+    start: int = 0,
+    end: int | None = None,
+) -> protocol.ResultList:
     """
     Format playlist for output to MPD client.
 
-    Arguments as for :func:`tracks_to_mpd_format`, except the first one.
+    :param playlist: the playlist
+    :param tagtypes: the MPD tagtypes enabled by the client
+    :param start: position of first track to include in output
+    :param end: position after last track to include in output
     """
-    return tracks_to_mpd_format(playlist.tracks, tagtypes, start=start, end=end)
+    return tracks_to_mpd_format(list(playlist.tracks), tagtypes, start=start, end=end)

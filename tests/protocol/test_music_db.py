@@ -9,24 +9,17 @@ from tests import protocol
 # TODO: split into more modules for faster parallel tests?
 
 
-class QueryFromMpdSearchFormatTest(unittest.TestCase):
+class QueryForSearchTest(unittest.TestCase):
     def test_dates_are_extracted(self):
-        result = music_db._query_from_mpd_search_parameters(
-            ["Date", "1974-01-02", "Date", "1975"], music_db._SEARCH_MAPPING
-        )
-        assert result["date"][0] == "1974-01-02"
-        assert result["date"][1] == "1975"
+        result = music_db._query_for_search(["Date", "1974-01-02", "Date", "1975"])
+        assert result["date"] == ["1974-01-02", "1975"]
 
     def test_empty_value_is_ignored(self):
-        result = music_db._query_from_mpd_search_parameters(
-            ["Date", ""], music_db._SEARCH_MAPPING
-        )
+        result = music_db._query_for_search(["Date", ""])
         assert result == {}
 
     def test_whitespace_value_is_ignored(self):
-        result = music_db._query_from_mpd_search_parameters(
-            ["Date", "  "], music_db._SEARCH_MAPPING
-        )
+        result = music_db._query_for_search(["Date", "  "])
         assert result == {}
 
     # TODO Test more mappings

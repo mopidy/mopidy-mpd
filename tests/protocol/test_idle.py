@@ -10,10 +10,10 @@ class IdleHandlerTest(protocol.BaseTestCase):
         self.session.on_event(subsystem)
 
     def assertEqualEvents(self, events):  # noqa: N802
-        assert set(events) == self.context.events
+        assert self.dispatcher.subsystem_events == set(events)
 
     def assertEqualSubscriptions(self, events):  # noqa: N802
-        assert set(events) == self.context.subscriptions
+        assert self.dispatcher.subsystem_subscriptions == set(events)
 
     def assertNoEvents(self):  # noqa: N802
         self.assertEqualEvents([])

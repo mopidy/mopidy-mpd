@@ -1,8 +1,17 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy.types import Uri
+
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("mount")
-def mount(context, path, uri):
+def mount(context: MpdContext, path: str, uri: Uri) -> Never:
     """
     *musicpd.org, mounts and neighbors section:*
 
@@ -19,7 +28,7 @@ def mount(context, path, uri):
 
 
 @protocol.commands.add("unmount")
-def unmount(context, path):
+def unmount(context: MpdContext, path: str) -> Never:
     """
     *musicpd.org, mounts and neighbors section:*
 
@@ -36,7 +45,7 @@ def unmount(context, path):
 
 
 @protocol.commands.add("listmounts")
-def listmounts(context):
+def listmounts(context: MpdContext) -> Never:
     """
     *musicpd.org, mounts and neighbors section:*
 
@@ -59,7 +68,7 @@ def listmounts(context):
 
 
 @protocol.commands.add("listneighbors")
-def listneighbors(context):
+def listneighbors(context: MpdContext) -> Never:
     """
     *musicpd.org, mounts and neighbors section:*
 

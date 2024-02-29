@@ -1,8 +1,15 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Never
+
 from mopidy_mpd import exceptions, protocol
+
+if TYPE_CHECKING:
+    from mopidy_mpd.context import MpdContext
 
 
 @protocol.commands.add("subscribe")
-def subscribe(context, channel):
+def subscribe(context: MpdContext, channel: str) -> Never:
     """
     *musicpd.org, client to client section:*
 
@@ -17,7 +24,7 @@ def subscribe(context, channel):
 
 
 @protocol.commands.add("unsubscribe")
-def unsubscribe(context, channel):
+def unsubscribe(context: MpdContext, channel: str) -> Never:
     """
     *musicpd.org, client to client section:*
 
@@ -30,7 +37,7 @@ def unsubscribe(context, channel):
 
 
 @protocol.commands.add("channels")
-def channels(context):
+def channels(context: MpdContext) -> Never:
     """
     *musicpd.org, client to client section:*
 
@@ -43,7 +50,7 @@ def channels(context):
 
 
 @protocol.commands.add("readmessages")
-def readmessages(context):
+def readmessages(context: MpdContext) -> Never:
     """
     *musicpd.org, client to client section:*
 
@@ -56,7 +63,7 @@ def readmessages(context):
 
 
 @protocol.commands.add("sendmessage")
-def sendmessage(context, channel, text):
+def sendmessage(context: MpdContext, channel: str, text: str) -> Never:
     """
     *musicpd.org, client to client section:*
 

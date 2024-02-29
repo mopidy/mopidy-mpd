@@ -22,19 +22,10 @@ class LineProtocolTest(unittest.TestCase):
         self.mock.parse_lines.return_value = return_value or []
 
     def test_init_stores_values_in_attributes(self):
-        delimiter = re.compile(network.LineProtocol.terminator)
         network.LineProtocol.__init__(self.mock, sentinel.connection)
         assert sentinel.connection == self.mock.connection
         assert self.mock.recv_buffer == b""
-        assert delimiter == self.mock.delimiter
         assert not self.mock.prevent_timeout
-
-    def test_init_compiles_delimiter(self):
-        self.mock.delimiter = "\r?\n"
-        delimiter = re.compile("\r?\n")
-
-        network.LineProtocol.__init__(self.mock, sentinel.connection)
-        assert delimiter == self.mock.delimiter
 
     def test_on_receive_close_calls_stop(self):
         self.prepare_on_receive_test()

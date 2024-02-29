@@ -6,7 +6,7 @@ from unittest.mock import Mock, call, patch, sentinel
 
 import pykka
 from gi.repository import GLib
-from mopidy_mpd import network
+from mopidy_mpd import network, uri_mapper
 
 from tests import any_int, any_unicode
 
@@ -20,11 +20,13 @@ class ConnectionTest(unittest.TestCase):
 
         network.Connection.__init__(
             self.mock,
-            Mock(),
-            {},
-            sock,
-            (sentinel.host, sentinel.port),
-            sentinel.timeout,
+            config={},
+            core=Mock(),
+            uri_map=Mock(spec=uri_mapper.MpdUriMapper),
+            protocol=Mock(spec=network.LineProtocol),
+            sock=sock,
+            addr=(sentinel.host, sentinel.port),
+            timeout=sentinel.timeout,
         )
         sock.setblocking.assert_called_once_with(False)
 
@@ -33,22 +35,26 @@ class ConnectionTest(unittest.TestCase):
 
         network.Connection.__init__(
             self.mock,
-            protocol,
-            {},
-            Mock(),
-            (sentinel.host, sentinel.port),
-            sentinel.timeout,
+            config={},
+            core=Mock(),
+            uri_map=Mock(spec=uri_mapper.MpdUriMapper),
+            protocol=protocol,
+            sock=Mock(spec=socket.SocketType),
+            addr=(sentinel.host, sentinel.port),
+            timeout=sentinel.timeout,
         )
-        protocol.start.assert_called_once_with(self.mock)
+        protocol.start.assert_called_once()
 
     def test_init_enables_recv_and_timeout(self):
         network.Connection.__init__(
             self.mock,
-            Mock(),
-            {},
-            Mock(),
-            (sentinel.host, sentinel.port),
-            sentinel.timeout,
+            config={},
+            core=Mock(),
+            uri_map=Mock(spec=uri_mapper.MpdUriMapper),
+            protocol=Mock(spec=network.LineProtocol),
+            sock=Mock(spec=socket.SocketType),
+            addr=(sentinel.host, sentinel.port),
+            timeout=sentinel.timeout,
         )
         self.mock.enable_recv.assert_called_once_with()
         self.mock.enable_timeout.assert_called_once_with()
@@ -56,15 +62,20 @@ class ConnectionTest(unittest.TestCase):
     def test_init_stores_values_in_attributes(self):
         addr = (sentinel.host, sentinel.port)
         protocol = Mock(spec=network.LineProtocol)
-        protocol_kwargs = {}
         sock = Mock(spec=socket.SocketType)
 
         network.Connection.__init__(
-            self.mock, protocol, protocol_kwargs, sock, addr, sentinel.timeout
+            self.mock,
+            config={},
+            core=Mock(),
+            uri_map=Mock(spec=uri_mapper.MpdUriMapper),
+            protocol=protocol,
+            sock=sock,
+            addr=addr,
+            timeout=sentinel.timeout,
         )
         assert sock == self.mock._sock
         assert protocol == self.mock.protocol
-        assert protocol_kwargs == self.mock.protocol_kwargs
         assert sentinel.timeout == self.mock.timeout
         assert sentinel.host == self.mock.host
         assert sentinel.port == self.mock.port
@@ -77,11 +88,17 @@ class ConnectionTest(unittest.TestCase):
             sentinel.scopeid,
         )
         protocol = Mock(spec=network.LineProtocol)
-        protocol_kwargs = {}
         sock = Mock(spec=socket.SocketType)
 
         network.Connection.__init__(
-            self.mock, protocol, protocol_kwargs, sock, addr, sentinel.timeout
+            self.mock,
+            config={},
+            core=Mock(),
+            uri_map=Mock(spec=uri_mapper.MpdUriMapper),
+            protocol=protocol,
+            sock=sock,
+            addr=addr,
+            timeout=sentinel.timeout,
         )
         assert sentinel.host == self.mock.host
         assert sentinel.port == self.mock.port
@@ -309,20 +326,12 @@ class ConnectionTest(unittest.TestCase):
         network.Connection.enable_timeout(self.mock)
         assert GLib.timeout_add_seconds.call_count == 0
 
-        self.mock.timeout = None
-        network.Connection.enable_timeout(self.mock)
-        assert GLib.timeout_add_seconds.call_count == 0
-
     def test_enable_timeout_does_not_call_disable_for_invalid_timeout(self):
         self.mock.timeout = 0
         network.Connection.enable_timeout(self.mock)
         assert self.mock.disable_timeout.call_count == 0
 
         self.mock.timeout = -1
-        network.Connection.enable_timeout(self.mock)
-        assert self.mock.disable_timeout.call_count == 0
-
-        self.mock.timeout = None
         network.Connection.enable_timeout(self.mock)
         assert self.mock.disable_timeout.call_count == 0
 

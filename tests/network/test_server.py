@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import Mock, patch, sentinel
 
 from gi.repository import GLib
-from mopidy_mpd import network
+from mopidy.core import CoreProxy
+from mopidy_mpd import network, uri_mapper
 
 from tests import any_int
 
@@ -17,7 +18,13 @@ class ServerTest(unittest.TestCase):
     @patch.object(network, "get_socket_address", new=Mock())
     def test_init_calls_create_server_socket(self):
         network.Server.__init__(
-            self.mock, sentinel.host, sentinel.port, sentinel.protocol
+            self.mock,
+            config={},
+            core=Mock(spec=CoreProxy),
+            uri_map=Mock(uri_mapper.MpdUriMapper),
+            protocol=sentinel.protocol,
+            host=sentinel.host,
+            port=sentinel.port,
         )
         self.mock.create_server_socket.assert_called_once_with(
             sentinel.host, sentinel.port
@@ -27,7 +34,13 @@ class ServerTest(unittest.TestCase):
     @patch.object(network, "get_socket_address", new=Mock())
     def test_init_calls_get_socket_address(self):
         network.Server.__init__(
-            self.mock, sentinel.host, sentinel.port, sentinel.protocol
+            self.mock,
+            config={},
+            core=Mock(spec=CoreProxy),
+            uri_map=Mock(uri_mapper.MpdUriMapper),
+            protocol=sentinel.protocol,
+            host=sentinel.host,
+            port=sentinel.port,
         )
         self.mock.create_server_socket.return_value = None
         network.get_socket_address.assert_called_once_with(sentinel.host, sentinel.port)
@@ -40,7 +53,13 @@ class ServerTest(unittest.TestCase):
         self.mock.create_server_socket.return_value = sock
 
         network.Server.__init__(
-            self.mock, sentinel.host, sentinel.port, sentinel.protocol
+            self.mock,
+            config={},
+            core=Mock(spec=CoreProxy),
+            uri_map=Mock(uri_mapper.MpdUriMapper),
+            protocol=sentinel.protocol,
+            host=sentinel.host,
+            port=sentinel.port,
         )
         self.mock.register_server_socket.assert_called_once_with(sentinel.fileno)
 
@@ -52,7 +71,13 @@ class ServerTest(unittest.TestCase):
 
         with self.assertRaises(socket.error):
             network.Server.__init__(
-                self.mock, sentinel.host, sentinel.port, sentinel.protocol
+                self.mock,
+                config={},
+                core=Mock(spec=CoreProxy),
+                uri_map=Mock(uri_mapper.MpdUriMapper),
+                protocol=sentinel.protocol,
+                host=sentinel.host,
+                port=sentinel.port,
             )
 
     def test_init_stores_values_in_attributes(self):
@@ -62,9 +87,12 @@ class ServerTest(unittest.TestCase):
 
         network.Server.__init__(
             self.mock,
-            str(sentinel.host),
-            sentinel.port,
-            sentinel.protocol,
+            config={},
+            core=Mock(spec=CoreProxy),
+            uri_map=Mock(uri_mapper.MpdUriMapper),
+            protocol=sentinel.protocol,
+            host=str(sentinel.host),
+            port=sentinel.port,
             max_connections=sentinel.max_connections,
             timeout=sentinel.timeout,
         )
@@ -204,12 +232,15 @@ class ServerTest(unittest.TestCase):
     def test_accept_connection(self):
         sock = Mock(spec=socket.socket)
         connected_sock = Mock(spec=socket.socket)
-        sock.accept.return_value = (connected_sock, sentinel.addr)
+        sock.accept.return_value = (
+            connected_sock,
+            (sentinel.host, sentinel.port, sentinel.flow, sentinel.scope),
+        )
         self.mock.server_socket = sock
 
         sock, addr = network.Server.accept_connection(self.mock)
-        assert connected_sock == sock
-        assert sentinel.addr == addr
+        assert sock == connected_sock
+        assert addr == (sentinel.host, sentinel.port)
 
     def test_accept_connection_unix(self):
         sock = Mock(spec=socket.socket)
@@ -261,21 +292,6 @@ class ServerTest(unittest.TestCase):
 
         get_by_class.return_value = []
         assert network.Server.number_of_connections(self.mock) == 0
-
-    @patch.object(network, "Connection", new=Mock())
-    def test_init_connection(self):
-        self.mock.protocol = sentinel.protocol
-        self.mock.protocol_kwargs = {}
-        self.mock.timeout = sentinel.timeout
-
-        network.Server.init_connection(self.mock, sentinel.sock, sentinel.addr)
-        network.Connection.assert_called_once_with(
-            sentinel.protocol,
-            {},
-            sentinel.sock,
-            sentinel.addr,
-            sentinel.timeout,
-        )
 
     def test_reject_connection(self):
         sock = Mock(spec=socket.socket)

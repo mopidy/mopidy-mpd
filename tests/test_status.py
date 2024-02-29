@@ -1,10 +1,11 @@
 import unittest
+from typing import cast
 
 import pykka
 from mopidy import core
 from mopidy.core import PlaybackState
 from mopidy.models import Track
-from mopidy_mpd import dispatcher
+from mopidy_mpd import dispatcher, uri_mapper
 from mopidy_mpd.protocol import status
 
 from tests import dummy_audio, dummy_backend, dummy_mixer
@@ -19,20 +20,31 @@ STOPPED = PlaybackState.STOPPED
 
 class StatusHandlerTest(unittest.TestCase):
     def setUp(self):
-        config = {"core": {"max_tracklist_length": 10000}}
+        config = {
+            "core": {"max_tracklist_length": 10000},
+            "mpd": {"password": None},
+        }
 
         self.audio = dummy_audio.create_proxy()
         self.mixer = dummy_mixer.create_proxy()
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
-        self.core = core.Core.start(
-            config,
-            audio=self.audio,
-            mixer=self.mixer,
-            backends=[self.backend],
-        ).proxy()
+        self.core = cast(
+            core.CoreProxy,
+            core.Core.start(
+                config,
+                audio=self.audio,
+                mixer=self.mixer,
+                backends=[self.backend],
+            ).proxy(),
+        )
 
-        self.dispatcher = dispatcher.MpdDispatcher(core=self.core)
+        self.dispatcher = dispatcher.MpdDispatcher(
+            config=config,
+            core=self.core,
+            uri_map=uri_mapper.MpdUriMapper(self.core),
+            session=None,
+        )
         self.context = self.dispatcher.context
 
     def tearDown(self):

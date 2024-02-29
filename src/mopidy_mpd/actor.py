@@ -1,10 +1,11 @@
 import logging
+from typing import Any
 
 import pykka
 from mopidy import exceptions, listener, zeroconf
-from mopidy.core import CoreListener
+from mopidy.core import CoreListener, CoreProxy
 
-from mopidy_mpd import network, session, uri_mapper
+from mopidy_mpd import network, session, types, uri_mapper
 
 logger = logging.getLogger(__name__)
 
@@ -27,29 +28,26 @@ _CORE_EVENTS_TO_IDLE_SUBSYSTEMS = {
 
 
 class MpdFrontend(pykka.ThreadingActor, CoreListener):
-    def __init__(self, config, core):
+    def __init__(self, config: types.Config, core: CoreProxy) -> None:
         super().__init__()
 
         self.hostname = network.format_hostname(config["mpd"]["hostname"])
         self.port = config["mpd"]["port"]
-        self.uri_map = uri_mapper.MpdUriMapper(core)
-
         self.zeroconf_name = config["mpd"]["zeroconf"]
         self.zeroconf_service = None
 
+        self.uri_map = uri_mapper.MpdUriMapper(core)
         self.server = self._setup_server(config, core)
 
-    def _setup_server(self, config, core):
+    def _setup_server(self, config: types.Config, core: CoreProxy) -> network.Server:
         try:
             server = network.Server(
-                self.hostname,
-                self.port,
+                config=config,
+                core=core,
+                uri_map=self.uri_map,
                 protocol=session.MpdSession,
-                protocol_kwargs={
-                    "config": config,
-                    "core": core,
-                    "uri_map": self.uri_map,
-                },
+                host=self.hostname,
+                port=self.port,
                 max_connections=config["mpd"]["max_connections"],
                 timeout=config["mpd"]["connection_timeout"],
             )
@@ -60,14 +58,14 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
         return server
 
-    def on_start(self):
+    def on_start(self) -> None:
         if self.zeroconf_name and not network.is_unix_socket(self.server.server_socket):
             self.zeroconf_service = zeroconf.Zeroconf(
                 name=self.zeroconf_name, stype="_mpd._tcp", port=self.port
             )
             self.zeroconf_service.publish()
 
-    def on_stop(self):
+    def on_stop(self) -> None:
         if self.zeroconf_service:
             self.zeroconf_service.unpublish()
 
@@ -77,12 +75,12 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
 
         self.server.stop()
 
-    def on_event(self, event, **kwargs):
+    def on_event(self, event: str, **kwargs: Any) -> None:
         if event not in _CORE_EVENTS_TO_IDLE_SUBSYSTEMS:
             logger.warning("Got unexpected event: %s(%s)", event, ", ".join(kwargs))
         else:
             self.send_idle(_CORE_EVENTS_TO_IDLE_SUBSYSTEMS[event])
 
-    def send_idle(self, subsystem):
+    def send_idle(self, subsystem: str | None) -> None:
         if subsystem:
             listener.send(session.MpdSession, subsystem)

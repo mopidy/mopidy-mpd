@@ -21,12 +21,17 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"Topic :: Multimedia :: Sound/Audio :: Players",
 ]
-dependencies = ["mopidy >= 3.3.0", "pykka >= 4.0", "setuptools >= 66"]
+dependencies = [
+	"mopidy >= 4.0.0a1",
+	"pygobject >= 3.42",
+	"pykka >= 4.0",
+	"setuptools >= 66",
+]
 
 [project.optional-dependencies]
 lint = ["ruff"]
 test = ["pytest", "pytest-cov"]
-typing = ["pyright"]
+typing = ["pygobject-stubs", "pyright"]
 dev = ["mopidy-mpd[lint,test,typing]", "tox"]
 
 [project.urls]
@@ -35,6 +40,16 @@ Issues = "https://github.com/mopidy/mopidy-mpd/issues"
 
 [project.entry-points."mopidy.ext"]
 mpd = "mopidy_mpd:Extension"
+
+
+[tool.pyright]
+pythonVersion = "3.11"
+# Use venv from parent directory, to share it with any extensions:
+venvPath = "../"
+venv = ".venv"
+typeCheckingMode = "standard"
+# Already covered by flake8-self:
+reportPrivateImportUsage = false
 
 
 [tool.ruff]
@@ -80,7 +95,9 @@ select = [
 	"W",   # pycodestyle
 ]
 ignore = [
-	"ANN",    # flake8-annotations
+	"ANN101", # missing-type-self
+	"ANN102", # missing-type-cls
+	"ANN401", # any-type
 	"D",      # pydocstyle
 	"ISC001", # single-line-implicit-string-concatenation
 	"TRY003", # raise-vanilla-args

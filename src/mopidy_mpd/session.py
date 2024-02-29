@@ -1,13 +1,28 @@
-import logging
+from __future__ import annotations
 
-from mopidy_mpd import dispatcher, formatting, network, protocol
+import logging
+from typing import TYPE_CHECKING, NoReturn, TypedDict
+
+from mopidy_mpd import dispatcher, formatting, network, protocol, types
 from mopidy_mpd.protocol import tagtype_list
+
+if TYPE_CHECKING:
+    from mopidy.core import CoreProxy
+
+    from mopidy_mpd.uri_mapper import MpdUriMapper
+
 
 logger = logging.getLogger(__name__)
 
 
-class MpdSession(network.LineProtocol):
+class MpdSessionKwargs(TypedDict):
+    config: types.Config
+    core: CoreProxy
+    uri_map: MpdUriMapper
+    connection: network.Connection
 
+
+class MpdSession(network.LineProtocol):
     """
     The MPD client session. Keeps track of a single client session. Any
     requests from the client is passed on to the MPD request dispatcher.
@@ -15,20 +30,29 @@ class MpdSession(network.LineProtocol):
 
     terminator = protocol.LINE_TERMINATOR
     encoding = protocol.ENCODING
-    delimiter = rb"\r?\n"
 
-    def __init__(self, connection, config=None, core=None, uri_map=None):
+    def __init__(
+        self,
+        *,
+        config: types.Config,
+        core: CoreProxy,
+        uri_map: MpdUriMapper,
+        connection: network.Connection,
+    ) -> None:
         super().__init__(connection)
         self.dispatcher = dispatcher.MpdDispatcher(
-            session=self, config=config, core=core, uri_map=uri_map
+            config=config,
+            core=core,
+            uri_map=uri_map,
+            session=self,
         )
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
 
-    def on_start(self):
+    def on_start(self) -> None:
         logger.info("New MPD connection from %s", self.connection)
         self.send_lines([f"OK MPD {protocol.VERSION}"])
 
-    def on_line_received(self, line):
+    def on_line_received(self, line: str) -> None:
         logger.debug("Request from %s: %s", self.connection, line)
 
         # All mpd commands start with a lowercase alphabetic character
@@ -50,10 +74,10 @@ class MpdSession(network.LineProtocol):
 
         self.send_lines(response)
 
-    def on_event(self, subsystem):
+    def on_event(self, subsystem: str) -> None:
         self.dispatcher.handle_idle(subsystem)
 
-    def decode(self, line):
+    def decode(self, line: bytes) -> str:
         try:
             return super().decode(line)
         except ValueError:
@@ -62,6 +86,7 @@ class MpdSession(network.LineProtocol):
                 "supplied by client was not valid."
             )
             self.stop()
+            return NoReturn
 
-    def close(self):
+    def close(self) -> None:
         self.stop()

@@ -19,6 +19,9 @@ jobs:
             python: "3.12"
             tox: py312
             coverage: true
+          - name: "Lint: pyright"
+            python: "3.12"
+            tox: pyright
           - name: "Lint: ruff lint"
             python: "3.12"
             tox: ruff-lint
