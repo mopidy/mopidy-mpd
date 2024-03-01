@@ -5,7 +5,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "Mopidy-MPD"
-version = "4.0.0a1"
 description = "Mopidy extension for controlling Mopidy from MPD clients"
 readme = "README.rst"
 requires-python = ">= 3.11"
@@ -21,6 +20,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.12",
 	"Topic :: Multimedia :: Sound/Audio :: Players",
 ]
+dynamic = ["version"]
 dependencies = [
 	"mopidy >= 4.0.0a1",
 	"pygobject >= 3.42",
