@@ -97,10 +97,7 @@ class MpdDispatcher:
         if not subsystems:
             return
 
-        response: list[str] = []
-        for subsystem in subsystems:
-            response.append(f"changed: {subsystem}")
-        response.append("OK")
+        response = [*[f"changed: {s}" for s in subsystems], "OK"]
         self.subsystem_events = set()
         self.subsystem_subscriptions = set()
         self.session.send_lines(response)

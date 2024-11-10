@@ -1,6 +1,7 @@
 import unittest
 
 import pytest
+
 from mopidy_mpd.exceptions import (
     MpdAckError,
     MpdNoCommandError,

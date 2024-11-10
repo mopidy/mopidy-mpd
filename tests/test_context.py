@@ -5,23 +5,23 @@ import pytest
 from mopidy.backend import BackendProxy
 from mopidy.core import Core, CoreProxy
 from mopidy.models import Ref
+
 from mopidy_mpd import uri_mapper
 from mopidy_mpd.context import MpdContext
-
 from tests import dummy_backend
 
 
-@pytest.fixture()
+@pytest.fixture
 def a_track() -> Ref:
     return Ref.track(uri="dummy:/a", name="a")
 
 
-@pytest.fixture()
+@pytest.fixture
 def b_track() -> Ref:
     return Ref.track(uri="dummy:/foo/b", name="b")
 
 
-@pytest.fixture()
+@pytest.fixture
 def backend_to_browse(a_track: Ref, b_track: Ref) -> BackendProxy:
     backend = cast(BackendProxy, dummy_backend.create_proxy())
     backend.library.dummy_browse_result = {
@@ -36,7 +36,7 @@ def backend_to_browse(a_track: Ref, b_track: Ref) -> BackendProxy:
     return backend
 
 
-@pytest.fixture()
+@pytest.fixture
 def mpd_context(backend_to_browse: BackendProxy) -> MpdContext:
     core = cast(
         CoreProxy,

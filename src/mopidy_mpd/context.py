@@ -48,7 +48,7 @@ class MpdContext:
     #: Mapping of URIs to MPD names.
     uri_map: MpdUriMapper
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         config: types.Config,
         core: CoreProxy,
@@ -65,14 +65,14 @@ class MpdContext:
     @overload
     def browse(
         self, path: str | None, *, recursive: bool, lookup: Literal[True]
-    ) -> Generator[tuple[str, pykka.Future[dict[Uri, list[Track]]] | None], Any, None]:
-        ...
+    ) -> Generator[
+        tuple[str, pykka.Future[dict[Uri, list[Track]]] | None], Any, None
+    ]: ...
 
     @overload
     def browse(
         self, path: str | None, *, recursive: bool, lookup: Literal[False]
-    ) -> Generator[tuple[str, Ref | None], Any, None]:
-        ...
+    ) -> Generator[tuple[str, Ref | None], Any, None]: ...
 
     def browse(  # noqa: C901, PLR0912
         self,

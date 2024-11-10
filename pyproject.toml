@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 
 [project]
-name = "Mopidy-MPD"
+name = "mopidy-mpd"
 description = "Mopidy extension for controlling Mopidy from MPD clients"
 readme = "README.rst"
 requires-python = ">= 3.11"
@@ -18,6 +18,7 @@ classifiers = [
 	"Programming Language :: Python :: 3",
 	"Programming Language :: Python :: 3.11",
 	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
 	"Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 dynamic = ["version"]
@@ -29,10 +30,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lint = ["ruff"]
-test = ["pytest", "pytest-cov"]
+lint = ["ruff >= 0.5"]
+test = ["pytest >= 7.2", "pytest-cov >= 4.0"]
 typing = ["pygobject-stubs", "pyright"]
-dev = ["mopidy-mpd[lint,test,typing]", "tox"]
+dev = ["mopidy-mpd[lint,test,typing]", "tox >= 4.21"]
 
 [project.urls]
 Source = "https://github.com/mopidy/mopidy-mpd"
@@ -56,51 +57,27 @@ reportPrivateImportUsage = false
 target-version = "py311"
 
 [tool.ruff.lint]
-select = [
-	"A",   # flake8-builtins
-	"ANN", # flake8-annotations
-	"ARG", # flake8-unused-arguments
-	"B",   # flake8-bugbear
-	"C4",  # flake8-comprehensions
-	"C90", # mccabe
-	"D",   # pydocstyle
-	"DTZ", # flake8-datetimez
-	"E",   # pycodestyle
-	"ERA", # eradicate
-	"F",   # pyflakes
-	"FBT", # flake8-boolean-trap
-	"I",   # isort
-	"INP", # flake8-no-pep420
-	"ISC", # flake8-implicit-str-concat
-	"N",   # pep8-naming
-	"PGH", # pygrep-hooks
-	"PIE", # flake8-pie
-	"PLC", # pylint convention
-	"PLE", # pylint error
-	"PLR", # pylint refactor
-	"PLW", # pylint warning
-	"PT",  # flake8-pytest-style
-	"PTH", # flake8-use-pathlib
-	"Q",   # flake8-quotes
-	"RET", # flake8-return
-	"RSE", # flake8-raise
-	"RUF", # ruff
-	"SIM", # flake8-simplify
-	"SLF", # flake8-self
-	"T20", # flake8-print
-	"TCH", # flake8-type-checking
-	"TID", # flake8-tidy-imports
-	"TRY", # tryceratops
-	"UP",  # pyupgrade
-	"W",   # pycodestyle
-]
+select = ["ALL"]
 ignore = [
 	"ANN101", # missing-type-self
 	"ANN102", # missing-type-cls
 	"ANN401", # any-type
 	"D",      # pydocstyle
-	"ISC001", # single-line-implicit-string-concatenation
+	"EM101",  # raw-string-in-exception  # TODO
+	"EM102",  # f-string-in-exception  # TODO
+	"FIX001", # line-contains-fixme
+	"FIX002", # line-contains-todo
+	"G004",   # logging-f-string
+	"S101",   # assert  # TODO
+	"TD002",  # missing-todo-author
+	"TD003",  # missing-todo-link
+	"TD004",  # missing-todo-colon  # TODO
+	"TD005",  # missing-todo-description  # TODO
 	"TRY003", # raise-vanilla-args
+	#
+	# These rules interfere with `ruff format`
+	"COM812", # missing-trailing-comma
+	"ISC001", # single-line-implicit-string-concatenation
 ]
 
 [tool.ruff.lint.per-file-ignores]
@@ -115,9 +92,39 @@ ignore = [
 	"PLR0913", # too-many-arguments
 	"PLR2004", # magic-value-comparison
 	"PT027",   # pytest-unittest-raises-assertion
+	"S101",    # assert
 	"SLF001",  # private-member-access
 	"TRY002",  # raise-vanilla-class
 ]
 
 
 [tool.setuptools_scm]
+
+
+[tool.tox]
+requires = ["tox >= 4.21"]
+env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-lint", "ruff-format"]
+
+[tool.tox.env_run_base]
+deps = [".[test]"]
+commands = [
+	[
+		"pytest",
+		"--basetemp={envtmpdir}",
+		"--cov=mopidy_mpd",
+		"--cov-report=term-missing",
+		"{posargs}",
+	],
+]
+
+[tool.tox.env.pyright]
+deps = [".[typing]"]
+commands = [["pyright", "{posargs:src}"]]
+
+[tool.tox.env.ruff-lint]
+deps = [".[lint]"]
+commands = [["ruff", "check", "{posargs:.}"]]
+
+[tool.tox.env.ruff-format]
+deps = [".[lint]"]
+commands = [["ruff", "format", "--check", "{posargs:.}"]]

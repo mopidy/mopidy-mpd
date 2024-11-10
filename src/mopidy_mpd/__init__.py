@@ -3,7 +3,7 @@ from importlib.metadata import version
 
 from mopidy import config, ext
 
-__version__ = version("Mopidy-MPD")
+__version__ = version("mopidy-mpd")
 
 
 class Extension(ext.Extension):

@@ -1,7 +1,7 @@
 import os
 
 
-# FIXME replace with mock usage in tests.
+# TODO: replace with mock usage in tests.
 class Mtime:
     def __init__(self):
         self.fake = None

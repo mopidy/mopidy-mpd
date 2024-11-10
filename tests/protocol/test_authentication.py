@@ -4,7 +4,7 @@ from tests import protocol
 class AuthenticationActiveTest(protocol.BaseTestCase):
     def get_config(self):
         config = super().get_config()
-        config["mpd"]["password"] = "topsecret"
+        config["mpd"]["password"] = "topsecret"  # noqa: S105
         return config
 
     def test_authentication_with_valid_password_is_accepted(self):

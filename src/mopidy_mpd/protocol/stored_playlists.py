@@ -29,15 +29,13 @@ def _check_playlist_name(name: str) -> None:
 @overload
 def _get_playlist(
     context: MpdContext, name: str, *, must_exist: Literal[True]
-) -> Playlist:
-    ...
+) -> Playlist: ...
 
 
 @overload
 def _get_playlist(
     context: MpdContext, name: str, *, must_exist: Literal[False]
-) -> Playlist | None:
-    ...
+) -> Playlist | None: ...
 
 
 def _get_playlist(

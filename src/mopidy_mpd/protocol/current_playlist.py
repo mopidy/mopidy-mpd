@@ -285,7 +285,7 @@ def plchanges(context: MpdContext, version: int) -> protocol.Result:
 
     - Calls ``plchanges "-1"`` two times per second to get the entire playlist.
     """
-    # XXX Naive implementation that returns all tracks as changed
+    # TODO: Naive implementation that returns all tracks as changed
     tracklist_version = context.core.tracklist.get_version().get()
 
     if version < tracklist_version:
@@ -328,7 +328,7 @@ def plchangesposid(context: MpdContext, version: int) -> protocol.Result:
         To detect songs that were deleted at the end of the playlist, use
         ``playlistlength`` returned by status command.
     """
-    # XXX Naive implementation that returns all tracks as changed
+    # TODO: Naive implementation that returns all tracks as changed
     if int(version) != context.core.tracklist.get_version().get():
         result = []
         for position, (tlid, _) in enumerate(

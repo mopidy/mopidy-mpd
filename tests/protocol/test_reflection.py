@@ -46,7 +46,7 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
 class ReflectionWhenNotAuthedTest(protocol.BaseTestCase):
     def get_config(self):
         config = super().get_config()
-        config["mpd"]["password"] = "topsecret"
+        config["mpd"]["password"] = "topsecret"  # noqa: S105
         return config
 
     def test_commands_show_less_if_auth_required_and_not_authed(self):

@@ -204,7 +204,7 @@ commands = Commands()
 
 
 class Handler:
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         *,
         name: str,

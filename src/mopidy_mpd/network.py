@@ -8,7 +8,7 @@ import re
 import socket
 import sys
 import threading
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, Never
 
 import pykka
 from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
@@ -60,7 +60,6 @@ def get_socket_address(host: str, port: int) -> tuple[str, int | None]:
 
 
 class ShouldRetrySocketCallError(Exception):
-
     """Indicate that attempted socket call should be retried"""
 
 
@@ -221,7 +220,7 @@ class Server:
         return len(pykka.ActorRegistry.get_by_class(self.protocol))
 
     def reject_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
-        # FIXME provide more context in logging?
+        # TODO: provide more context in logging?
         logger.warning("Rejected connection from %s", format_address(addr))
         with contextlib.suppress(OSError):
             sock.close()
@@ -433,7 +432,6 @@ class Connection:
 
 
 class LineProtocol(pykka.ThreadingActor):
-
     """
     Base class for handling line based protocols.
 
@@ -526,7 +524,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return NoReturn
+            return Never
 
     def decode(self, line: bytes) -> str:
         """
@@ -543,7 +541,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return NoReturn
+            return Never
 
     def join_lines(self, lines: list[str]) -> str:
         if not lines:
