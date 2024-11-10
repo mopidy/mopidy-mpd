@@ -18,15 +18,18 @@ jobs:
           - name: "Test: Python 3.12"
             python: "3.12"
             tox: py312
+          - name: "Test: Python 3.13"
+            python: "3.13"
+            tox: py313
             coverage: true
           - name: "Lint: pyright"
-            python: "3.12"
+            python: "3.13"
             tox: pyright
           - name: "Lint: ruff lint"
-            python: "3.12"
+            python: "3.13"
             tox: ruff-lint
           - name: "Lint: ruff format"
-            python: "3.12"
+            python: "3.13"
             tox: ruff-format
 
     name: ${{ matrix.name }}
