@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch, sentinel
 
 from gi.repository import GLib
 from mopidy.core import CoreProxy
-from mopidy_mpd import network, uri_mapper
 
+from mopidy_mpd import network, uri_mapper
 from tests import any_int
 
 
@@ -263,7 +263,7 @@ class ServerTest(unittest.TestCase):
             with self.assertRaises(network.ShouldRetrySocketCallError):
                 network.Server.accept_connection(self.mock)
 
-    # FIXME decide if this should be allowed to propegate
+    # TODO: decide if this should be allowed to propegate
     def test_accept_connection_unrecoverable_error(self):
         sock = Mock(spec=socket.socket)
         self.mock.server_socket = sock

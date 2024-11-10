@@ -3,10 +3,10 @@ from typing import cast
 
 import pykka
 from mopidy.core import Core, CoreProxy
+
 from mopidy_mpd import uri_mapper
 from mopidy_mpd.dispatcher import MpdDispatcher
 from mopidy_mpd.exceptions import MpdAckError
-
 from tests import dummy_backend
 
 

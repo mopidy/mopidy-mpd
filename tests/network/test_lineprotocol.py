@@ -3,7 +3,6 @@ import unittest
 from unittest.mock import Mock, sentinel
 
 from mopidy_mpd import network
-
 from tests import any_unicode
 
 
@@ -234,12 +233,12 @@ class LineProtocolTest(unittest.TestCase):
     def test_decode_plain_ascii(self):
         result = network.LineProtocol.decode(self.mock, b"abc")
         assert result == "abc"
-        assert str == type(result)
+        assert isinstance(result, str)
 
     def test_decode_utf8(self):
         result = network.LineProtocol.decode(self.mock, "æøå".encode())
         assert result == "æøå"
-        assert str == type(result)
+        assert isinstance(result, str)
 
     def test_decode_invalid_data(self):
         string = Mock()
@@ -257,12 +256,12 @@ class LineProtocolTest(unittest.TestCase):
     def test_encode_plain_ascii(self):
         result = network.LineProtocol.encode(self.mock, "abc")
         assert result == b"abc"
-        assert bytes == type(result)
+        assert isinstance(result, bytes)
 
     def test_encode_utf8(self):
         result = network.LineProtocol.encode(self.mock, "æøå")
         assert "æøå".encode() == result
-        assert bytes == type(result)
+        assert isinstance(result, bytes)
 
     def test_encode_invalid_data(self):
         string = Mock()

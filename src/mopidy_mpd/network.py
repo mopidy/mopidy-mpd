@@ -220,7 +220,7 @@ class Server:
         return len(pykka.ActorRegistry.get_by_class(self.protocol))
 
     def reject_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
-        # FIXME provide more context in logging?
+        # TODO: provide more context in logging?
         logger.warning("Rejected connection from %s", format_address(addr))
         with contextlib.suppress(OSError):
             sock.close()

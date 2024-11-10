@@ -6,8 +6,8 @@ from unittest.mock import Mock, call, patch, sentinel
 
 import pykka
 from gi.repository import GLib
-from mopidy_mpd import network, uri_mapper
 
+from mopidy_mpd import network, uri_mapper
 from tests import any_int, any_unicode
 
 

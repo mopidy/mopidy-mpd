@@ -4,8 +4,8 @@ from unittest import mock
 
 import pykka
 from mopidy import core
-from mopidy_mpd import session, uri_mapper
 
+from mopidy_mpd import session, uri_mapper
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 
@@ -73,7 +73,7 @@ class BaseTestCase(unittest.TestCase):
         return self.connection.response
 
     def assertNoResponse(self):  # noqa: N802
-        assert [] == self.connection.response
+        assert self.connection.response == []
 
     def assertInResponse(self, value):  # noqa: N802
         assert (

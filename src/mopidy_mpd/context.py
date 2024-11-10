@@ -48,7 +48,7 @@ class MpdContext:
     #: Mapping of URIs to MPD names.
     uri_map: MpdUriMapper
 
-    def __init__(  # noqa: PLR0913
+    def __init__(
         self,
         config: types.Config,
         core: CoreProxy,

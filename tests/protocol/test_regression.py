@@ -2,8 +2,8 @@ import random
 from unittest import mock
 
 from mopidy.models import Playlist, Ref, Track
-from mopidy_mpd.protocol import stored_playlists
 
+from mopidy_mpd.protocol import stored_playlists
 from tests import protocol
 
 
@@ -252,7 +252,7 @@ class IssueGH1348RegressionTest(protocol.BaseTestCase):
 
         # Create an other playlist which isn't in the map
         self.send_request('playlistadd "testing2" "dummy:a"')
-        assert ["OK"] == self.send_request('rm "testing2"')
+        assert self.send_request('rm "testing2"') == ["OK"]
 
         playlists = self.backend.playlists.as_list().get()
-        assert ["testing1"] == [ref.name for ref in playlists]
+        assert [ref.name for ref in playlists] == ["testing1"]

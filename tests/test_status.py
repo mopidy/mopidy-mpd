@@ -5,17 +5,16 @@ import pykka
 from mopidy import core
 from mopidy.core import PlaybackState
 from mopidy.models import Track
+
 from mopidy_mpd import dispatcher, uri_mapper
 from mopidy_mpd.protocol import status
-
 from tests import dummy_audio, dummy_backend, dummy_mixer
 
 PAUSED = PlaybackState.PAUSED
 PLAYING = PlaybackState.PLAYING
 STOPPED = PlaybackState.STOPPED
 
-# FIXME migrate to using protocol.BaseTestCase instead of status.stats
-# directly?
+# TODO: migrate to using protocol.BaseTestCase instead of status.stats directly?
 
 
 class StatusHandlerTest(unittest.TestCase):

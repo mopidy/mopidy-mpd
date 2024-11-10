@@ -110,12 +110,10 @@ def idle(context: MpdContext, *args: str) -> protocol.Result:
         context.session.prevent_timeout = True
         return None
 
-    response = []
+    response: protocol.ResultList = [("changed", subsystem) for subsystem in active]
     context.dispatcher.subsystem_events = set()
     context.dispatcher.subsystem_subscriptions = set()
 
-    for subsystem in active:
-        response.append(f"changed: {subsystem}")
     return response
 
 
