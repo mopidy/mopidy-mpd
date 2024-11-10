@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING, NoReturn, TypedDict
+from typing import TYPE_CHECKING, Never, TypedDict
 
 from mopidy_mpd import dispatcher, formatting, network, protocol, types
 from mopidy_mpd.protocol import tagtype_list
@@ -86,7 +86,7 @@ class MpdSession(network.LineProtocol):
                 "supplied by client was not valid."
             )
             self.stop()
-            return NoReturn
+            return Never
 
     def close(self) -> None:
         self.stop()

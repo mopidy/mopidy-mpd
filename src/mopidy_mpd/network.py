@@ -8,7 +8,7 @@ import re
 import socket
 import sys
 import threading
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, Any, Never
 
 import pykka
 from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
@@ -524,7 +524,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return NoReturn
+            return Never
 
     def decode(self, line: bytes) -> str:
         """
@@ -541,7 +541,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return NoReturn
+            return Never
 
     def join_lines(self, lines: list[str]) -> str:
         if not lines:
