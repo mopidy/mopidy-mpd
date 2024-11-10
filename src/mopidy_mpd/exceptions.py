@@ -5,7 +5,6 @@ from mopidy.types import UriScheme
 
 
 class MpdAckError(MopidyException):
-
     """See fields on this class for available MPD error codes"""
 
     ACK_ERROR_NOT_LIST = 1

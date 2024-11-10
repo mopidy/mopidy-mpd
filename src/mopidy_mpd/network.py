@@ -60,7 +60,6 @@ def get_socket_address(host: str, port: int) -> tuple[str, int | None]:
 
 
 class ShouldRetrySocketCallError(Exception):
-
     """Indicate that attempted socket call should be retried"""
 
 
@@ -433,7 +432,6 @@ class Connection:
 
 
 class LineProtocol(pykka.ThreadingActor):
-
     """
     Base class for handling line based protocols.
 

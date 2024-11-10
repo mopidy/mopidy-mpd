@@ -12,7 +12,6 @@ def mock_shuffle(foo):
 
 
 class IssueGH17RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: http://github.com/mopidy/mopidy/issues/17
 
@@ -54,7 +53,6 @@ class IssueGH17RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH18RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: http://github.com/mopidy/mopidy/issues/18
 
@@ -97,7 +95,6 @@ class IssueGH18RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH22RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: http://github.com/mopidy/mopidy/issues/22
 
@@ -136,7 +133,6 @@ class IssueGH22RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH69RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: https://github.com/mopidy/mopidy/issues/69
 
@@ -193,7 +189,6 @@ class IssueGH113RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH137RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: https://github.com/mopidy/mopidy/issues/137
 
@@ -244,7 +239,6 @@ class IssueGH1120RegressionTest(protocol.BaseTestCase):
 
 
 class IssueGH1348RegressionTest(protocol.BaseTestCase):
-
     """
     The issue: http://github.com/mopidy/mopidy/issues/1348
     """
