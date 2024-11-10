@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-lint = ["ruff"]
-test = ["pytest", "pytest-cov"]
+lint = ["ruff >= 0.5"]
+test = ["pytest >= 7.2", "pytest-cov >= 4.0"]
 typing = ["pygobject-stubs", "pyright"]
 dev = ["mopidy-mpd[lint,test,typing]", "tox >= 4.21"]
 
