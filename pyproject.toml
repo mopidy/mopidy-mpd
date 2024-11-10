@@ -33,7 +33,7 @@ dependencies = [
 lint = ["ruff"]
 test = ["pytest", "pytest-cov"]
 typing = ["pygobject-stubs", "pyright"]
-dev = ["mopidy-mpd[lint,test,typing]", "tox"]
+dev = ["mopidy-mpd[lint,test,typing]", "tox >= 4.21"]
 
 [project.urls]
 Source = "https://github.com/mopidy/mopidy-mpd"
@@ -122,3 +122,32 @@ ignore = [
 
 
 [tool.setuptools_scm]
+
+
+[tool.tox]
+requires = ["tox >= 4.21"]
+env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-lint", "ruff-format"]
+
+[tool.tox.env_run_base]
+deps = [".[test]"]
+commands = [
+	[
+		"pytest",
+		"--basetemp={envtmpdir}",
+		"--cov=mopidy_mpd",
+		"--cov-report=term-missing",
+		"{posargs}",
+	],
+]
+
+[tool.tox.env.pyright]
+deps = [".[typing]"]
+commands = [["pyright", "{posargs:src}"]]
+
+[tool.tox.env.ruff-lint]
+deps = [".[lint]"]
+commands = [["ruff", "check", "{posargs:.}"]]
+
+[tool.tox.env.ruff-format]
+deps = [".[lint]"]
+commands = [["ruff", "format", "--check", "{posargs:.}"]]
