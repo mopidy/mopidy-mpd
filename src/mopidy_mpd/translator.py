@@ -44,9 +44,9 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
 
     result: list[protocol.ResultTuple] = [
         ("file", track.uri),
-        ("Time", track.length and (track.length // 1000) or 0),
+        ("Time", (track.length and (track.length // 1000)) or 0),
         *multi_tag_list(track.artists, "name", "Artist"),
-        ("Album", track.album and track.album.name or ""),
+        ("Album", (track.album and track.album.name) or ""),
     ]
 
     if stream_title is not None:
