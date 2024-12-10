@@ -11,22 +11,22 @@ requires-python = ">= 3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Stein Magnus Jodal", email = "stein.magnus@jodal.no" }]
 classifiers = [
-	"Environment :: No Input/Output (Daemon)",
-	"Intended Audience :: End Users/Desktop",
-	"License :: OSI Approved :: Apache Software License",
-	"Operating System :: OS Independent",
-	"Programming Language :: Python :: 3",
-	"Programming Language :: Python :: 3.11",
-	"Programming Language :: Python :: 3.12",
-	"Programming Language :: Python :: 3.13",
-	"Topic :: Multimedia :: Sound/Audio :: Players",
+    "Environment :: No Input/Output (Daemon)",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 dynamic = ["version"]
 dependencies = [
-	"mopidy >= 4.0.0a1",
-	"pygobject >= 3.42",
-	"pykka >= 4.0",
-	"setuptools >= 66",
+    "mopidy >= 4.0.0a1",
+    "pygobject >= 3.42",
+    "pykka >= 4.0",
+    "setuptools >= 66",
 ]
 
 [project.optional-dependencies]
@@ -59,42 +59,42 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-	"ANN101", # missing-type-self
-	"ANN102", # missing-type-cls
-	"ANN401", # any-type
-	"D",      # pydocstyle
-	"EM101",  # raw-string-in-exception  # TODO
-	"EM102",  # f-string-in-exception  # TODO
-	"FIX001", # line-contains-fixme
-	"FIX002", # line-contains-todo
-	"G004",   # logging-f-string
-	"S101",   # assert  # TODO
-	"TD002",  # missing-todo-author
-	"TD003",  # missing-todo-link
-	"TD004",  # missing-todo-colon  # TODO
-	"TD005",  # missing-todo-description  # TODO
-	"TRY003", # raise-vanilla-args
-	#
-	# These rules interfere with `ruff format`
-	"COM812", # missing-trailing-comma
-	"ISC001", # single-line-implicit-string-concatenation
+    "ANN101", # missing-type-self
+    "ANN102", # missing-type-cls
+    "ANN401", # any-type
+    "D",      # pydocstyle
+    "EM101",  # raw-string-in-exception  # TODO
+    "EM102",  # f-string-in-exception  # TODO
+    "FIX001", # line-contains-fixme
+    "FIX002", # line-contains-todo
+    "G004",   # logging-f-string
+    "S101",   # assert  # TODO
+    "TD002",  # missing-todo-author
+    "TD003",  # missing-todo-link
+    "TD004",  # missing-todo-colon  # TODO
+    "TD005",  # missing-todo-description  # TODO
+    "TRY003", # raise-vanilla-args
+    #
+    # These rules interfere with `ruff format`
+    "COM812", # missing-trailing-comma
+    "ISC001", # single-line-implicit-string-concatenation
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "src/mopidy_mpd/protocol/*" = [
-	"ARG001", # unused-function-argument
+    "ARG001", # unused-function-argument
 ]
 "tests/*" = [
-	"ANN",     # flake8-annotations
-	"ARG",     # flake8-unused-arguments
-	"D",       # pydocstyle
-	"FBT",     # flake8-boolean-trap
-	"PLR0913", # too-many-arguments
-	"PLR2004", # magic-value-comparison
-	"PT027",   # pytest-unittest-raises-assertion
-	"S101",    # assert
-	"SLF001",  # private-member-access
-	"TRY002",  # raise-vanilla-class
+    "ANN",     # flake8-annotations
+    "ARG",     # flake8-unused-arguments
+    "D",       # pydocstyle
+    "FBT",     # flake8-boolean-trap
+    "PLR0913", # too-many-arguments
+    "PLR2004", # magic-value-comparison
+    "PT027",   # pytest-unittest-raises-assertion
+    "S101",    # assert
+    "SLF001",  # private-member-access
+    "TRY002",  # raise-vanilla-class
 ]
 
 
@@ -108,13 +108,13 @@ env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-lint", "ruff-format"]
 [tool.tox.env_run_base]
 deps = [".[test]"]
 commands = [
-	[
-		"pytest",
-		"--basetemp={envtmpdir}",
-		"--cov=mopidy_mpd",
-		"--cov-report=term-missing",
-		"{posargs}",
-	],
+    [
+        "pytest",
+        "--basetemp={envtmpdir}",
+        "--cov=mopidy_mpd",
+        "--cov-report=term-missing",
+        "{posargs}",
+    ],
 ]
 
 [tool.tox.env.pyright]
