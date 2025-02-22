@@ -1,12 +1,7 @@
-[build-system]
-requires = ["setuptools >= 66", "setuptools-scm >= 7.1"]
-build-backend = "setuptools.build_meta"
-
-
 [project]
 name = "mopidy-mpd"
 description = "Mopidy extension for controlling Mopidy from MPD clients"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">= 3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Stein Magnus Jodal", email = "stein.magnus@jodal.no" }]
@@ -15,42 +10,61 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 dynamic = ["version"]
-dependencies = [
-    "mopidy >= 4.0.0a1",
-    "pygobject >= 3.42",
-    "pykka >= 4.0",
-    "setuptools >= 66",
-]
-
-[project.optional-dependencies]
-lint = ["ruff >= 0.8.2"]
-test = ["pytest >= 7.2", "pytest-cov >= 4.0"]
-typing = ["pygobject-stubs >= 2.12.0", "pyright >= 1.1.380"]
-dev = ["mopidy-mpd[lint,test,typing]", "tox >= 4.21"]
+dependencies = ["mopidy >= 4.0.0a3", "pygobject >= 3.42", "pykka >= 4"]
 
 [project.urls]
-Source = "https://github.com/mopidy/mopidy-mpd"
-Issues = "https://github.com/mopidy/mopidy-mpd/issues"
+Homepage = "https://github.com/mopidy/mopidy-mpd"
 
 [project.entry-points."mopidy.ext"]
 mpd = "mopidy_mpd:Extension"
 
 
+[build-system]
+requires = ["setuptools >= 66", "setuptools-scm >= 7.1"]
+build-backend = "setuptools.build_meta"
+
+
+[dependency-groups]
+dev = [
+    "tox",
+    { include-group = "ruff" },
+    { include-group = "tests" },
+    { include-group = "typing" },
+]
+ruff = ["ruff"]
+tests = ["pytest", "pytest-cov"]
+typing = ["pyright"]
+
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages/"]
+
+[tool.coverage.run]
+source_pkgs = ["mopidy_mpd"]
+
+[tool.coverage.report]
+show_missing = true
+
+
 [tool.pyright]
 pythonVersion = "3.11"
-# Use venv from parent directory, to share it with any extensions:
-venvPath = "../"
-venv = ".venv"
 typeCheckingMode = "standard"
-# Already covered by flake8-self:
+# Not all dependencies have type hints:
+reportMissingTypeStubs = false
+# Already covered by ruff's flake8-self checks:
 reportPrivateImportUsage = false
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # By default, fail tests on warnings from our own code
+    "error:::mopidy_mpd",
+    #
+    # Add any warnings you want to ignore here
+]
 
 
 [tool.ruff]
@@ -59,8 +73,11 @@ target-version = "py311"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
+    "A005",   # stdlib-module-shadowing
     "ANN401", # any-type
     "D",      # pydocstyle
+    "D203",   # one-blank-line-before-class
+    "D213",   # multi-line-summary-second-line
     "EM101",  # raw-string-in-exception  # TODO
     "EM102",  # f-string-in-exception  # TODO
     "FIX001", # line-contains-fixme
@@ -73,7 +90,7 @@ ignore = [
     "TD005",  # missing-todo-description  # TODO
     "TRY003", # raise-vanilla-args
     #
-    # These rules interfere with `ruff format`
+    # Conflicting with `ruff format`
     "COM812", # missing-trailing-comma
     "ISC001", # single-line-implicit-string-concatenation
 ]
@@ -96,33 +113,40 @@ ignore = [
 ]
 
 
+[tool.setuptools.package-data]
+"*" = ["*.conf"]
+
+
 [tool.setuptools_scm]
+# This section, even if empty, must be present for setuptools_scm to work
 
 
 [tool.tox]
-requires = ["tox >= 4.21"]
-env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-lint", "ruff-format"]
+env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-check", "ruff-format"]
 
 [tool.tox.env_run_base]
-deps = [".[test]"]
+package = "wheel"
+wheel_build_env = ".pkg"
+dependency_groups = ["tests"]
 commands = [
     [
         "pytest",
+        "--cov",
         "--basetemp={envtmpdir}",
-        "--cov=mopidy_mpd",
-        "--cov-report=term-missing",
-        "{posargs}",
+        { replace = "posargs", extend = true },
     ],
 ]
 
 [tool.tox.env.pyright]
-deps = [".[typing]"]
+dependency_groups = ["typing"]
 commands = [["pyright", "{posargs:src}"]]
 
-[tool.tox.env.ruff-lint]
-deps = [".[lint]"]
+[tool.tox.env.ruff-check]
+skip_install = true
+dependency_groups = ["ruff"]
 commands = [["ruff", "check", "{posargs:.}"]]
 
 [tool.tox.env.ruff-format]
-deps = [".[lint]"]
+skip_install = true
+dependency_groups = ["ruff"]
 commands = [["ruff", "format", "--check", "{posargs:.}"]]
