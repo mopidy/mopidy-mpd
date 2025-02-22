@@ -1,0 +1,9 @@
+_commit: v1.1.0
+_src_path: gh:mopidy/mopidy-ext-template
+author_email: stein.magnus@jodal.no
+author_full_name: Stein Magnus Jodal
+repo_name: mopidy-mpd
+dist_name: Mopidy-MPD
+ext_name: mpd
+github_username: mopidy
+short_description: Mopidy extension for controlling Mopidy from MPD clients
