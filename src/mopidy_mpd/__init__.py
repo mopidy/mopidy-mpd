@@ -7,7 +7,7 @@ __version__ = version("mopidy-mpd")
 
 
 class Extension(ext.Extension):
-    dist_name = "Mopidy-MPD"
+    dist_name = "mopidy-mpd"
     ext_name = "mpd"
     version = __version__
 

@@ -1,8 +1,8 @@
 # mopidy-mpd
 
-![PyPI - Version](https://img.shields.io/pypi/v/mopidy-mpd?link=https://pypi.org/p/mopidy-mpd)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/mopidy/mopidy-mpd/ci.yml?link=https://github.com/mopidy/mopidy-mpd/actions/workflows/ci.yml)
-![Codecov](https://img.shields.io/codecov/c/gh/mopidy/mopidy-mpd?link=https://codecov.io/gh/mopidy/mopidy-mpd)
+[![Latest PyPI version](https://img.shields.io/pypi/v/mopidy-mpd)](https://pypi.org/p/mopidy-mpd)
+[![CI build status](https://img.shields.io/github/actions/workflow/status/mopidy/mopidy-mpd/ci.yml)](https://github.com/mopidy/mopidy-mpd/actions/workflows/ci.yml)
+[![Test coverage](https://img.shields.io/codecov/c/gh/mopidy/mopidy-mpd)](https://codecov.io/gh/mopidy/mopidy-mpd)
 
 [Mopidy](https://mopidy.com/) extension for controlling Mopidy from MPD
 clients.
