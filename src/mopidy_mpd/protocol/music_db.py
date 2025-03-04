@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, cast
 
 from mopidy.models import Album, Artist, SearchResult, Track
 from mopidy.types import DistinctField, Query, SearchField, Uri
-
 from mopidy_mpd import exceptions, protocol, translator
 from mopidy_mpd.protocol import stored_playlists
 
@@ -86,7 +85,7 @@ def _get_tracks(search_results: Iterable[SearchResult]) -> list[Track]:
 def _album_as_track(album: Album) -> Track:
     return Track(
         uri=album.uri,
-        name="Album: " + album.name,
+        name=f"Album: {album.name}",
         artists=album.artists,
         album=album,
         date=album.date,
@@ -96,7 +95,7 @@ def _album_as_track(album: Album) -> Track:
 def _artist_as_track(artist: Artist) -> Track:
     return Track(
         uri=artist.uri,
-        name="Artist: " + artist.name,
+        name=f"Artist: {artist.name}",
         artists=[artist],
     )
 

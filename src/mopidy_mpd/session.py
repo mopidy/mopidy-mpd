@@ -8,7 +8,6 @@ from mopidy_mpd.protocol import tagtype_list
 
 if TYPE_CHECKING:
     from mopidy.core import CoreProxy
-
     from mopidy_mpd.uri_mapper import MpdUriMapper
 
 
@@ -86,7 +85,7 @@ class MpdSession(network.LineProtocol):
                 "supplied by client was not valid."
             )
             self.stop()
-            return Never
+            return Never  # pyright: ignore[reportReturnType]
 
     def close(self) -> None:
         self.stop()

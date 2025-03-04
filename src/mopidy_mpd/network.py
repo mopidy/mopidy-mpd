@@ -20,7 +20,6 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from mopidy.core import CoreProxy
-
     from mopidy_mpd import types
     from mopidy_mpd.session import MpdSession, MpdSessionKwargs
     from mopidy_mpd.types import SocketAddress
@@ -524,7 +523,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return Never
+            return Never  # pyright: ignore[reportReturnType]
 
     def decode(self, line: bytes) -> str:
         """
@@ -541,7 +540,7 @@ class LineProtocol(pykka.ThreadingActor):
                 self.encoding,
             )
             self.stop()
-            return Never
+            return Never  # pyright: ignore[reportReturnType]
 
     def join_lines(self, lines: list[str]) -> str:
         if not lines:
