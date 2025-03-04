@@ -67,7 +67,7 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
         result.append(("Pos", position))
         result.append(("Id", tlid))
     if track.album is not None and track.album.musicbrainz_id is not None:
-        result.append(("MUSICBRAINZ_ALBUMID", track.album.musicbrainz_id))
+        result.append(("MUSICBRAINZ_ALBUMID", str(track.album.musicbrainz_id)))
 
     if track.album is not None and track.album.artists:
         result += multi_tag_list(track.album.artists, "name", "AlbumArtist")
@@ -100,7 +100,7 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
         result.append(("Last-Modified", datestring.replace("+00:00", "Z")))
 
     if track.musicbrainz_id is not None:
-        result.append(("MUSICBRAINZ_TRACKID", track.musicbrainz_id))
+        result.append(("MUSICBRAINZ_TRACKID", str(track.musicbrainz_id)))
 
     if track.album and track.album.uri:
         result.append(("X-AlbumUri", track.album.uri))
@@ -146,7 +146,7 @@ def concat_multi_values(
     # strict alphabetical). If we just use them in the order in which they come
     # in then the musicbrainz ids have a higher chance of staying in sync
     return ";".join(
-        getattr(m, attribute) for m in models if getattr(m, attribute, None) is not None
+        str(value) for m in models if (value := getattr(m, attribute, None)) is not None
     )
 
 
@@ -165,9 +165,9 @@ def multi_tag_list(
     """
 
     return [
-        (tag, getattr(obj, attribute))
+        (tag, value if isinstance(value, int) else str(value))
         for obj in models
-        if getattr(obj, attribute, None) is not None
+        if (value := getattr(obj, attribute, None)) is not None
     ]
 
 

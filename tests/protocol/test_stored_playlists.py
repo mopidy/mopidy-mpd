@@ -492,7 +492,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('rename "old_name" "new_name"')
 
         self.assertInResponse(
-            "ACK [0@0] {rename} Backend with " 'scheme "dummy" failed to save playlist'
+            'ACK [0@0] {rename} Backend with scheme "dummy" failed to save playlist'
         )
 
     def test_rename_unknown_playlist_acks(self):
@@ -555,7 +555,7 @@ class PlaylistsHandlerTest(protocol.BaseTestCase):
         self.send_request('save "name"')
 
         self.assertInResponse(
-            "ACK [0@0] {save} Backend with " 'scheme "dummy" failed to save playlist'
+            'ACK [0@0] {save} Backend with scheme "dummy" failed to save playlist'
         )
 
     def test_save_invalid_name_acks(self):

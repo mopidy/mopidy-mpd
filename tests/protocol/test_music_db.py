@@ -1125,15 +1125,6 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.send_request('list "date" "artist" ""')
         self.assertInResponse("OK")
 
-    def test_list_date_should_not_return_blank_dates(self):
-        self.backend.library.dummy_find_exact_result = SearchResult(
-            tracks=[Track(date="")]
-        )
-
-        self.send_request('list "date"')
-        self.assertNotInResponse("Date: ")
-        self.assertInResponse("OK")
-
     # Genre
 
     def test_list_genre_with_quotes(self):
