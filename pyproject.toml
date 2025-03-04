@@ -13,7 +13,7 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 dynamic = ["version"]
-dependencies = ["mopidy >= 4.0.0a3", "pygobject >= 3.42", "pykka >= 4"]
+dependencies = ["mopidy >= 4.0.0a4", "pygobject >= 3.42", "pykka >= 4"]
 
 [project.urls]
 Homepage = "https://github.com/mopidy/mopidy-mpd"
