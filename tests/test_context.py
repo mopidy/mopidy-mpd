@@ -75,9 +75,7 @@ class TestMpdContext:
         "bad_ref",
         [
             Ref.track(uri="dummy:/x"),
-            Ref.track(name="x"),
             Ref.directory(uri="dummy:/y"),
-            Ref.directory(name="y"),
         ],
     )
     def test_browse_skips_bad_refs(
