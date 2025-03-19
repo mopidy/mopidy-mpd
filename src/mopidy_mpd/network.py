@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import contextlib
 import errno
 import logging
@@ -8,10 +9,9 @@ import re
 import socket
 import sys
 import threading
-from typing import TYPE_CHECKING, Any, Never
+from typing import TYPE_CHECKING, Any, Never, Optional
 
 import pykka
-from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,7 @@ def format_hostname(hostname: str) -> str:
 
 
 class Server:
-    """Setup listener and register it with GLib's event loop."""
+    """Setup listener and register it with the asyncio loop."""
 
     def __init__(  # noqa: PLR0913
         self,
@@ -142,8 +142,7 @@ class Server:
         self.timeout = timeout
         self.server_socket = self.create_server_socket(host, port)
         self.address = get_socket_address(host, port)
-
-        self.watcher = self.register_server_socket(self.server_socket.fileno())
+        self._should_stop = asyncio.Event()
 
     def create_server_socket(self, host: str, port: int) -> socket.socket:
         sock = get_systemd_socket()
@@ -156,7 +155,7 @@ class Server:
             sock.bind(socket_path)
         else:
             # ensure the port is supplied
-            if not isinstance(port, int):
+            if not (port and isinstance(port, int)):
                 raise TypeError(f"Expected an integer, not {port!r}")
             sock = create_tcp_socket()
             sock.bind((host, port))
@@ -166,7 +165,6 @@ class Server:
         return sock
 
     def stop(self) -> None:
-        GLib.source_remove(self.watcher)
         if is_unix_socket(self.server_socket):
             unix_socket_path = self.server_socket.getsockname()
         else:
@@ -179,35 +177,21 @@ class Server:
         if unix_socket_path is not None:
             os.unlink(unix_socket_path)  # noqa: PTH108
 
-    def register_server_socket(self, fileno: int) -> int:
-        return GLib.io_add_watch(fileno, GLib.IO_IN, self.handle_connection)
+        self._should_stop.set()
 
-    def handle_connection(self, _fd: int, _flags: int) -> bool:
-        try:
-            sock, addr = self.accept_connection()
-        except ShouldRetrySocketCallError:
-            return True
-
+    def handle_connection(
+        self,
+        client: socket.socket,
+        addr: SocketAddress,
+        loop: asyncio.AbstractEventLoop,
+    ) -> bool:
+        if is_unix_socket(client):
+            addr = (client.getsockname(), None)
         if self.maximum_connections_exceeded():
-            self.reject_connection(sock, addr)
+            self.reject_connection(client, addr, reason="Maximum connections exceeded")
         else:
-            self.init_connection(sock, addr)
+            self.init_connection(client, addr, loop)
         return True
-
-    def accept_connection(self) -> tuple[socket.socket, SocketAddress]:
-        try:
-            sock, addr = self.server_socket.accept()
-            if is_unix_socket(sock):
-                addr = (sock.getsockname(), None)
-        except OSError as exc:
-            if exc.errno in (errno.EAGAIN, errno.EINTR):
-                raise ShouldRetrySocketCallError from None
-            raise
-        else:
-            return (
-                sock,
-                addr[:2],  # addr is a two-tuple for IPv4 and four-tuple for IPv6
-            )
 
     def maximum_connections_exceeded(self) -> bool:
         return (
@@ -218,14 +202,17 @@ class Server:
     def number_of_connections(self) -> int:
         return len(pykka.ActorRegistry.get_by_class(self.protocol))
 
-    def reject_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
-        # TODO: provide more context in logging?
-        logger.warning("Rejected connection from %s", format_address(addr))
+    def reject_connection(
+        self, sock: socket.socket, addr: SocketAddress, reason: str = ""
+    ) -> None:
+        logger.warning("Rejected connection from %s: %s", format_address(addr), reason)
         with contextlib.suppress(OSError):
             sock.close()
 
-    def init_connection(self, sock: socket.socket, addr: SocketAddress) -> None:
-        Connection(
+    def init_connection(
+        self, sock: socket.socket, addr: SocketAddress, loop: asyncio.AbstractEventLoop
+    ) -> None:
+        conn = Connection(
             config=self.config,
             core=self.core,
             uri_map=self.uri_map,
@@ -233,18 +220,49 @@ class Server:
             sock=sock,
             addr=addr,
             timeout=self.timeout,
+            loop=loop,
         )
+
+        asyncio.create_task(conn.serve())
+
+    async def wait_stop(self, timeout: Optional[float] = None) -> None:
+        await asyncio.wait_for(self._should_stop.wait(), timeout=timeout)
+
+    def should_stop(self) -> bool:
+        return self._should_stop.is_set()
+
+    async def run(self) -> None:
+        loop = asyncio.get_event_loop()
+        self._should_stop.clear()
+        wait_stop = loop.create_task(self.wait_stop())
+
+        while not self.should_stop():
+            try:
+                tasks = [
+                    loop.create_task(loop.sock_accept(self.server_socket)),
+                    wait_stop,
+                ]
+
+                await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+
+                if tasks[1].done():
+                    tasks[1].result()
+                    break
+
+                try:
+                    client, addr = tasks[0].result()
+                    self.handle_connection(client, addr, loop)
+                except OSError as exc:
+                    if exc.errno in (errno.EBADF, errno.ENOTSOCK):
+                        continue
+                    raise exc
+            except OSError as exc:
+                if exc.errno in (errno.EAGAIN, errno.EINTR):
+                    continue
+                raise exc
 
 
 class Connection:
-    # NOTE: the callback code is _not_ run in the actor's thread, but in the
-    # same one as the event loop. If code in the callbacks blocks, the rest of
-    # GLib code will likely be blocked as well...
-    #
-    # Also note that source_remove() return values are ignored on purpose, a
-    # false return value would only tell us that what we thought was registered
-    # is already gone, there is really nothing more we can do.
-
     host: str
     port: int | None
 
@@ -258,12 +276,14 @@ class Connection:
         sock: socket.socket,
         addr: SocketAddress,
         timeout: int,
+        loop: asyncio.AbstractEventLoop,
     ) -> None:
         sock.setblocking(False)  # noqa: FBT003
 
         self.host, self.port = addr[:2]
 
         self._sock = sock
+        self._loop = loop
         self.protocol = protocol
         self.timeout = timeout
 
@@ -272,24 +292,48 @@ class Connection:
 
         self.stopping = False
 
-        self.recv_id: int | None = None
-        self.send_id: int | None = None
-        self.timeout_id: int | None = None
-
         protocol_kwargs: MpdSessionKwargs = {
             "config": config,
             "core": core,
             "uri_map": uri_map,
             "connection": self,
+            "loop": loop,
         }
         self.actor_ref = self.protocol.start(**protocol_kwargs)
 
-        self.enable_recv()
-        self.enable_timeout()
+    async def serve(self) -> None:
+        while not self.stopping:
+            try:
+                task = asyncio.create_task(self._loop.sock_recv(self._sock, 4096))
+                done, _ = await asyncio.wait(
+                    {task}, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED
+                )
+
+                if not done:
+                    self.stop(
+                        f"Client inactive for {self.timeout:d}s; closing connection"
+                    )
+                    return
+
+                data = task.result()
+            except OSError as exc:
+                if exc.errno in (errno.EWOULDBLOCK, errno.EINTR):
+                    continue
+                self.stop(f"Unexpected client error: {exc}")
+                return
+
+            if not data:
+                self.actor_ref.tell({"close": True})
+                return
+
+            try:
+                self.actor_ref.tell({"received": data})
+            except pykka.ActorDeadError:
+                self.stop("Actor is dead.")
 
     def stop(self, reason: str, level: int = logging.DEBUG) -> None:
         if self.stopping:
-            logger.log(level, f"Already stopping: {reason}")
+            logger.log(level, "Already stopping: %s", reason)
             return
 
         self.stopping = True
@@ -299,128 +343,24 @@ class Connection:
         with contextlib.suppress(pykka.ActorDeadError):
             self.actor_ref.stop(block=False)
 
-        self.disable_timeout()
-        self.disable_recv()
-        self.disable_send()
-
         with contextlib.suppress(OSError):
             self._sock.close()
 
-    def queue_send(self, data: bytes) -> None:
+    async def queue_send(self, data: bytes) -> None:
         """Try to send data to client exactly as is and queue rest."""
-        self.send_lock.acquire(blocking=True)
-        self.send_buffer = self.send(self.send_buffer + data)
-        self.send_lock.release()
-        if self.send_buffer:
-            self.enable_send()
+        with self.send_lock:
+            task = asyncio.create_task(self.send(self.send_buffer + data))
+            await asyncio.wait({task}, timeout=self.timeout)
+            self.send_buffer = b""
 
-    def send(self, data: bytes) -> bytes:
-        """Send data to client, return any unsent data."""
+    async def send(self, data: bytes):
+        """Send data to client."""
         try:
-            sent = self._sock.send(data)
-            return data[sent:]
+            await self._loop.sock_sendall(self._sock, data)
         except OSError as exc:
             if exc.errno in (errno.EWOULDBLOCK, errno.EINTR):
                 return data
             self.stop(f"Unexpected client error: {exc}")
-            return b""
-
-    def enable_timeout(self) -> None:
-        """Reactivate timeout mechanism."""
-        if self.timeout <= 0:
-            return
-
-        self.disable_timeout()
-        self.timeout_id = GLib.timeout_add_seconds(self.timeout, self.timeout_callback)
-
-    def disable_timeout(self) -> None:
-        """Deactivate timeout mechanism."""
-        if self.timeout_id is None:
-            return
-        GLib.source_remove(self.timeout_id)
-        self.timeout_id = None
-
-    def enable_recv(self) -> None:
-        if self.recv_id is not None:
-            return
-
-        try:
-            self.recv_id = GLib.io_add_watch(
-                self._sock.fileno(),
-                GLib.IO_IN | GLib.IO_ERR | GLib.IO_HUP,
-                self.recv_callback,
-            )
-        except OSError as exc:
-            self.stop(f"Problem with connection: {exc}")
-
-    def disable_recv(self) -> None:
-        if self.recv_id is None:
-            return
-        GLib.source_remove(self.recv_id)
-        self.recv_id = None
-
-    def enable_send(self) -> None:
-        if self.send_id is not None:
-            return
-
-        try:
-            self.send_id = GLib.io_add_watch(
-                self._sock.fileno(),
-                GLib.IO_OUT | GLib.IO_ERR | GLib.IO_HUP,
-                self.send_callback,
-            )
-        except OSError as exc:
-            self.stop(f"Problem with connection: {exc}")
-
-    def disable_send(self) -> None:
-        if self.send_id is None:
-            return
-
-        GLib.source_remove(self.send_id)
-        self.send_id = None
-
-    def recv_callback(self, fd: int, flags: int) -> bool:  # noqa: ARG002
-        if flags & (GLib.IO_ERR | GLib.IO_HUP):
-            self.stop(f"Bad client flags: {flags}")
-            return True
-
-        try:
-            data = self._sock.recv(4096)
-        except OSError as exc:
-            if exc.errno not in (errno.EWOULDBLOCK, errno.EINTR):
-                self.stop(f"Unexpected client error: {exc}")
-            return True
-
-        if not data:
-            self.disable_recv()
-            self.actor_ref.tell({"close": True})
-            return True
-
-        try:
-            self.actor_ref.tell({"received": data})
-        except pykka.ActorDeadError:
-            self.stop("Actor is dead.")
-
-        return True
-
-    def send_callback(self, fd: int, flags: int) -> bool:  # noqa: ARG002
-        if flags & (GLib.IO_ERR | GLib.IO_HUP):
-            self.stop(f"Bad client flags: {flags}")
-            return True
-
-        # If with can't get the lock, simply try again next time socket is
-        # ready for sending.
-        if not self.send_lock.acquire(blocking=False):
-            return True
-
-        try:
-            self.send_buffer = self.send(self.send_buffer)
-            if not self.send_buffer:
-                self.disable_send()
-        finally:
-            self.send_lock.release()
-
-        return True
 
     def timeout_callback(self) -> bool:
         self.stop(f"Client inactive for {self.timeout:d}s; closing connection")
@@ -478,7 +418,6 @@ class LineProtocol(pykka.ThreadingActor):
         if "received" not in message:
             return
 
-        self.connection.disable_timeout()
         self.recv_buffer += message["received"]
 
         for line in self.parse_lines():
@@ -486,17 +425,16 @@ class LineProtocol(pykka.ThreadingActor):
             if decoded_line is not None:
                 self.on_line_received(decoded_line)
 
-        if not self.prevent_timeout:
-            self.connection.enable_timeout()
-
     def on_failure(
         self,
-        exception_type: type[BaseException] | None,  # noqa: ARG002
-        exception_value: BaseException | None,  # noqa: ARG002
-        traceback: TracebackType | None,  # noqa: ARG002
+        exception_type: type[BaseException] | None,
+        exception_value: BaseException | None,
+        traceback: TracebackType | None,
     ) -> None:
         """Clean up connection resouces when actor fails."""
+        super().on_failure(exception_type, exception_value, traceback)
         self.connection.stop("Actor failed.")
+        logger.exception("Actor failed.", exc_info=exception_value)
 
     def on_stop(self) -> None:
         """Clean up connection resouces when actor stops."""
@@ -548,7 +486,7 @@ class LineProtocol(pykka.ThreadingActor):
         line_terminator = self.decode(self.terminator)
         return line_terminator.join(lines) + line_terminator
 
-    def send_lines(self, lines: list[str]) -> None:
+    async def send_lines(self, lines: list[str]) -> None:
         """
         Send array of lines to client via connection.
 
@@ -562,4 +500,4 @@ class LineProtocol(pykka.ThreadingActor):
         lines = [line.translate(CONTROL_CHARS) for line in lines]
 
         data = self.join_lines(lines)
-        self.connection.queue_send(self.encode(data))
+        await self.connection.queue_send(self.encode(data))

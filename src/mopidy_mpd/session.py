@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import TYPE_CHECKING, Never, TypedDict
 
@@ -19,6 +20,7 @@ class MpdSessionKwargs(TypedDict):
     core: CoreProxy
     uri_map: MpdUriMapper
     connection: network.Connection
+    loop: asyncio.AbstractEventLoop
 
 
 class MpdSession(network.LineProtocol):
@@ -37,6 +39,7 @@ class MpdSession(network.LineProtocol):
         core: CoreProxy,
         uri_map: MpdUriMapper,
         connection: network.Connection,
+        loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(connection)
         self.dispatcher = dispatcher.MpdDispatcher(
@@ -46,10 +49,14 @@ class MpdSession(network.LineProtocol):
             session=self,
         )
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
+        self.loop = loop
 
     def on_start(self) -> None:
         logger.info("New MPD connection from %s", self.connection)
-        self.send_lines([f"OK MPD {protocol.VERSION}"])
+        asyncio.run_coroutine_threadsafe(
+            self.send_lines([f"OK MPD {protocol.VERSION}"]),
+            self.loop,
+        )
 
     def on_line_received(self, line: str) -> None:
         logger.debug("Request from %s: %s", self.connection, line)
@@ -71,7 +78,10 @@ class MpdSession(network.LineProtocol):
             formatting.indent(self.decode(self.terminator).join(response)),
         )
 
-        self.send_lines(response)
+        asyncio.run_coroutine_threadsafe(
+            self.send_lines(response),
+            self.loop,
+        )
 
     def on_event(self, subsystem: str) -> None:
         self.dispatcher.handle_idle(subsystem)
