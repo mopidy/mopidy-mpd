@@ -2,16 +2,24 @@ import asyncio
 import errno
 import logging
 import socket
+from typing import Type
 import unittest
 from unittest.mock import Mock, patch, sentinel
 
 import pykka
 
-from mopidy_mpd import network, uri_mapper
+from mopidy_mpd import network, types, uri_mapper
+from mopidy_mpd.session import MpdSession
 from tests import IsA, any_int, any_unicode
 
 
 class ConnectionTest(unittest.TestCase):
+    _empty_config = types.Config({})  # type: ignore
+
+    @property
+    def _mock_protocol(self) -> Type[MpdSession]:
+        return Mock(spec=network.LineProtocol)  # type: ignore
+
     def setUp(self):
         self.mock = Mock(spec=network.Connection)
         self.loop = asyncio.new_event_loop()
@@ -19,10 +27,10 @@ class ConnectionTest(unittest.TestCase):
 
     def create_connection(self):
         conn = network.Connection(
-            config={},  # type: ignore
+            config=self._empty_config,
             core=Mock(),
             uri_map=Mock(spec=uri_mapper.MpdUriMapper),
-            protocol=Mock(spec=network.LineProtocol),  # type: ignore
+            protocol=self._mock_protocol,
             sock=Mock(spec=socket.SocketType),
             addr=(sentinel.host, sentinel.port),
             timeout=1,
@@ -38,10 +46,10 @@ class ConnectionTest(unittest.TestCase):
 
         network.Connection.__init__(
             self.mock,
-            config={},  # type: ignore
+            config=self._empty_config,
             core=Mock(),
             uri_map=Mock(spec=uri_mapper.MpdUriMapper),
-            protocol=Mock(spec=network.LineProtocol),  # type: ignore
+            protocol=self._mock_protocol,
             sock=sock,
             addr=(sentinel.host, sentinel.port),
             timeout=sentinel.timeout,
@@ -50,14 +58,14 @@ class ConnectionTest(unittest.TestCase):
         sock.setblocking.assert_called_once_with(False)
 
     def test_init_starts_actor(self):
-        protocol = Mock(spec=network.LineProtocol)
+        protocol = self._mock_protocol
 
         network.Connection.__init__(
             self.mock,
-            config={},  # type: ignore
+            config=self._empty_config,
             core=Mock(),
             uri_map=Mock(spec=uri_mapper.MpdUriMapper),
-            protocol=protocol,  # type: ignore
+            protocol=protocol,
             sock=Mock(spec=socket.SocketType),
             addr=(sentinel.host, sentinel.port),
             timeout=sentinel.timeout,
@@ -67,15 +75,15 @@ class ConnectionTest(unittest.TestCase):
 
     def test_init_stores_values_in_attributes(self):
         addr = (sentinel.host, sentinel.port)
-        protocol = Mock(spec=network.LineProtocol)
+        protocol = self._mock_protocol
         sock = Mock(spec=socket.SocketType)
 
         network.Connection.__init__(
             self.mock,
-            config={},  # type: ignore
+            config=self._empty_config,
             core=Mock(),
             uri_map=Mock(spec=uri_mapper.MpdUriMapper),
-            protocol=protocol,  # type: ignore
+            protocol=protocol,
             sock=sock,
             addr=addr,
             timeout=sentinel.timeout,
@@ -94,15 +102,14 @@ class ConnectionTest(unittest.TestCase):
             sentinel.flowinfo,
             sentinel.scopeid,
         )
-        protocol = Mock(spec=network.LineProtocol)
         sock = Mock(spec=socket.SocketType)
 
         network.Connection.__init__(
             self.mock,
-            config={},  # type: ignore
+            config=self._empty_config,
             core=Mock(),
             uri_map=Mock(spec=uri_mapper.MpdUriMapper),
-            protocol=protocol,  # type: ignore
+            protocol=self._mock_protocol,
             sock=sock,
             addr=addr,
             timeout=sentinel.timeout,
@@ -195,21 +202,19 @@ class ConnectionTest(unittest.TestCase):
         conn.send_buffer = b""
 
         asyncio.run(conn.queue_send(b"data"))
-        conn._loop.sock_sendall.assert_called_once_with(  # type: ignore
-            IsA(Mock), b"data"
-        )
+        conn._loop.sock_sendall.assert_called_once_with(IsA(Mock), b"data")
         assert conn.send_buffer == b""
 
     def test_recv_callback_sends_data_to_actor(self):
         conn = self.create_connection()
-        conn._sock.recv.return_value = b"data"  # type: ignore
+        conn._sock.recv.return_value = b"data"
 
         assert asyncio.run(conn.recv())
         conn.actor_ref.tell.assert_called_once_with({"received": b"data"})
 
     def test_recv_callback_handles_dead_actors(self):
         conn = self.create_connection()
-        conn._sock.recv.return_value = b"data"  # type: ignore
+        conn._sock.recv.return_value = b"data"
         conn.actor_ref.tell.side_effect = pykka.ActorDeadError()
 
         assert not asyncio.run(conn.recv())
@@ -217,7 +222,7 @@ class ConnectionTest(unittest.TestCase):
 
     def test_recv_callback_gets_no_data(self):
         conn = self.create_connection()
-        conn._sock.recv.return_value = b""  # type: ignore
+        conn._sock.recv.return_value = b""
 
         assert not asyncio.run(conn.recv())
         assert conn.actor_ref.mock_calls == [
@@ -229,7 +234,7 @@ class ConnectionTest(unittest.TestCase):
         conn._loop = Mock(spec=asyncio.AbstractEventLoop)
 
         for error in (errno.EWOULDBLOCK, errno.EINTR):
-            conn._loop.sock_recv.side_effect = OSError(error, "")  # type: ignore
+            conn._loop.sock_recv.side_effect = OSError(error, "")
             assert asyncio.run(conn.recv())
             assert conn.actor_ref.stop.call_count == 0
 
@@ -245,12 +250,10 @@ class ConnectionTest(unittest.TestCase):
         conn = self.create_connection()
         conn.send_buffer = b"data"
         conn._loop = Mock(spec=asyncio.AbstractEventLoop)
-        conn._loop.sock_sendall.return_value = None  # type: ignore
+        conn._loop.sock_sendall.return_value = None
 
         asyncio.run(conn.send(conn.send_buffer))
-        conn._loop.sock_sendall.assert_called_once_with(  # type: ignore
-            IsA(Mock), b"data"
-        )
+        conn._loop.sock_sendall.assert_called_once_with(IsA(Mock), b"data")
 
     def test_send_recoverable_error(self):
         conn = self.create_connection()
