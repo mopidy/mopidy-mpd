@@ -301,35 +301,41 @@ class Connection:
         }
         self.actor_ref = self.protocol.start(**protocol_kwargs)
 
+    async def recv(self) -> bool:
+        try:
+            task = asyncio.create_task(self._loop.sock_recv(self._sock, 4096))
+            tasks, _ = await asyncio.wait(
+                [task], timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED
+            )
+
+            if not (tasks and task in tasks):
+                self.stop(f"Client inactive for {self.timeout:d}s; closing connection")
+                return False
+
+            data = task.result()
+        except OSError as exc:
+            if exc.errno in (errno.EWOULDBLOCK, errno.EINTR):
+                return True
+            self.stop(f"Unexpected client error: {exc}")
+            return False
+
+        if not data:
+            self.actor_ref.tell({"close": True})
+            return False
+
+        try:
+            self.actor_ref.tell({"received": data})
+        except pykka.ActorDeadError:
+            self.stop("Actor is dead.")
+            return False
+
+        return True
+
     async def serve(self) -> None:
         while not self.stopping:
-            try:
-                task = asyncio.create_task(self._loop.sock_recv(self._sock, 4096))
-                done, _ = await asyncio.wait(
-                    {task}, timeout=self.timeout, return_when=asyncio.FIRST_COMPLETED
-                )
-
-                if not done:
-                    self.stop(
-                        f"Client inactive for {self.timeout:d}s; closing connection"
-                    )
-                    return
-
-                data = task.result()
-            except OSError as exc:
-                if exc.errno in (errno.EWOULDBLOCK, errno.EINTR):
-                    continue
-                self.stop(f"Unexpected client error: {exc}")
-                return
-
-            if not data:
-                self.actor_ref.tell({"close": True})
-                return
-
-            try:
-                self.actor_ref.tell({"received": data})
-            except pykka.ActorDeadError:
-                self.stop("Actor is dead.")
+            should_continue = await self.recv()
+            if not should_continue:
+                break
 
     def stop(self, reason: str, level: int = logging.DEBUG) -> None:
         if self.stopping:
@@ -353,13 +359,13 @@ class Connection:
             await asyncio.wait({task}, timeout=self.timeout)
             self.send_buffer = b""
 
-    async def send(self, data: bytes):
+    async def send(self, data: bytes) -> None:
         """Send data to client."""
         try:
             await self._loop.sock_sendall(self._sock, data)
         except OSError as exc:
             if exc.errno in (errno.EWOULDBLOCK, errno.EINTR):
-                return data
+                return
             self.stop(f"Unexpected client error: {exc}")
 
     def timeout_callback(self) -> bool:
