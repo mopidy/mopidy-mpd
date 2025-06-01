@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Callable
 from typing import (
@@ -100,7 +101,10 @@ class MpdDispatcher:
         response = [*[f"changed: {s}" for s in subsystems], "OK"]
         self.subsystem_events = set()
         self.subsystem_subscriptions = set()
-        self.session.send_lines(response)
+        asyncio.run_coroutine_threadsafe(
+            self.session.send_lines(response),
+            self.session.loop,
+        )
 
     def _call_next_filter(
         self, request: Request, response: Response, filter_chain: list[Filter]

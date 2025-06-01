@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from typing import cast
 from unittest import mock
@@ -53,12 +54,15 @@ class BaseTestCase(unittest.TestCase):
             ).proxy(),
         )
 
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
         self.connection = MockConnection()
         self.session = session.MpdSession(
             config=self.get_config(),
             core=self.core,
             uri_map=uri_mapper.MpdUriMapper(self.core),
             connection=self.connection,
+            loop=self.loop,
         )
         self.dispatcher = self.session.dispatcher
         self.context = self.dispatcher.context
@@ -76,20 +80,20 @@ class BaseTestCase(unittest.TestCase):
         assert self.connection.response == []
 
     def assertInResponse(self, value):  # noqa: N802
-        assert value in self.connection.response, (
-            f"Did not find {value!r} in {self.connection.response!r}"
-        )
+        assert (
+            value in self.connection.response
+        ), f"Did not find {value!r} in {self.connection.response!r}"
 
     def assertOnceInResponse(self, value):  # noqa: N802
         matched = len([r for r in self.connection.response if r == value])
-        assert matched == 1, (
-            f"Expected to find {value!r} once in {self.connection.response!r}"
-        )
+        assert (
+            matched == 1
+        ), f"Expected to find {value!r} once in {self.connection.response!r}"
 
     def assertNotInResponse(self, value):  # noqa: N802
-        assert value not in self.connection.response, (
-            f"Found {value!r} in {self.connection.response!r}"
-        )
+        assert (
+            value not in self.connection.response
+        ), f"Found {value!r} in {self.connection.response!r}"
 
     def assertEqualResponse(self, value):  # noqa: N802
         assert len(self.connection.response) == 1

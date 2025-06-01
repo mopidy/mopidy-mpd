@@ -1,4 +1,6 @@
+import asyncio
 import logging
+import threading
 from typing import Any
 
 import pykka
@@ -37,7 +39,11 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
         self.zeroconf_service = None
 
         self.uri_map = uri_mapper.MpdUriMapper(core)
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
         self.server = self._setup_server(config, core)
+        self.server_thread = threading.Thread(target=self._run_server)
 
     def _setup_server(self, config: types.Config, core: CoreProxy) -> network.Server:
         try:
@@ -54,11 +60,16 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
         except OSError as exc:
             raise exceptions.FrontendError(f"MPD server startup failed: {exc}") from exc
 
-        logger.info(f"MPD server running at {network.format_address(server.address)}")
+        logger.info("MPD server running at %s", network.format_address(server.address))
 
         return server
 
+    def _run_server(self) -> None:
+        self.loop.run_until_complete(self.server.run())
+
     def on_start(self) -> None:
+        self.server_thread.start()
+
         if self.zeroconf_name and not network.is_unix_socket(self.server.server_socket):
             self.zeroconf_service = zeroconf.Zeroconf(
                 name=self.zeroconf_name, stype="_mpd._tcp", port=self.port
@@ -73,7 +84,13 @@ class MpdFrontend(pykka.ThreadingActor, CoreListener):
         for session_actor in session_actors:
             session_actor.stop()
 
-        self.server.stop()
+        if not self.server_thread.is_alive():
+            logger.warning("MPD server already stopped")
+            return
+
+        self.loop.call_soon_threadsafe(self.server.stop)
+        logger.debug("Waiting for MPD server thread to terminate")
+        self.server_thread.join()
 
     def on_event(self, event: str, **kwargs: Any) -> None:
         if event not in _CORE_EVENTS_TO_IDLE_SUBSYSTEMS:
