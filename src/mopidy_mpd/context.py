@@ -65,14 +65,12 @@ class MpdContext:
     @overload
     def browse(
         self, path: str | None, *, recursive: bool, lookup: Literal[True]
-    ) -> Generator[
-        tuple[str, pykka.Future[dict[Uri, list[Track]]] | None], Any, None
-    ]: ...
+    ) -> Generator[tuple[str, pykka.Future[dict[Uri, list[Track]]] | None], Any]: ...
 
     @overload
     def browse(
         self, path: str | None, *, recursive: bool, lookup: Literal[False]
-    ) -> Generator[tuple[str, Ref | None], Any, None]: ...
+    ) -> Generator[tuple[str, Ref | None], Any]: ...
 
     def browse(  # noqa: C901, PLR0912
         self,
@@ -80,7 +78,7 @@ class MpdContext:
         *,
         recursive: bool = True,
         lookup: bool = True,
-    ) -> Generator[Any, Any, None]:
+    ) -> Generator[Any, Any]:
         """
         Browse the contents of a given directory path.
 

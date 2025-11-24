@@ -8,6 +8,7 @@ from mopidy_mpd.protocol import tagtype_list
 
 if TYPE_CHECKING:
     from mopidy.core import CoreProxy
+
     from mopidy_mpd.uri_mapper import MpdUriMapper
 
 

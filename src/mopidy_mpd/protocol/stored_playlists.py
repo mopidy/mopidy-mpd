@@ -6,14 +6,15 @@ import re
 from typing import TYPE_CHECKING, Literal, cast, overload
 from urllib.parse import urlparse
 
-from mopidy.models import Track
 from mopidy.types import Uri, UriScheme
+
 from mopidy_mpd import exceptions, protocol, translator
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
-    from mopidy.models import Playlist
+    from mopidy.models import Playlist, Track
+
     from mopidy_mpd.context import MpdContext
 
 logger = logging.getLogger(__name__)
@@ -176,7 +177,7 @@ def load(
     """
     playlist = _get_playlist(context, name, must_exist=True)
     tracks = cast(  # TODO(type): Improve typing of models to avoid cast.
-        tuple[Track],
+        "tuple[Track]",
         playlist.tracks[playlist_slice],  # pyright: ignore[reportIndexIssue]
     )
     track_uris = [track.uri for track in tracks]

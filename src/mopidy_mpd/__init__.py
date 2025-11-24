@@ -27,6 +27,6 @@ class Extension(ext.Extension):
         return schema
 
     def setup(self, registry: ext.Registry) -> None:
-        from .actor import MpdFrontend
+        from .actor import MpdFrontend  # noqa: PLC0415
 
         registry.add("frontend", MpdFrontend)

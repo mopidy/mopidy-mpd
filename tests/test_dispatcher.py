@@ -15,7 +15,7 @@ class MpdDispatcherTest(unittest.TestCase):
         config = {"mpd": {"password": None, "command_blacklist": ["disabled"]}}
         self.backend = dummy_backend.create_proxy()
         self.core = cast(
-            CoreProxy, Core.start(config=None, backends=[self.backend]).proxy()
+            "CoreProxy", Core.start(config=None, backends=[self.backend]).proxy()
         )
         self.dispatcher = MpdDispatcher(
             config=config,

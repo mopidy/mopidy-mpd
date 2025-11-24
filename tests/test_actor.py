@@ -41,7 +41,7 @@ def test_idle_hooked_up_correctly(event, expected):
         frontend = actor.MpdFrontend(core=mock.Mock(), config=config)
 
     with mock.patch("mopidy.listener.send") as send_mock:
-        frontend.on_event(event[0], **{e: None for e in event[1:]})
+        frontend.on_event(event[0], **dict.fromkeys(event[1:]))
 
     if expected is None:
         assert not send_mock.call_args

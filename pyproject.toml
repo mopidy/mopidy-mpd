@@ -2,7 +2,7 @@
 name = "mopidy-mpd"
 description = "Mopidy extension for controlling Mopidy from MPD clients"
 readme = "README.md"
-requires-python = ">= 3.11"
+requires-python = ">= 3.13"
 license = { text = "Apache-2.0" }
 authors = [{ name = "Stein Magnus Jodal", email = "stein.magnus@jodal.no" }]
 classifiers = [
@@ -13,7 +13,11 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Players",
 ]
 dynamic = ["version"]
-dependencies = ["mopidy >= 4.0.0a4", "pygobject >= 3.42", "pykka >= 4"]
+dependencies = [
+    "mopidy >= 4.0.0a7",
+    "pygobject >= 3.50",
+    "pykka >= 4.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/mopidy/mopidy-mpd"
@@ -23,7 +27,7 @@ mpd = "mopidy_mpd:Extension"
 
 
 [build-system]
-requires = ["setuptools >= 66", "setuptools-scm >= 7.1"]
+requires = ["setuptools >= 78", "setuptools-scm >= 8.2"]
 build-backend = "setuptools.build_meta"
 
 
@@ -50,7 +54,7 @@ show_missing = true
 
 
 [tool.pyright]
-pythonVersion = "3.11"
+pythonVersion = "3.13"
 typeCheckingMode = "standard"
 # Not all dependencies have type hints:
 reportMissingTypeStubs = false
@@ -68,7 +72,7 @@ filterwarnings = [
 
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -122,7 +126,13 @@ ignore = [
 
 
 [tool.tox]
-env_list = ["3.11", "3.12", "3.13", "pyright", "ruff-check", "ruff-format"]
+env_list = [
+    "3.13",
+    "3.14",
+    "pyright",
+    "ruff-check",
+    "ruff-format",
+]
 
 [tool.tox.env_run_base]
 package = "wheel"
