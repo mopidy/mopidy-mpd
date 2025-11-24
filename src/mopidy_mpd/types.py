@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeAlias, TypedDict
+from typing import TYPE_CHECKING, TypedDict
 
 from mopidy.config import Config as MopidyConfig
 
@@ -23,4 +23,4 @@ class MpdConfig(TypedDict):
     default_playlist_scheme: UriScheme
 
 
-SocketAddress: TypeAlias = tuple[str, int | None]
+type SocketAddress = tuple[str, int | None]

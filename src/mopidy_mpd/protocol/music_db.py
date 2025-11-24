@@ -4,12 +4,14 @@ import itertools
 from typing import TYPE_CHECKING, cast
 
 from mopidy.models import Album, Artist, SearchResult, Track
-from mopidy.types import DistinctField, Query, SearchField, Uri
+
 from mopidy_mpd import exceptions, protocol, translator
 from mopidy_mpd.protocol import stored_playlists
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
+
+    from mopidy.types import DistinctField, Query, SearchField, Uri
 
     from mopidy_mpd.context import MpdContext
 
@@ -67,7 +69,7 @@ def _query_for_search(parameters: Sequence[str]) -> Query[SearchField]:
         value = parameters.pop(0)
         if value.strip():
             query.setdefault(field, []).append(value)
-    return cast(Query[SearchField], query)
+    return cast("Query[SearchField]", query)
 
 
 def _get_albums(search_results: Iterable[SearchResult]) -> list[Album]:
@@ -418,7 +420,7 @@ def lsinfo(context: MpdContext, uri: str | None = None) -> protocol.Result:
             # `protocol.Result``, but this information disappears because of the
             # typing of the `protocol.commands.add()`` decorator.
             cast(
-                protocol.ResultList,
+                "protocol.ResultList",
                 stored_playlists.listplaylists(context),
             )
         )

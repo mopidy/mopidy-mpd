@@ -23,7 +23,7 @@ def b_track() -> Ref:
 
 @pytest.fixture
 def backend_to_browse(a_track: Ref, b_track: Ref) -> BackendProxy:
-    backend = cast(BackendProxy, dummy_backend.create_proxy())
+    backend = cast("BackendProxy", dummy_backend.create_proxy())
     backend.library.dummy_browse_result = {
         "dummy:/": [
             a_track,
@@ -39,7 +39,7 @@ def backend_to_browse(a_track: Ref, b_track: Ref) -> BackendProxy:
 @pytest.fixture
 def mpd_context(backend_to_browse: BackendProxy) -> MpdContext:
     core = cast(
-        CoreProxy,
+        "CoreProxy",
         Core.start(config=None, backends=[backend_to_browse]).proxy(),
     )
     return MpdContext(

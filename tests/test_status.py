@@ -29,7 +29,7 @@ class StatusHandlerTest(unittest.TestCase):
         self.backend = dummy_backend.create_proxy(audio=self.audio)
 
         self.core = cast(
-            core.CoreProxy,
+            "core.CoreProxy",
             core.Core.start(
                 config,
                 audio=self.audio,

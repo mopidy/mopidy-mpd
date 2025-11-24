@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from mopidy.core import CoreProxy
+
     from mopidy_mpd import types
     from mopidy_mpd.session import MpdSession, MpdSessionKwargs
     from mopidy_mpd.types import SocketAddress
@@ -502,7 +503,7 @@ class LineProtocol(pykka.ThreadingActor):
         """Clean up connection resouces when actor stops."""
         self.connection.stop("Actor is shutting down.")
 
-    def parse_lines(self) -> Generator[bytes, Any, None]:
+    def parse_lines(self) -> Generator[bytes, Any]:
         """Consume new data and yield any lines found."""
         while re.search(self.terminator, self.recv_buffer):
             line, self.recv_buffer = self.delimiter.split(self.recv_buffer, 1)

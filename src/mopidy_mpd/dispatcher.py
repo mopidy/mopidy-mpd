@@ -5,7 +5,6 @@ from collections.abc import Callable
 from typing import (
     TYPE_CHECKING,
     NewType,
-    TypeAlias,
     TypeVar,
 )
 
@@ -25,9 +24,9 @@ logger = logging.getLogger(__name__)
 protocol.load_protocol_modules()
 
 T = TypeVar("T")
-Request: TypeAlias = str
+type Request = str
 Response = NewType("Response", list[str])
-Filter: TypeAlias = Callable[[Request, Response, list["Filter"]], Response]
+type Filter = Callable[[Request, Response, list["Filter"]], Response]
 
 
 class MpdDispatcher:

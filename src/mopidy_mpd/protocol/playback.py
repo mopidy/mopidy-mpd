@@ -127,7 +127,7 @@ def next_(context: MpdContext) -> None:
 
 
 @protocol.commands.add("pause", state=protocol.BOOL)
-def pause(context: MpdContext, state: bool | None = None) -> None:
+def pause(context: MpdContext, state: bool | None = None) -> None:  # noqa: FBT001
     """
     *musicpd.org, playback section:*
 

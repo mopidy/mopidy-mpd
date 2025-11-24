@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeAlias
+from typing import TYPE_CHECKING, Any
 
 from mopidy_mpd import exceptions
 
@@ -31,12 +31,12 @@ LINE_TERMINATOR = b"\n"
 VERSION = "0.19.0"
 
 
-ResultValue: TypeAlias = str | int
-ResultDict: TypeAlias = dict[str, ResultValue]
-ResultTuple: TypeAlias = tuple[str, ResultValue]
-ResultList: TypeAlias = list[ResultTuple | ResultDict]
-Result: TypeAlias = None | ResultDict | ResultTuple | ResultList
-HandlerFunc: TypeAlias = Callable[..., Result]
+type ResultValue = str | int
+type ResultDict = dict[str, ResultValue]
+type ResultTuple = tuple[str, ResultValue]
+type ResultList = list[ResultTuple | ResultDict]
+type Result = None | ResultDict | ResultTuple | ResultList
+type HandlerFunc = Callable[..., Result]
 
 
 def load_protocol_modules() -> None:
@@ -44,7 +44,7 @@ def load_protocol_modules() -> None:
     The protocol modules must be imported to get them registered in
     :attr:`commands`.
     """
-    from . import (  # noqa: F401
+    from . import (  # noqa: F401, PLC0415
         audio_output,
         channels,
         command_list,
