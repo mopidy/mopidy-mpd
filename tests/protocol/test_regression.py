@@ -22,8 +22,8 @@ class IssueGH17RegressionTest(protocol.BaseTestCase):
     - Press next until you get to the unplayable track
     """
 
-    @mock.patch.object(protocol.core.tracklist.random, "shuffle", mock_shuffle)
     def test(self):
+        random.seed(1)
         tracks = [
             Track(uri="dummy:a"),
             Track(uri="dummy:b"),
@@ -42,14 +42,18 @@ class IssueGH17RegressionTest(protocol.BaseTestCase):
         assert self.core.playback.get_current_track().get().uri == "dummy:a"
         self.send_request('random "1"')
         self.send_request("next")
-        assert self.core.playback.get_current_track().get().uri == "dummy:b"
-        self.send_request("next")
-        # Should now be at track 'c', but playback fails and it skips ahead
-        assert self.core.playback.get_current_track().get().uri == "dummy:f"
-        self.send_request("next")
         assert self.core.playback.get_current_track().get().uri == "dummy:d"
         self.send_request("next")
+        assert self.core.playback.get_current_track().get().uri == "dummy:f"
+        self.send_request("next")
+        assert self.core.playback.get_current_track().get().uri == "dummy:a"
+        self.send_request("next")
         assert self.core.playback.get_current_track().get().uri == "dummy:e"
+        self.send_request("next")
+        assert self.core.playback.get_current_track().get().uri == "dummy:b"
+        self.send_request("next")
+        # All tracks have been played, including the error one, which we skipped.
+        assert self.core.playback.get_current_track().get() is None
 
 
 class IssueGH18RegressionTest(protocol.BaseTestCase):

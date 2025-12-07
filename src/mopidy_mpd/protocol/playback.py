@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Never
 
-from mopidy.core import PlaybackState
-from mopidy.types import DurationMs, Percentage
+from mopidy.types import DurationMs, Percentage, PlaybackState
 
 from mopidy_mpd import exceptions, protocol
 

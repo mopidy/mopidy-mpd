@@ -3,8 +3,8 @@ from typing import cast
 
 import pykka
 from mopidy import core
-from mopidy.core import PlaybackState
 from mopidy.models import Track
+from mopidy.types import PlaybackState
 
 from mopidy_mpd import dispatcher, uri_mapper
 from mopidy_mpd.protocol import status

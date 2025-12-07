@@ -5,6 +5,8 @@ tests of the core and backends.
 """
 
 import pykka
+from mopidy.types import PlaybackState
+
 from mopidy import audio
 
 
@@ -16,7 +18,7 @@ def create_proxy(config=None, mixer=None):
 class DummyAudio(pykka.ThreadingActor):
     def __init__(self, config=None, mixer=None):
         super().__init__()
-        self.state = audio.PlaybackState.STOPPED
+        self.state = PlaybackState.STOPPED
         self._volume = 0
         self._position = 0
         self._source_setup_callback = None
@@ -50,10 +52,10 @@ class DummyAudio(pykka.ThreadingActor):
         return True
 
     def start_playback(self):
-        return self._change_state(audio.PlaybackState.PLAYING)
+        return self._change_state(PlaybackState.PLAYING)
 
     def pause_playback(self):
-        return self._change_state(audio.PlaybackState.PAUSED)
+        return self._change_state(PlaybackState.PAUSED)
 
     def prepare_change(self):
         self._uri = None
@@ -61,7 +63,7 @@ class DummyAudio(pykka.ThreadingActor):
         return True
 
     def stop_playback(self):
-        return self._change_state(audio.PlaybackState.STOPPED)
+        return self._change_state(PlaybackState.STOPPED)
 
     def get_volume(self):
         return self._volume
@@ -92,7 +94,7 @@ class DummyAudio(pykka.ThreadingActor):
         if not self._uri:
             return False
 
-        if new_state == audio.PlaybackState.STOPPED and self._uri:
+        if new_state == PlaybackState.STOPPED and self._uri:
             self._stream_changed = True
             self._uri = None
 
@@ -111,7 +113,7 @@ class DummyAudio(pykka.ThreadingActor):
             target_state=None,
         )
 
-        if new_state == audio.PlaybackState.PLAYING:
+        if new_state == PlaybackState.PLAYING:
             self._tags["audio-codec"] = ["fake info..."]
             audio.AudioListener.send("tags_changed", tags=["audio-codec"])
 
