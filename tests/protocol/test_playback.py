@@ -1,7 +1,7 @@
 import unittest
 
-from mopidy.core import PlaybackState
 from mopidy.models import Track
+from mopidy.types import PlaybackState
 
 from tests import protocol
 
