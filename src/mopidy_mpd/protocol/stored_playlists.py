@@ -65,7 +65,7 @@ def listplaylist(context: MpdContext, name: str) -> protocol.Result:
         file: relative/path/to/file3.mp3
     """
     playlist = _get_playlist(context, name, must_exist=True)
-    return [("file", track.uri) for track in playlist.tracks]
+    return [("file", track.uri) for track in playlist.tracks if track.uri is not None]
 
 
 @protocol.commands.add("listplaylistinfo")
@@ -83,7 +83,7 @@ def listplaylistinfo(context: MpdContext, name: str) -> protocol.Result:
         Album, Artist, Track
     """
     playlist = _get_playlist(context, name, must_exist=True)
-    track_uris = [track.uri for track in playlist.tracks]
+    track_uris = [track.uri for track in playlist.tracks if track.uri is not None]
     tracks_map = context.core.library.lookup(uris=track_uris).get()
     tracks = []
     for uri in track_uris:
@@ -180,7 +180,7 @@ def load(
         "tuple[Track]",
         playlist.tracks[playlist_slice],  # pyright: ignore[reportIndexIssue]
     )
-    track_uris = [track.uri for track in tracks]
+    track_uris = [track.uri for track in tracks if track.uri is not None]
     context.core.tracklist.add(uris=track_uris).get()
 
 
@@ -358,6 +358,7 @@ def rename(context: MpdContext, old_name: str, new_name: str) -> None:
     _check_playlist_name(new_name)
 
     old_playlist = _get_playlist(context, old_name, must_exist=True)
+    assert old_playlist.uri
 
     if _get_playlist(context, new_name, must_exist=False):
         raise exceptions.MpdExistError("Playlist already exists")

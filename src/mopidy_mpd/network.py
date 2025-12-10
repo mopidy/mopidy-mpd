@@ -11,7 +11,9 @@ import threading
 from typing import TYPE_CHECKING, Any, Never
 
 import pykka
-from gi.repository import GLib  # pyright: ignore[reportMissingModuleSource]
+from gi.repository import (
+    GLib,  # pyright: ignore[reportAttributeAccessIssue, reportMissingModuleSource]
+)
 
 logger = logging.getLogger(__name__)
 
