@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
+from mopidy.types import TracklistId
+
 from mopidy_mpd import exceptions, protocol, translator
 
 if TYPE_CHECKING:
@@ -153,7 +155,7 @@ def moveid(context: MpdContext, tlid: int, to: int) -> None:
         the playlist. If ``TO`` is negative, it is relative to the current
         song in the playlist (if there is one).
     """
-    position = context.core.tracklist.index(tlid=tlid).get()
+    position = context.core.tracklist.index(tlid=TracklistId(tlid)).get()
     if position is None:
         raise exceptions.MpdNoExistError("No such song")
     context.core.tracklist.move(position, position + 1, to)
@@ -428,8 +430,8 @@ def swapid(context: MpdContext, tlid1: int, tlid2: int) -> None:
 
         Swaps the positions of ``SONG1`` and ``SONG2`` (both song ids).
     """
-    position1 = context.core.tracklist.index(tlid=tlid1).get()
-    position2 = context.core.tracklist.index(tlid=tlid2).get()
+    position1 = context.core.tracklist.index(tlid=TracklistId(tlid1)).get()
+    position2 = context.core.tracklist.index(tlid=TracklistId(tlid2)).get()
     if position1 is None or position2 is None:
         raise exceptions.MpdNoExistError("No such song")
     swap(context, position1, position2)
