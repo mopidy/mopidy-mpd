@@ -1,7 +1,11 @@
+import asyncio
 import logging
 from unittest.mock import Mock, sentinel
 
 from mopidy_mpd import dispatcher, network, session
+
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
 
 
 def test_on_start_logged(caplog):
@@ -13,6 +17,7 @@ def test_on_start_logged(caplog):
         core=None,
         uri_map=None,
         connection=connection,
+        loop=loop,
     ).on_start()
 
     assert f"New MPD connection from {connection}" in caplog.text
@@ -26,6 +31,7 @@ def test_on_line_received_logged(caplog):
         core=None,
         uri_map=None,
         connection=connection,
+        loop=loop,
     )
     mpd_session.dispatcher = Mock(spec=dispatcher.MpdDispatcher)
     mpd_session.dispatcher.handle_request.return_value = [str(sentinel.resp)]
