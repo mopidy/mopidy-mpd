@@ -14,7 +14,7 @@ classifiers = [
 ]
 dynamic = ["version"]
 dependencies = [
-    "mopidy >= 4.0.0",
+    "mopidy >= 4.0.2",
     "pygobject >= 3.50",
     "pykka >= 4.1",
 ]
