@@ -1,7 +1,7 @@
 import unittest
 
 from mopidy.models import Album, Artist, Playlist, TlTrack, Track
-from mopidy.types import Date, DurationMs, TracklistId, Uri
+from mopidy.types import DurationMs, ReleaseDate, TracklistId, Uri
 
 from mopidy_mpd import translator
 from mopidy_mpd.protocol import tagtype_list
@@ -43,7 +43,7 @@ class TrackMpdFormatTest(unittest.TestCase):
             ]
         ),
         genre="a genre",
-        date=Date("1977-01-01"),
+        date=ReleaseDate("1977-01-01"),
         disc_no=1,
         comment="a comment",
         length=DurationMs(137000),
