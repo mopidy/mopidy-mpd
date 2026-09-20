@@ -95,6 +95,55 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("playtime: 0")
         self.assertInResponse("OK")
 
+    def test_count_with_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", date="2001", length=4000),
+            Track(uri="dummy:b", date="2002", length=100000),
+        ]
+        self.send_request('count "(date == \\"2001\\")"')
+        self.assertInResponse("songs: 1")
+        self.assertInResponse("playtime: 4")
+        self.assertInResponse("OK")
+
+    def test_count_with_unknown_tag_in_filter_expression_fails(self):
+        self.send_request('count "(notatag == \\"x\\")"')
+        self.assertEqualResponse("ACK [2@0] {count} unknown tag 'notatag'")
+
+    def test_count_grouped_by_artist(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                artists=frozenset([Artist(name="ABBA")]),
+                length=4000,
+            ),
+            Track(
+                uri="dummy:b",
+                artists=frozenset([Artist(name="ABBA")]),
+                length=6000,
+            ),
+            Track(
+                uri="dummy:c",
+                artists=frozenset([Artist(name="TLC")]),
+                length=2000,
+            ),
+            Track(uri="dummy:d", length=1000),
+        ]
+
+        self.send_request('count group artist')
+
+        assert self.connection.response == [
+            "Artist: ",
+            "songs: 1",
+            "playtime: 1",
+            "Artist: ABBA",
+            "songs: 2",
+            "playtime: 10",
+            "Artist: TLC",
+            "songs: 1",
+            "playtime: 2",
+            "OK",
+        ]
+
     def test_findadd(self):
         track = Track(uri="dummy:a", name="A")
         self.backend.library.dummy_library = [track]
@@ -102,6 +151,20 @@ class MusicDatabaseHandlerTest(protocol.BaseTestCase):
         assert self.core.tracklist.get_length().get() == 0
 
         self.send_request('findadd "title" "A"')
+
+        assert self.core.tracklist.get_length().get() == 1
+        assert self.core.tracklist.get_tracks().get()[0].uri == "dummy:a"
+        self.assertInResponse("OK")
+
+    def test_findadd_with_filter_expression(self):
+        tracks = [
+            Track(uri="dummy:a", name="A"),
+            Track(uri="dummy:b", name="B"),
+        ]
+        self.backend.library.dummy_library = tracks
+        assert self.core.tracklist.get_length().get() == 0
+
+        self.send_request('findadd "(title == \\"A\\")"')
 
         assert self.core.tracklist.get_length().get() == 1
         assert self.core.tracklist.get_tracks().get()[0].uri == "dummy:a"
@@ -710,11 +773,74 @@ class MusicDatabaseFindTest(protocol.BaseTestCase):
         self.send_request('find "album" ""')
         self.assertInResponse("OK")
 
+    def test_find_with_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", name="foo", date="2001"),
+            Track(uri="dummy:b", name="bar", date="2002"),
+        ]
+
+        self.send_request('find "(date == \\"2001\\")"')
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_find_with_filter_expression_excludes_fake_tracks(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:track:c", name="C", date="2001"),
+        ]
+        self.backend.library.dummy_find_exact_result = SearchResult(
+            albums=[Album(uri="dummy:album:a", name="A", date="2001")],
+            artists=[Artist(uri="dummy:artist:b", name="B")],
+            tracks=[Track(uri="dummy:track:c", name="C", date="2001")],
+        )
+
+        self.send_request('find "(date == \\"2001\\")"')
+
+        self.assertNotInResponse("file: dummy:artist:b")
+        self.assertNotInResponse("file: dummy:album:a")
+        self.assertInResponse("file: dummy:track:c")
+        self.assertInResponse("OK")
+
+    def test_find_with_example_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                name="Reach Out",
+                album=Album(
+                    name="Exciter",
+                    artists=frozenset([Artist(name="Depeche Mode")]),
+                ),
+                date="2001",
+            ),
+            Track(
+                uri="dummy:b",
+                name="Other",
+                album=Album(name="Other Album", artists=frozenset()),
+                date="1999",
+            ),
+        ]
+
+        self.send_request(
+            'find "((album == \\"Exciter\\") AND '
+            '(albumartist == \\"Depeche Mode\\") AND (date == \\"2001\\"))"'
+        )
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_find_with_unknown_tag_in_filter_expression_fails(self):
+        self.send_request('find "(notatag == \\"x\\")"')
+        self.assertEqualResponse("ACK [2@0] {find} unknown tag 'notatag'")
+
 
 class MusicDatabaseListTest(protocol.BaseTestCase):
     def test_list(self):
-        self.backend.library.dummy_get_distinct_result = {"artist": {"A Artist"}}
-        self.send_request('list "artist" "artist" "foo"')
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", artists=[Artist(name="A Artist")])
+        ]
+        self.send_request('list "artist" "artist" "A Artist"')
 
         self.assertInResponse("Artist: A Artist")
         self.assertInResponse("OK")
@@ -1041,7 +1167,13 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.assertInResponse("OK")
 
     def test_list_album_with_artist_name(self):
-        self.backend.library.dummy_get_distinct_result = {"album": {"foo"}}
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                album=Album(name="foo"),
+                artists=[Artist(name="anartist")],
+            )
+        ]
 
         self.send_request('list "album" "anartist"')
         self.assertInResponse("Album: foo")
@@ -1197,8 +1329,193 @@ class MusicDatabaseListTest(protocol.BaseTestCase):
         self.send_request('list "genre" "artist" ""')
         self.assertInResponse("OK")
 
+    def test_list_artist_with_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                artists=frozenset([Artist(name="ABBA")]),
+                date="2001",
+            ),
+            Track(
+                uri="dummy:b",
+                artists=frozenset([Artist(name="TLC")]),
+                date="2002",
+            ),
+        ]
+
+        self.send_request('list "artist" "(date == \\"2001\\")"')
+
+        self.assertInResponse("Artist: ABBA")
+        self.assertNotInResponse("Artist: TLC")
+        self.assertInResponse("OK")
+
+    def test_list_album_with_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                album=Album(name="Gold"),
+                artists=frozenset([Artist(name="ABBA")]),
+            ),
+            Track(
+                uri="dummy:b",
+                album=Album(name="CrazySexyCool"),
+                artists=frozenset([Artist(name="TLC")]),
+            ),
+        ]
+
+        self.send_request('list "album" "(artist == \\"ABBA\\")"')
+
+        self.assertInResponse("Album: Gold")
+        self.assertNotInResponse("Album: CrazySexyCool")
+        self.assertInResponse("OK")
+
+    def test_list_filter_expression_without_type_fails(self):
+        self.send_request('list "(date == \\"2001\\")"')
+        self.assertEqualResponse(
+            'ACK [2@0] {list} Unknown tag type: (date == "2001")'
+        )
+
+    def test_list_with_unknown_tag_in_filter_expression_fails(self):
+        self.send_request('list "artist" "(notatag == \\"x\\")"')
+        self.assertEqualResponse("ACK [2@0] {list} unknown tag 'notatag'")
+
+    def test_list_grouped_by_albumartist(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:gold",
+                album=Album(
+                    name="Gold", artists=frozenset([Artist(name="ABBA")])
+                ),
+            ),
+            Track(
+                uri="dummy:more-gold",
+                album=Album(
+                    name="More Gold", artists=frozenset([Artist(name="ABBA")])
+                ),
+            ),
+            Track(
+                uri="dummy:fanmail",
+                album=Album(
+                    name="Fanmail", artists=frozenset([Artist(name="TLC")])
+                ),
+            ),
+        ]
+
+        self.send_request('list album group albumartist')
+
+        assert self.connection.response == [
+            "AlbumArtist: ABBA",
+            "Album: Gold",
+            "Album: More Gold",
+            "AlbumArtist: TLC",
+            "Album: Fanmail",
+            "OK",
+        ]
+
+    def test_list_with_two_groups_nests_the_last_group_outermost(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:dancing-queen",
+                name="Dancing Queen",
+                album=Album(
+                    name="Gold", artists=frozenset([Artist(name="ABBA")])
+                ),
+            ),
+            Track(
+                uri="dummy:mamma-mia",
+                name="Mamma Mia",
+                album=Album(
+                    name="Gold", artists=frozenset([Artist(name="ABBA")])
+                ),
+            ),
+            Track(
+                uri="dummy:no-scrubs",
+                name="No Scrubs",
+                album=Album(
+                    name="Fanmail", artists=frozenset([Artist(name="TLC")])
+                ),
+            ),
+        ]
+
+        self.send_request('list title group albumartist group album')
+
+        assert self.connection.response == [
+            "Album: Fanmail",
+            "AlbumArtist: TLC",
+            "Title: No Scrubs",
+            "Album: Gold",
+            "AlbumArtist: ABBA",
+            "Title: Dancing Queen",
+            "Title: Mamma Mia",
+            "OK",
+        ]
+
+    def test_list_with_numeric_track_group(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:exciter", album=Album(name="Exciter"), track_no=1),
+            Track(uri="dummy:arcade", album=Album(name="Arcade"), track_no=2),
+        ]
+
+        self.send_request('list album group track')
+
+        assert self.connection.response == [
+            "Track: 1",
+            "Album: Exciter",
+            "Track: 2",
+            "Album: Arcade",
+            "OK",
+        ]
+
+    def test_list_grouped_by_track_does_not_repeat_the_group(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:arcade-1", album=Album(name="Arcade"), track_no=1),
+            Track(uri="dummy:exciter-1", album=Album(name="Exciter"), track_no=1),
+            Track(uri="dummy:arcade-2", album=Album(name="Arcade"), track_no=2),
+            Track(uri="dummy:exciter-2", album=Album(name="Exciter"), track_no=2),
+        ]
+
+        self.send_request("list album group track")
+
+        assert self.connection.response == [
+            "Track: 1",
+            "Album: Arcade",
+            "Album: Exciter",
+            "Track: 2",
+            "Album: Arcade",
+            "Album: Exciter",
+            "OK",
+        ]
+
 
 class MusicDatabaseSearchTest(protocol.BaseTestCase):
+    def test_searchcount_grouped_by_artist(self):
+        self.backend.library.dummy_search_result = SearchResult(
+            tracks=[
+                Track(
+                    uri="dummy:a",
+                    artists=frozenset([Artist(name="ABBA")]),
+                    length=4000,
+                ),
+                Track(
+                    uri="dummy:b",
+                    artists=frozenset([Artist(name="TLC")]),
+                    length=2000,
+                ),
+            ]
+        )
+
+        self.send_request('searchcount any x group artist')
+
+        assert self.connection.response == [
+            "Artist: ABBA",
+            "songs: 1",
+            "playtime: 4",
+            "Artist: TLC",
+            "songs: 1",
+            "playtime: 2",
+            "OK",
+        ]
+
     def test_search(self):
         self.backend.library.dummy_search_result = SearchResult(
             albums=[Album(uri="dummy:album:a", name="A")],
@@ -1216,6 +1533,122 @@ class MusicDatabaseSearchTest(protocol.BaseTestCase):
         self.assertInResponse("Title: C")
 
         self.assertInResponse("OK")
+
+    def test_search_with_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", name="foo", date="2001"),
+            Track(uri="dummy:b", name="bar", date="2002"),
+        ]
+
+        self.send_request('search "(date == \\"2001\\")"')
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_mpc_tag_and_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", album=Album(name="Arcade")),
+            Track(uri="dummy:b", album=Album(name="Exciter")),
+        ]
+
+        self.send_request('search track "(album contains \\"arc\\")"')
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_example_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                name="Reach Out",
+                album=Album(
+                    name="Exciter",
+                    artists=frozenset([Artist(name="Depeche Mode")]),
+                ),
+                date="2001",
+            ),
+            Track(
+                uri="dummy:b",
+                name="Other",
+                album=Album(name="Other Album", artists=frozenset()),
+                date="1999",
+            ),
+        ]
+
+        self.send_request(
+            'search "((album == \\"Exciter\\") AND '
+            '(albumartist == \\"Depeche Mode\\") AND (date == \\"2001\\"))"'
+        )
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_negation_combined_with_positive_clause(self):
+        self.backend.library.dummy_library = [
+            Track(
+                uri="dummy:a",
+                artists=frozenset([Artist(name="foo")]),
+                date="2001",
+            ),
+            Track(
+                uri="dummy:b",
+                artists=frozenset([Artist(name="foo")]),
+                date="2002",
+            ),
+            Track(
+                uri="dummy:c",
+                artists=frozenset([Artist(name="bar")]),
+                date="2002",
+            ),
+        ]
+
+        self.send_request(
+            'search "((artist == \\"foo\\") AND (!(date == \\"2001\\")))"'
+        )
+
+        self.assertNotInResponse("file: dummy:a")
+        self.assertInResponse("file: dummy:b")
+        self.assertNotInResponse("file: dummy:c")
+        self.assertInResponse("OK")
+
+    def test_search_with_bare_negation(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", date="2001"),
+            Track(uri="dummy:b", date="2002"),
+        ]
+        self.send_request('search "(!(date == \\"2001\\"))"')
+        self.assertNotInResponse("file: dummy:a")
+        self.assertInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_contains_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", name="Exciter"),
+            Track(uri="dummy:b", name="Something Else"),
+        ]
+
+        self.send_request('search "(title contains \\"cit\\")"')
+
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_any_contains_filter_expression(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:a", name="foo", genre="Jazz"),
+            Track(uri="dummy:b", name="bar", genre="Rock"),
+        ]
+        self.send_request('search "(any contains \\"zz\\")"')
+        self.assertInResponse("file: dummy:a")
+        self.assertNotInResponse("file: dummy:b")
+        self.assertInResponse("OK")
+
+    def test_search_with_unknown_tag_in_filter_expression_fails(self):
+        self.send_request('search "(notatag == \\"x\\")"')
+        self.assertEqualResponse("ACK [2@0] {search} unknown tag 'notatag'")
 
     def test_search_album(self):
         self.send_request('search "album" "analbum"')
