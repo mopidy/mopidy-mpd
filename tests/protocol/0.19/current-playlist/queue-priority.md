@@ -9,6 +9,16 @@ would need playback to enforce their end points. Volatile tags could live in
 Mopidy-MPD, but they would need to follow shared queue entries across client
 connections and affect all metadata responses consistently.
 
+The test track is queued first so the reference responses reflect operations
+on a real song rather than only missing-song errors.
+
+```mpd
+add dummy:/a
+```
+```expected
+OK
+```
+
 ```mpd
 prio 10 0:1
 ```

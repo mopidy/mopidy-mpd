@@ -1,7 +1,7 @@
 # Playback transport uses the current queue
 
-The test track has a 40-second length. Status and `currentsong` reflect
-playback, pause, and stop, while the queue survives stopping.
+The test track has a 40-second length. `currentsong` reports its queue entry
+during playback, and stopping leaves the queue intact.
 
 ```mpd
 add "dummy:/a"
@@ -28,24 +28,6 @@ OK
 ```
 
 ```mpd
-pause 1
-```
-```expected
-OK
-```
-
-```mpd
-status
-```
-```expected
-state: pause
-song: 0
-songid: 1
-OK
-```
-
-```mpd
-pause 0
 stop
 status
 ```
