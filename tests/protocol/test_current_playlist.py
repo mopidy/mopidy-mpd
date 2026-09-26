@@ -1,5 +1,5 @@
 import pytest
-from mopidy.models import Ref, Track
+from mopidy.models import Album, Artist, Ref, Track
 
 from tests import protocol
 
@@ -197,7 +197,7 @@ class MoveCommandsTest(BasePopulatedTracklistTestCase):
 class PlaylistFindCommandTest(protocol.BaseTestCase):
     def test_playlistfind(self):
         self.send_request('playlistfind "tag" "needle"')
-        self.assertEqualResponse("ACK [0@0] {playlistfind} Not implemented")
+        self.assertEqualResponse("ACK [2@0] {playlistfind} incorrect arguments")
 
     def test_playlistfind_by_filename_not_in_tracklist(self):
         self.send_request('playlistfind "filename" "file:///dev/null"')
@@ -301,6 +301,62 @@ class PlaylistFindCommandTest(protocol.BaseTestCase):
                     "Id: 3",
                     "OK",
                 ]
+
+    def test_playlistfind_by_nested_metadata(self):
+        artist = Artist(
+            name="Example", sortname="Example sort", musicbrainz_id="artist-id"
+        )
+        album_artist = Artist(
+            name="Band", sortname="Band sort", musicbrainz_id="band-id"
+        )
+        track = Track(
+            uri="dummy:/a",
+            name="A",
+            artists=frozenset({Artist(name="Other"), artist}),
+            album=Album(
+                name="Record",
+                artists=frozenset({album_artist}),
+                musicbrainz_id="album-id",
+            ),
+            composers=frozenset({Artist(name="Composer")}),
+            performers=frozenset({Artist(name="Performer")}),
+            date="2020",
+            track_no=1,
+            disc_no=2,
+        )
+        self.backend.library.dummy_library = [track, Track(uri="dummy:/b", name="B")]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b"])
+
+        for tag, value in (
+            ("file", "dummy:/a"),
+            ("Artist", "Example"),
+            ("Artist", "Other"),
+            ("ArtistSort", "Example sort"),
+            ("Album", "Record"),
+            ("AlbumArtist", "Band"),
+            ("AlbumArtistSort", "Band sort"),
+            ("Composer", "Composer"),
+            ("Performer", "Performer"),
+            ("Date", "2020"),
+            ("Track", "1"),
+            ("Disc", "2"),
+            ("MUSICBRAINZ_ARTISTID", "artist-id"),
+            ("MUSICBRAINZ_ALBUMID", "album-id"),
+            ("MUSICBRAINZ_ALBUMARTISTID", "band-id"),
+            ("any", "Example"),
+            ("any", "1"),
+        ):
+            with self.subTest(tag=tag, value=value):
+                self.send_request(f'playlistfind {tag} "{value}"')
+                self.assertInResponse("file: dummy:/a")
+                self.assertInResponse("Pos: 0")
+                self.assertInResponse("Id: 1")
+                self.assertNotInResponse("file: dummy:/b")
+
+        for tag, value in (("Track", "01"), ("any", "dummy:/a"), ("Name", "A")):
+            with self.subTest(tag=tag, value=value):
+                self.send_request(f'playlistfind {tag} "{value}"')
+                self.assertEqualResponse("OK")
 
 
 class PlaylistIdCommandTest(BasePopulatedTracklistTestCase):
