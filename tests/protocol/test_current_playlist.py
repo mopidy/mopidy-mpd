@@ -255,6 +255,28 @@ class PlaylistFindCommandTest(protocol.BaseTestCase):
         self.send_request("playlistfind Title a")
         self.assertEqualResponse("OK")
 
+    def test_playlistfind_by_direct_track_metadata(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:/a", genre="Rock", comment="First", musicbrainz_id="a"),
+            Track(uri="dummy:/b", genre="Jazz", comment="Second", musicbrainz_id="b"),
+        ]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b"])
+
+        for tag, value in (
+            ("Genre", "Jazz"),
+            ("Comment", "Second"),
+            ("MUSICBRAINZ_TRACKID", "b"),
+        ):
+            with self.subTest(tag=tag):
+                self.send_request(f"playlistfind {tag} {value}")
+                self.assertInResponse("file: dummy:/b")
+                self.assertInResponse("Pos: 1")
+                self.assertInResponse("Id: 2")
+                self.assertNotInResponse("file: dummy:/a")
+
+                self.send_request(f"playlistfind {tag} {value.lower()}x")
+                self.assertEqualResponse("OK")
+
 
 class PlaylistIdCommandTest(BasePopulatedTracklistTestCase):
     def test_playlistid_without_songid(self):

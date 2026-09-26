@@ -86,6 +86,33 @@
     {
       "step": 6,
       "commands": [
+        "playlistfind Genre Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 7,
+      "commands": [
+        "playlistfind Comment Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 8,
+      "commands": [
+        "playlistfind MUSICBRAINZ_TRACKID Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 9,
+      "commands": [
         "playlistsearch Title B"
       ],
       "mpd": [
@@ -102,7 +129,7 @@
       ]
     },
     {
-      "step": 7,
+      "step": 10,
       "commands": [
         "delete 0",
         "status"

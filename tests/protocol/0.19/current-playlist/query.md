@@ -1,10 +1,10 @@
 # Current playlist metadata can be queried by tag
 
-The test library provides named tracks. `playlistfind` supports exact filename
-and Title matching in the current queue, including the matching position and
-ID. Tag names are case-insensitive; values match exactly. Other metadata tags
-and `playlistsearch` remain unsupported despite being recognized. `delete`
-removes a position from the queue.
+The test library provides named tracks. `playlistfind` supports exact filename,
+Title, Genre, Comment, and MUSICBRAINZ_TRACKID matching in the current queue,
+including the matching position and ID. Tag names are case-insensitive; values
+match exactly. Other metadata tags and `playlistsearch` remain unsupported
+despite being recognized. `delete` removes a position from the queue.
 
 ```mpd
 add dummy:/a
@@ -50,6 +50,30 @@ file: dummy:/a
 Title: A
 Pos: 0
 Id: 1
+OK
+```
+
+The dummy tracks have no Genre, Comment, or MusicBrainz track ID. Looking for
+these tags returns no queue entries.
+
+```mpd
+playlistfind Genre Example
+```
+```expected
+OK
+```
+
+```mpd
+playlistfind Comment Example
+```
+```expected
+OK
+```
+
+```mpd
+playlistfind MUSICBRAINZ_TRACKID Example
+```
+```expected
 OK
 ```
 

@@ -14,7 +14,10 @@ if TYPE_CHECKING:
 
 
 _PLAYLIST_FIND_FIELDS: dict[str, TracklistField] = {
+    "comment": "comment",
     "filename": "uri",
+    "genre": "genre",
+    "musicbrainz_trackid": "musicbrainz_id",
     "title": "name",
 }
 
