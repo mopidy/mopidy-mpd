@@ -277,6 +277,31 @@ class PlaylistFindCommandTest(protocol.BaseTestCase):
                 self.send_request(f"playlistfind {tag} {value.lower()}x")
                 self.assertEqualResponse("OK")
 
+    def test_playlistfind_returns_each_matching_queue_entry(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:/a", name="A"),
+            Track(uri="dummy:/b", name="B"),
+        ]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b", "dummy:/a"])
+
+        for query in ("Title A", "filename dummy:/a"):
+            with self.subTest(query=query):
+                response = self.send_request(f"playlistfind {query}")
+                entries = [
+                    line
+                    for line in response
+                    if line.startswith(("file: ", "Pos: ", "Id: ")) or line == "OK"
+                ]
+                assert entries == [
+                    "file: dummy:/a",
+                    "Pos: 0",
+                    "Id: 1",
+                    "file: dummy:/a",
+                    "Pos: 2",
+                    "Id: 3",
+                    "OK",
+                ]
+
 
 class PlaylistIdCommandTest(BasePopulatedTracklistTestCase):
     def test_playlistid_without_songid(self):

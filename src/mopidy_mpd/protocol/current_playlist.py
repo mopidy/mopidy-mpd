@@ -201,10 +201,16 @@ def playlistfind(context: MpdContext, tag: str, needle: str) -> protocol.Result:
     tl_tracks = context.core.tracklist.filter({field: [needle]}).get()
     if not tl_tracks:
         return None
-    position = context.core.tracklist.index(tl_tracks[0]).get()
-    return translator.track_to_mpd_format(
-        tl_tracks[0], context.session.tagtypes, position=position
-    )
+    matching_ids = {tl_track.tlid for tl_track in tl_tracks}
+    result: protocol.ResultList = []
+    for position, tl_track in enumerate(context.core.tracklist.get_tl_tracks().get()):
+        if tl_track.tlid in matching_ids:
+            result.extend(
+                translator.track_to_mpd_format(
+                    tl_track, context.session.tagtypes, position=position
+                )
+            )
+    return result
 
 
 @protocol.commands.add("playlistid", tlid=protocol.UINT)

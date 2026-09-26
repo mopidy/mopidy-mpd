@@ -147,6 +147,71 @@
         "state: stop",
         "OK"
       ]
+    },
+    {
+      "step": 11,
+      "commands": [
+        "add a.flac",
+        "add a.flac"
+      ],
+      "mpd": [
+        "OK",
+        "OK"
+      ]
+    },
+    {
+      "step": 12,
+      "commands": [
+        "playlistfind Title A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 1",
+        "Id: 3",
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 2",
+        "Id: 4",
+        "OK"
+      ]
+    },
+    {
+      "step": 13,
+      "commands": [
+        "playlistfind filename a.flac"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 1",
+        "Id: 3",
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 2",
+        "Id: 4",
+        "OK"
+      ]
     }
   ]
 }

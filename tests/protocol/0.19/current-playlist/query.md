@@ -2,9 +2,10 @@
 
 The test library provides named tracks. `playlistfind` supports exact filename,
 Title, Genre, Comment, and MUSICBRAINZ_TRACKID matching in the current queue,
-including the matching position and ID. Tag names are case-insensitive; values
-match exactly. Other metadata tags and `playlistsearch` remain unsupported
-despite being recognized. `delete` removes a position from the queue.
+returning every match with its position and ID. Tag names are case-insensitive;
+values match exactly. Other metadata tags and `playlistsearch` remain
+unsupported despite being recognized. `delete` removes a position from the
+queue.
 
 ```mpd
 add dummy:/a
@@ -90,5 +91,40 @@ status
 ```
 ```expected
 playlistlength: 1
+OK
+```
+
+Adding the same track twice creates distinct queue entries. Both filename and
+Title lookups return each entry with its own position and ID.
+
+```mpd
+add dummy:/a
+add dummy:/a
+```
+```expected
+OK
+```
+
+```mpd
+playlistfind Title A
+```
+```expected
+file: dummy:/a
+Pos: 1
+Id: 3
+Pos: 2
+Id: 4
+OK
+```
+
+```mpd
+playlistfind filename dummy:/a
+```
+```expected
+file: dummy:/a
+Pos: 1
+Id: 3
+Pos: 2
+Id: 4
 OK
 ```
