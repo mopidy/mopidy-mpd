@@ -1,0 +1,56 @@
+{
+  "scenario": "tests/protocol/0.19/current-playlist/add.md",
+  "daemon": "Music Player Daemon 0.19.21",
+  "greeting": "OK MPD 0.19.0",
+  "media_sha256": {
+    "a.flac": "03f370f721b7682dfdf6f5564e7122dd03402bef41334134f7b8043ac4b07458",
+    "b.flac": "f55b937ca656cc7e89a79be1f4e5ca46eba7037d4acb4a755ebf23104e6756c8"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "commands": [
+        "add \"a.flac\""
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 2,
+      "commands": [
+        "playlistinfo"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 3,
+      "commands": [
+        "status"
+      ],
+      "mpd": [
+        "volume: -1",
+        "repeat: 0",
+        "random: 0",
+        "single: 0",
+        "consume: 0",
+        "playlist: <revision>",
+        "playlistlength: 1",
+        "mixrampdb: 0.000000",
+        "state: stop",
+        "OK"
+      ]
+    }
+  ]
+}

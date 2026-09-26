@@ -139,6 +139,7 @@ env_list = [
 package = "wheel"
 wheel_build_env = ".pkg"
 dependency_groups = ["tests"]
+pass_env = ["MPD_REFERENCE_BIN", "MPD_REFERENCE_RECORD_DIR"]
 commands = [
     [
         "pytest",
