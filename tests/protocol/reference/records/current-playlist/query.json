@@ -68,6 +68,24 @@
     {
       "step": 5,
       "commands": [
+        "playlistfind TiTle A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 6,
+      "commands": [
         "playlistsearch Title B"
       ],
       "mpd": [
@@ -84,7 +102,7 @@
       ]
     },
     {
-      "step": 6,
+      "step": 7,
       "commands": [
         "delete 0",
         "status"

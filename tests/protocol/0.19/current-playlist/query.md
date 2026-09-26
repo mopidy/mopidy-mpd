@@ -1,10 +1,10 @@
 # Current playlist metadata can be queried by tag
 
-The test library provides named tracks. Only filename matching is implemented
-for `playlistfind`; metadata matching and `playlistsearch` fail despite being
-recognized. Both searches could inspect the existing Mopidy tracklist entries
-in this extension; they do not need a new core search API. `delete` removes a
-position from the queue.
+The test library provides named tracks. `playlistfind` supports exact filename
+and Title matching in the current queue, including the matching position and
+ID. Tag names are case-insensitive; values match exactly. Other metadata tags
+and `playlistsearch` remain unsupported despite being recognized. `delete`
+removes a position from the queue.
 
 ```mpd
 add dummy:/a
@@ -35,7 +35,22 @@ OK
 playlistfind Title A
 ```
 ```expected
-ACK [0@0] {playlistfind} Not implemented
+file: dummy:/a
+Title: A
+Pos: 0
+Id: 1
+OK
+```
+
+```mpd
+playlistfind TiTle A
+```
+```expected
+file: dummy:/a
+Title: A
+Pos: 0
+Id: 1
+OK
 ```
 
 ```mpd

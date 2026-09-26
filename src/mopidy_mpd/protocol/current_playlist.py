@@ -8,9 +8,15 @@ from mopidy.types import TracklistId
 from mopidy_mpd import exceptions, protocol, translator
 
 if TYPE_CHECKING:
-    from mopidy.types import Uri
+    from mopidy.types import TracklistField, Uri
 
     from mopidy_mpd.context import MpdContext
+
+
+_PLAYLIST_FIND_FIELDS: dict[str, TracklistField] = {
+    "filename": "uri",
+    "title": "name",
+}
 
 
 @protocol.commands.add("add")
@@ -186,15 +192,16 @@ def playlistfind(context: MpdContext, tag: str, needle: str) -> protocol.Result:
 
         Finds songs in the current playlist with strict matching.
     """
-    if tag == "filename":
-        tl_tracks = context.core.tracklist.filter({"uri": [needle]}).get()
-        if not tl_tracks:
-            return None
-        position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(
-            tl_tracks[0], context.session.tagtypes, position=position
-        )
-    raise exceptions.MpdNotImplementedError  # TODO
+    field = _PLAYLIST_FIND_FIELDS.get(tag.lower())
+    if field is None:
+        raise exceptions.MpdNotImplementedError  # TODO
+    tl_tracks = context.core.tracklist.filter({field: [needle]}).get()
+    if not tl_tracks:
+        return None
+    position = context.core.tracklist.index(tl_tracks[0]).get()
+    return translator.track_to_mpd_format(
+        tl_tracks[0], context.session.tagtypes, position=position
+    )
 
 
 @protocol.commands.add("playlistid", tlid=protocol.UINT)

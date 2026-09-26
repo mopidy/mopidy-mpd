@@ -218,6 +218,43 @@ class PlaylistFindCommandTest(protocol.BaseTestCase):
         self.assertInResponse("Pos: 0")
         self.assertInResponse("OK")
 
+        self.send_request('playlistfind FilENamE "dummy:///exists"')
+        self.assertInResponse("file: dummy:///exists")
+        self.assertInResponse("Id: 1")
+        self.assertInResponse("Pos: 0")
+
+    def test_playlistfind_by_title_matches_only_exact_title(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:/a", name="A"),
+            Track(uri="dummy:/b", name="B"),
+        ]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b"])
+
+        self.send_request("playlistfind Title A")
+        self.assertInResponse("file: dummy:/a")
+        self.assertInResponse("Title: A")
+        self.assertInResponse("Pos: 0")
+        self.assertInResponse("Id: 1")
+        self.assertNotInResponse("file: dummy:/b")
+        self.assertNotInResponse("Title: B")
+
+        self.send_request("playlistfind Title B")
+        self.assertInResponse("file: dummy:/b")
+        self.assertInResponse("Pos: 1")
+        self.assertInResponse("Id: 2")
+        self.assertNotInResponse("file: dummy:/a")
+
+        self.send_request("playlistfind title A")
+        self.assertInResponse("file: dummy:/a")
+        self.assertInResponse("Pos: 0")
+        self.assertInResponse("Id: 1")
+
+        self.send_request("playlistfind TiTle A")
+        self.assertInResponse("file: dummy:/a")
+
+        self.send_request("playlistfind Title a")
+        self.assertEqualResponse("OK")
+
 
 class PlaylistIdCommandTest(BasePopulatedTracklistTestCase):
     def test_playlistid_without_songid(self):
