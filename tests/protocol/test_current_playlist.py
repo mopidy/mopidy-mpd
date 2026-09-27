@@ -466,13 +466,57 @@ class PlaylistInfoCommandTest(BasePopulatedTracklistTestCase):
 
 
 class PlaylistSearchCommandTest(protocol.BaseTestCase):
-    def test_playlistsearch(self):
+    def test_playlistsearch_empty_queue(self):
         self.send_request('playlistsearch "any" "needle"')
-        self.assertEqualResponse("ACK [0@0] {playlistsearch} Not implemented")
+        self.assertEqualResponse("OK")
 
-    def test_playlistsearch_without_quotes(self):
-        self.send_request('playlistsearch any "needle"')
-        self.assertEqualResponse("ACK [0@0] {playlistsearch} Not implemented")
+    def test_playlistsearch_invalid_tag(self):
+        self.send_request('playlistsearch bogus "needle"')
+        self.assertEqualResponse("ACK [2@0] {playlistsearch} incorrect arguments")
+
+    def test_playlistsearch_matches_substrings_across_the_queue(self):
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:/a", name="Alpha"),
+            Track(uri="dummy:/b", name="Beta"),
+        ]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b", "dummy:/a"])
+
+        for query in ('TiTle "LPH"', 'filename "/a"'):
+            with self.subTest(query=query):
+                response = self.send_request(f"playlistsearch {query}")
+                entries = [
+                    line
+                    for line in response
+                    if line.startswith(("file: ", "Pos: ", "Id: ")) or line == "OK"
+                ]
+                assert entries == [
+                    "file: dummy:/a",
+                    "Pos: 0",
+                    "Id: 1",
+                    "file: dummy:/a",
+                    "Pos: 2",
+                    "Id: 3",
+                    "OK",
+                ]
+
+        self.send_request('playlistsearch any "dummy:/a"')
+        self.assertEqualResponse("OK")
+
+    def test_playlistsearch_matches_nested_metadata(self):
+        artist = Artist(name="Example")
+        self.backend.library.dummy_library = [
+            Track(uri="dummy:/a", artists=frozenset({artist})),
+            Track(uri="dummy:/b", artists=frozenset({Artist(name="Someone")})),
+        ]
+        self.core.tracklist.add(uris=["dummy:/a", "dummy:/b"])
+
+        for tag in ("Artist", "any"):
+            with self.subTest(tag=tag):
+                self.send_request(f'playlistsearch {tag} "AMP"')
+                self.assertInResponse("file: dummy:/a")
+                self.assertInResponse("Pos: 0")
+                self.assertInResponse("Id: 1")
+                self.assertNotInResponse("file: dummy:/b")
 
 
 class PlChangeCommandTest(BasePopulatedTracklistTestCase):

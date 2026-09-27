@@ -302,6 +302,87 @@
     {
       "step": 19,
       "commands": [
+        "playlistsearch TiTle a"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 20,
+      "commands": [
+        "playlistsearch filename b"
+      ],
+      "mpd": [
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 21,
+      "commands": [
+        "playlistsearch Artist AMP"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 22,
+      "commands": [
+        "playlistsearch any a.flac"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 23,
+      "commands": [
+        "playlistsearch bogus A"
+      ],
+      "mpd": [
+        "ACK [2@0] {playlistsearch} incorrect arguments"
+      ]
+    },
+    {
+      "step": 24,
+      "commands": [
         "delete 0",
         "status"
       ],
@@ -320,7 +401,7 @@
       ]
     },
     {
-      "step": 20,
+      "step": 25,
       "commands": [
         "add a.flac",
         "add a.flac"
@@ -331,7 +412,7 @@
       ]
     },
     {
-      "step": 21,
+      "step": 26,
       "commands": [
         "playlistfind Title A"
       ],
@@ -358,9 +439,36 @@
       ]
     },
     {
-      "step": 22,
+      "step": 27,
       "commands": [
         "playlistfind filename a.flac"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 1",
+        "Id: 3",
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 2",
+        "Id: 4",
+        "OK"
+      ]
+    },
+    {
+      "step": 28,
+      "commands": [
+        "playlistsearch Title a"
       ],
       "mpd": [
         "file: a.flac",
