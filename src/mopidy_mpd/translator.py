@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import logging
 from typing import TYPE_CHECKING
 
@@ -94,8 +94,8 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
         result.append(("Disc", track.disc_no))
 
     if track.last_modified:
-        datestring = datetime.datetime.fromtimestamp(
-            track.last_modified // 1000, tz=datetime.UTC
+        datestring = dt.datetime.fromtimestamp(
+            track.last_modified // 1000, tz=dt.UTC
         ).isoformat(timespec="seconds")
         result.append(("Last-Modified", datestring.replace("+00:00", "Z")))
 
