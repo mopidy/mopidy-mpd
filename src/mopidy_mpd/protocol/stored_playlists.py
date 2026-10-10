@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import datetime
+import datetime as dt
 import logging
 import re
 from typing import TYPE_CHECKING, Literal, cast, overload
@@ -140,10 +140,10 @@ def _get_last_modified(last_modified: int | None = None) -> str:
     """
     if last_modified is None:
         # If unknown, assume the playlist is modified
-        dt = datetime.datetime.now(tz=datetime.UTC)
+        modified = dt.datetime.now(tz=dt.UTC)
     else:
-        dt = datetime.datetime.fromtimestamp(last_modified / 1000.0, tz=datetime.UTC)
-    return dt.isoformat(timespec="seconds").replace("+00:00", "Z")
+        modified = dt.datetime.fromtimestamp(last_modified / 1000.0, tz=dt.UTC)
+    return modified.isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
 DEFAULT_PLAYLIST_SLICE = slice(0, None)
