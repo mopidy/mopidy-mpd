@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 import itertools
+from collections import defaultdict
 from typing import TYPE_CHECKING, cast
 
 from mopidy.models import Album, Artist, SearchResult, Track
+from mopidy.query import MatchAll, SearchExpr, dict_to_expr, field_values
 
 from mopidy_mpd import exceptions, protocol, translator
-from mopidy_mpd.protocol import stored_playlists
+from mopidy_mpd.protocol import filter_expression, stored_playlists
 
 if TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
@@ -72,6 +74,115 @@ def _query_for_search(parameters: Sequence[str]) -> Query[SearchField]:
     return cast("Query[SearchField]", query)
 
 
+def parse_query(
+    params: Sequence[str],
+    field_mapping: dict[str, str],
+    *,
+    exact: bool = False,
+) -> SearchExpr:
+    """Parse ``params`` as a core search expression.
+
+    Some clients, notably ``mpc``, retain their legacy tag argument when a
+    user supplies a modern parenthesized filter.  MPD accepts that form, e.g.
+    ``search track "(album contains 'a')"``.  The legacy tag is merely a
+    client-side selector in this case; the expression itself is authoritative.
+
+    Legacy MPD tag/value pairs are compiled to an expression immediately.
+    """
+    if expression := _filter_expression(params, field_mapping):
+        return filter_expression.parse(expression, field_mapping)
+    return dict_to_expr(_query_for_search(params), exact=exact)
+
+
+def _parse_query(
+    params: Sequence[str],
+    field_mapping: dict[str, str],
+    *,
+    exact: bool = False,
+) -> SearchExpr:
+    try:
+        return parse_query(params, field_mapping, exact=exact)
+    except filter_expression.FilterExpressionError as exc:
+        raise exceptions.MpdArgError(str(exc)) from exc
+
+
+def _filter_expression(
+    params: Sequence[str], field_mapping: dict[str, str]
+) -> str | None:
+    if len(params) == 1 and params[0].strip().startswith("("):
+        return params[0]
+    if (
+        len(params) == 2
+        and params[0].lower() in field_mapping
+        and params[1].strip().startswith("(")
+    ):
+        return params[1]
+    return None
+
+
+def _parse_group_suffix(
+    params: Sequence[str], *, max_groups: int | None = None
+) -> tuple[list[str], list[DistinctField]]:
+    """Split trailing ``group TAG`` clauses from a command's filter.
+
+    MPD treats the last group as the outermost list level, hence group fields
+    are returned in reverse command-line order.
+    """
+    remaining = list(params)
+    groups: list[DistinctField] = []
+    while len(remaining) >= 2 and remaining[-2].lower() == "group":
+        tag = remaining.pop()
+        remaining.pop()
+        field = _LIST_MAPPING.get(tag.lower())
+        if field is None:
+            raise exceptions.MpdArgError(f"Unknown tag type: {tag}")
+        groups.append(field)
+    if remaining and remaining[-1].lower() == "group":
+        raise exceptions.MpdArgError("incorrect arguments")
+    if max_groups is not None and len(groups) > max_groups:
+        raise exceptions.MpdArgError("incorrect arguments")
+    return remaining, groups
+
+
+def _count_result(tracks: Iterable[Track]) -> protocol.ResultList:
+    tracks = list(tracks)
+    total_length = sum(track.length or 0 for track in tracks)
+    return [("songs", len(tracks)), ("playtime", total_length // 1000)]
+
+
+def _grouped_count_result(
+    tracks: Iterable[Track], group_field: DistinctField
+) -> protocol.ResultList:
+    groups: defaultdict[str | None, list[Track]] = defaultdict(list)
+    for track in tracks:
+        for value in field_values(track, group_field) or (None,):
+            groups[value].append(track)
+    name = _LIST_NAME_MAPPING[group_field]
+    result: protocol.ResultList = []
+    for value in sorted(
+        groups,
+        key=lambda value: "" if value is None else value.casefold(),
+    ):
+        result.append((name, "" if value is None else value))
+        result.extend(_count_result(groups[value]))
+    return result
+
+
+def _count(
+    context: MpdContext, args: Sequence[str], *, exact: bool
+) -> protocol.ResultList:
+    try:
+        params, groups = _parse_group_suffix(args, max_groups=1)
+        expr = _parse_query(params, _SEARCH_MAPPING, exact=exact)
+    except ValueError as exc:
+        raise exceptions.MpdArgError("incorrect arguments") from exc
+
+    tracks = _get_tracks(context.core.library.search_with_expr(expr).get())
+    if groups:
+        return _grouped_count_result(tracks, groups[0])
+    return _count_result(tracks)
+
+
 def _get_albums(search_results: Iterable[SearchResult]) -> list[Album]:
     return list(itertools.chain(*[r.albums for r in search_results]))
 
@@ -111,7 +222,7 @@ def count(context: MpdContext, *args: str) -> protocol.Result:
     """
     *musicpd.org, music database section:*
 
-        ``count {TAG} {NEEDLE}``
+        ``count {FILTER} [group {GROUPTYPE}]``
 
         Counts the number of songs and their total playtime in the db
         matching ``TAG`` exactly.
@@ -120,18 +231,7 @@ def count(context: MpdContext, *args: str) -> protocol.Result:
 
     - use multiple tag-needle pairs to make more specific searches.
     """
-    try:
-        query = _query_for_search(args)
-    except ValueError as exc:
-        raise exceptions.MpdArgError("incorrect arguments") from exc
-
-    results = context.core.library.search(query=query, exact=True).get()
-    result_tracks = _get_tracks(results)
-    total_length = sum(t.length for t in result_tracks if t.length)
-    return [
-        ("songs", len(result_tracks)),
-        ("playtime", int(total_length / 1000)),
-    ]
+    return _count(context, args, exact=True)
 
 
 @protocol.commands.add("find")
@@ -161,30 +261,32 @@ def find(context: MpdContext, *args: str) -> protocol.Result:
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_for_search(args)
+        expr = _parse_query(args, _SEARCH_MAPPING, exact=True)
     except ValueError:
         return None
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search_with_expr(expr).get()
     result_tracks: list[Track] = []
-    if (
-        "artist" not in query
-        and "albumartist" not in query
-        and "composer" not in query
-        and "performer" not in query
-    ):
-        result_tracks += [
-            track
-            for a in _get_artists(results)
-            if (track := _artist_as_track(a)) is not None
-        ]
-    if "album" not in query:
-        result_tracks += [
-            track
-            for a in _get_albums(results)
-            if (track := _album_as_track(a)) is not None
-        ]
-    result_tracks += _get_tracks(results)
+    if _filter_expression(args, _SEARCH_MAPPING) is None:
+        query = _query_for_search(args)
+        if (
+            "artist" not in query
+            and "albumartist" not in query
+            and "composer" not in query
+            and "performer" not in query
+        ):
+            result_tracks.extend(
+                track
+                for a in _get_artists(results)
+                if (track := _artist_as_track(a)) is not None
+            )
+        if "album" not in query:
+            result_tracks.extend(
+                track
+                for a in _get_albums(results)
+                if (track := _album_as_track(a)) is not None
+            )
+    result_tracks.extend(_get_tracks(results))
     return translator.tracks_to_mpd_format(result_tracks, context.session.tagtypes)
 
 
@@ -199,11 +301,11 @@ def findadd(context: MpdContext, *args: str) -> None:
         current playlist. Parameters have the same meaning as for ``find``.
     """
     try:
-        query = _query_for_search(args)
+        expr = _parse_query(args, _SEARCH_MAPPING, exact=True)
     except ValueError:
         return
 
-    results = context.core.library.search(query=query, exact=True).get()
+    results = context.core.library.search_with_expr(expr).get()
     uris = [track.uri for track in _get_tracks(results) if track.uri is not None]
     context.core.tracklist.add(uris=uris).get()
 
@@ -228,9 +330,12 @@ def list_(context: MpdContext, *args: str) -> protocol.Result:
 
         ``list {TYPE} {QUERY}``
 
-        Where ``QUERY`` applies to all ``TYPE``. ``QUERY`` is one or more pairs
-        of a field name and a value. If the ``QUERY`` consists of more than one
-        pair, the pairs are AND-ed together to find the result. Examples of
+        Where ``QUERY`` applies to all ``TYPE``. ``QUERY`` is either a
+        parenthesized filter expression (``list album "(artist == \\"ABBA\\")"``)
+        or one or more pairs of a field name and a value. If the ``QUERY``
+        consists of more than one pair, the pairs are AND-ed together to find
+        the result. The tag type to list is always the first argument; a
+        filter expression alone is not a valid ``list`` command. Examples of
         valid queries and what they should return:
 
         ``list "artist" "artist" "ABBA"``
@@ -295,24 +400,76 @@ def list_(context: MpdContext, *args: str) -> protocol.Result:
     if field is None:
         raise exceptions.MpdArgError(f"Unknown tag type: {field_arg}")
 
-    query: Query[SearchField] | None = None
-    if len(params) == 1:
-        if field != "album":
-            raise exceptions.MpdArgError('should be "Album" for 3 arguments')
-        if params[0].strip():
-            query = {"artist": params}
-    else:
-        try:
-            query = _query_for_search(params)
-        except exceptions.MpdArgError as exc:
-            exc.message = "Unknown filter type"  # B306: Our own exception
-            raise
-        except ValueError:
-            return None
-
     name = _LIST_NAME_MAPPING[field]
-    result = context.core.library.get_distinct(field, query)
-    return [(name, value) for value in result.get()]
+
+    params, group_fields = _parse_group_suffix(params)
+
+    expr: SearchExpr | None = None
+    if params and params[0].strip().startswith("("):
+        expr = _parse_query((" ".join(params),), _SEARCH_MAPPING)
+    else:
+        query: Query[SearchField] | None = None
+        if len(params) == 1:
+            if field != "album":
+                raise exceptions.MpdArgError('should be "Album" for 3 arguments')
+            if params[0].strip():
+                query = {"artist": params}
+        else:
+            try:
+                query = _query_for_search(params)
+            except exceptions.MpdArgError as exc:
+                exc.message = "Unknown filter type"  # B306: Our own exception
+                raise
+            except ValueError:
+                return None
+
+        expr = MatchAll() if query is None else dict_to_expr(query)
+
+    fields = tuple(dict.fromkeys((field, *group_fields)))
+    results = context.core.library.search_with_expr(
+        expr, fields=fields, limit=False
+    ).get()
+    tracks = _get_tracks(results)
+    if group_fields:
+        return _grouped_list_result(name, field, group_fields, tracks)
+    values = sorted(
+        {value for track in tracks for value in field_values(track, field)}
+    )
+    return [(name, value) for value in values]
+
+
+def _grouped_list_result(
+    name: str,
+    field: DistinctField,
+    group_fields: Sequence[DistinctField],
+    tracks: Iterable[Track],
+) -> protocol.ResultList:
+    rows = {
+        (*groups, leaf)
+        for track in tracks
+        for groups in itertools.product(
+            *(field_values(track, group) or (None,) for group in group_fields)
+        )
+        for leaf in field_values(track, field)
+    }
+    group_names = [_LIST_NAME_MAPPING[field] for field in group_fields]
+    result: protocol.ResultList = []
+    previous: tuple[object, ...] = ()
+    for row in sorted(
+        rows,
+        key=lambda row: tuple("" if value is None else value for value in row),
+    ):
+        groups, leaf = row[:-1], row[-1]
+        for index, (group_name, value) in enumerate(
+            zip(group_names, groups, strict=True)
+        ):
+            if groups[: index + 1] != previous[: index + 1]:
+                result.append(
+                    (group_name, "" if value is None else cast("str", value))
+                )
+        result.append((name, cast("str", leaf)))
+        previous = groups
+    return result
 
 
 @protocol.commands.add("listall")
@@ -479,23 +636,35 @@ def search(context: MpdContext, *args: str) -> protocol.Result:
     - uses "file" instead of "filename".
     """
     try:
-        query = _query_for_search(args)
+        expr = _parse_query(args, _SEARCH_MAPPING)
     except ValueError:
         return None
-    results = context.core.library.search(query).get()
-    artists = [
-        track
-        for a in _get_artists(results)
-        if (track := _artist_as_track(a))
-        if not None
-    ]
-    albums = [
-        track for a in _get_albums(results) if (track := _album_as_track(a)) is not None
-    ]
-    tracks = _get_tracks(results)
-    return translator.tracks_to_mpd_format(
-        artists + albums + tracks, context.session.tagtypes
-    )
+    results = context.core.library.search_with_expr(expr).get()
+    if _filter_expression(args, _SEARCH_MAPPING) is None:
+        artists = [
+            track
+            for a in _get_artists(results)
+            if (track := _artist_as_track(a)) is not None
+        ]
+        albums = [
+            track
+            for a in _get_albums(results)
+            if (track := _album_as_track(a)) is not None
+        ]
+        result_tracks = artists + albums + _get_tracks(results)
+    else:
+        result_tracks = _get_tracks(results)
+    return translator.tracks_to_mpd_format(result_tracks, context.session.tagtypes)
+
+
+@protocol.commands.add("searchcount")
+def searchcount(context: MpdContext, *args: str) -> protocol.Result:
+    """Count case-insensitive search matches, optionally grouped by one tag.
+
+    ``searchcount`` is MPD's case-insensitive counterpart to ``count``;
+    ordinary ``search`` deliberately has no ``group`` option in the protocol.
+    """
+    return _count(context, args, exact=False)
 
 
 @protocol.commands.add("searchadd")
@@ -512,11 +681,11 @@ def searchadd(context: MpdContext, *args: str) -> None:
         not case sensitive.
     """
     try:
-        query = _query_for_search(args)
+        expr = _parse_query(args, _SEARCH_MAPPING)
     except ValueError:
         return
 
-    results = context.core.library.search(query).get()
+    results = context.core.library.search_with_expr(expr).get()
     uris = [track.uri for track in _get_tracks(results) if track.uri is not None]
     context.core.tracklist.add(uris=uris).get()
 
@@ -542,7 +711,7 @@ def searchaddpl(context: MpdContext, *args: str) -> None:
 
     playlist_name = parameters.pop(0)
     try:
-        query = _query_for_search(parameters)
+        expr = _parse_query(parameters, _SEARCH_MAPPING)
     except ValueError:
         return
 
@@ -554,7 +723,7 @@ def searchaddpl(context: MpdContext, *args: str) -> None:
     if not playlist:
         return  # TODO: Raise error about failed playlist creation?
 
-    results = context.core.library.search(query).get()
+    results = context.core.library.search_with_expr(expr).get()
     tracks = list(playlist.tracks) + _get_tracks(results)
     playlist = playlist.replace(tracks=tracks)
     context.core.playlists.save(playlist)
