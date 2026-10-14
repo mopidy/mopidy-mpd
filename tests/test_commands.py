@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 from typing import TYPE_CHECKING
+from unittest import mock
 
 from mopidy_mpd import exceptions, protocol
 
@@ -281,3 +282,28 @@ class TestCommands(unittest.TestCase):
 
         assert self.commands.handlers["foo"].list_command
         assert not self.commands.handlers["bar"].list_command
+
+    def test_is_listed_returns_bool_list_command(self):
+        def func1(context: MpdContext):
+            pass
+
+        def func2(context: MpdContext):
+            pass
+
+        self.commands.add("foo")(func1)
+        self.commands.add("bar", list_command=False)(func2)
+        context = mock.Mock()
+
+        assert self.commands.handlers["foo"].is_listed(context) is True
+        assert self.commands.handlers["bar"].is_listed(context) is False
+
+    def test_is_listed_calls_list_command_with_context(self):
+        def func(context: MpdContext):
+            pass
+
+        list_command = mock.Mock(return_value=False)
+        self.commands.add("foo", list_command=list_command)(func)
+        context = mock.Mock()
+
+        assert self.commands.handlers["foo"].is_listed(context) is False
+        list_command.assert_called_once_with(context)

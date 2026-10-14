@@ -1,3 +1,5 @@
+from unittest import mock
+
 from tests import protocol
 
 
@@ -14,6 +16,9 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("command: commands")
         self.assertInResponse("command: play")
         self.assertInResponse("command: status")
+        # The dummy backend provides playlists
+        self.assertInResponse("command: save")
+        self.assertInResponse("command: listplaylists")
         # Check if commands you do not have access to are not present
         self.assertNotInResponse("command: config")
         self.assertNotInResponse("command: kill")
@@ -24,6 +29,27 @@ class ReflectionHandlerTest(protocol.BaseTestCase):
         self.assertInResponse("command: idle")
         self.assertNotInResponse("command: noidle")
         self.assertNotInResponse("command: sticker")
+        self.assertInResponse("OK")
+
+    def test_commands_hides_playlist_commands_without_playlist_backend(self):
+        with mock.patch(
+            "mopidy.core.PlaylistsController.get_uri_schemes", return_value=[]
+        ):
+            self.send_request("commands")
+        for name in (
+            "listplaylists",
+            "playlistadd",
+            "playlistclear",
+            "playlistdelete",
+            "playlistmove",
+            "rename",
+            "rm",
+            "save",
+        ):
+            self.assertNotInResponse(f"command: {name}")
+        self.assertInResponse("command: load")
+        self.assertInResponse("command: listplaylist")
+        self.assertInResponse("command: play")
         self.assertInResponse("OK")
 
     def test_decoders(self):
