@@ -66,12 +66,29 @@ class TrackMpdFormatTest(unittest.TestCase):
         )
         assert ("file", "a uri") in result
         assert ("Time", 137) in result
+        assert ("duration", "137.000") in result
         assert ("Artist", "") not in result
         assert ("Title", "") not in result
         assert ("Album", "") not in result
         assert ("Track", 0) not in result
         assert ("Date", "") not in result
-        assert len(result) == 2
+        assert len(result) == 3
+
+    def test_track_to_mpd_format_duration_has_millisecond_precision(self):
+        result = translator.track_to_mpd_format(
+            Track(uri=Uri("a uri"), length=DurationMs(137123)),
+            tagtype_list.TAGTYPE_LIST,
+        )
+        assert ("Time", 137) in result
+        assert ("duration", "137.123") in result
+
+    def test_track_to_mpd_format_without_length_has_no_duration(self):
+        result = translator.track_to_mpd_format(
+            Track(uri=Uri("a uri")),
+            tagtype_list.TAGTYPE_LIST,
+        )
+        assert ("Time", 0) in result
+        assert "duration" not in dict(result)
 
     def test_track_to_mpd_format_with_position(self):
         result = translator.track_to_mpd_format(
@@ -109,6 +126,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         )
         assert ("file", "à uri") in result
         assert ("Time", 137) in result
+        assert ("duration", "137.000") in result
         assert ("Artist", "an artist") in result
         assert ("Artist", "yet another artist") in result
         assert ("Title", "a nàme") in result
@@ -127,7 +145,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert ("Id", 122) in result
         assert ("X-AlbumUri", "urischeme:àlbum:12345") in result
         assert ("Comment", "a comment") not in result
-        assert len(result) == 19
+        assert len(result) == 20
 
     def test_track_to_mpd_format_with_last_modified(self):
         track = self.track.replace(last_modified=995303899000)
@@ -233,6 +251,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         )
         assert ("file", "à uri") in result
         assert ("Time", 137) in result
+        assert ("duration", "137.000") in result
         assert ("Artist", "an artist") in result
         assert ("Artist", "yet another artist") in result
         assert ("Title", "a nàme") in result
@@ -241,7 +260,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert ("Track", "7/13") in result
         assert ("Pos", 9) in result
         assert ("Id", 122) in result
-        assert len(result) == 10
+        assert len(result) == 11
 
 
 class PlaylistMpdFormatTest(unittest.TestCase):

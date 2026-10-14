@@ -178,6 +178,8 @@ def status(context: MpdContext) -> protocol.Result:
         - ``nextsong``: playlist song number of the next song to be played
         - ``nextsongid``: playlist songid of the next song to be played
         - ``time``: total time elapsed (of current playing/paused song)
+        - ``duration``: total duration of the track in seconds
+                        (with milliseconds as fractional component)
         - ``elapsed``: Total time elapsed within the current song, but with
           higher resolution.
         - ``bitrate``: instantaneous bitrate in kbps
@@ -249,6 +251,8 @@ def status(context: MpdContext) -> protocol.Result:
         and current_track is not None
     ):
         result.append(("time", _status_time(playback_time_position, current_track)))
+        if current_track.length is not None:
+            result.append(("duration", _status_duration(current_track)))
         result.append(("elapsed", _status_time_elapsed(playback_time_position)))
         result.append(("bitrate", current_track.bitrate or 0))
     return result
@@ -268,6 +272,11 @@ def _status_time(playback_time_position: DurationMs, current_track: Track) -> st
     position = playback_time_position // 1000
     total = (current_track.length or 0) // 1000
     return f"{position:d}:{total:d}"
+
+
+def _status_duration(current_track: Track) -> str:
+
+    return f"{(current_track.length or 0) / 1000:.3f}"
 
 
 def _status_time_elapsed(playback_time_position: DurationMs) -> str:
