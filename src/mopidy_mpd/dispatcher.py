@@ -9,6 +9,7 @@ from typing import (
 )
 
 import pykka
+from rich.markup import escape
 
 from mopidy_mpd import context, exceptions, protocol, tokenize, types
 
@@ -188,7 +189,7 @@ class MpdDispatcher:
         if self._is_currently_idle() and request != "noidle":
             logger.debug(
                 "Client sent us %s, only %s is allowed while in the idle state",
-                repr(request),
+                escape(repr(request)),
                 repr("noidle"),
             )
             self.session.close()
