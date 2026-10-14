@@ -72,6 +72,18 @@ def _query_for_search(parameters: Sequence[str]) -> Query[SearchField]:
     return cast("Query[SearchField]", query)
 
 
+def _split_window(args: Sequence[str]) -> tuple[Sequence[str], slice]:
+    """Split a trailing ``window START:END`` pair off ``find``/``search`` args."""
+    match args:
+        case [*rest, "window", window]:
+            try:
+                return rest, protocol.RANGE(window)
+            except ValueError as exc:
+                raise exceptions.MpdArgError("incorrect arguments") from exc
+        case _:
+            return args, slice(None)
+
+
 def _get_albums(search_results: Iterable[SearchResult]) -> list[Album]:
     return list(itertools.chain(*[r.albums for r in search_results]))
 
@@ -139,12 +151,16 @@ def find(context: MpdContext, *args: str) -> protocol.Result:
     """
     *musicpd.org, music database section:*
 
-        ``find {TYPE} {WHAT}``
+        ``find {TYPE} {WHAT} [...] [window START:END]``
 
         Finds songs in the db that are exactly ``WHAT``. ``TYPE`` can be any
         tag supported by MPD, or one of the two special parameters - ``file``
         to search by full path (relative to database root), and ``any`` to
         match against all available tags. ``WHAT`` is what to find.
+
+        ``window`` can be used to query only a portion of the real response.
+        The parameter is two zero-based record numbers; a start number and an
+        end number.
 
     *GMPC:*
 
@@ -160,8 +176,9 @@ def find(context: MpdContext, *args: str) -> protocol.Result:
     - also uses the search type "date".
     - uses "file" instead of "filename".
     """
+    params, window = _split_window(args)
     try:
-        query = _query_for_search(args)
+        query = _query_for_search(params)
     except ValueError:
         return None
 
@@ -185,7 +202,9 @@ def find(context: MpdContext, *args: str) -> protocol.Result:
             if (track := _album_as_track(a)) is not None
         ]
     result_tracks += _get_tracks(results)
-    return translator.tracks_to_mpd_format(result_tracks, context.session.tagtypes)
+    return translator.tracks_to_mpd_format(
+        result_tracks[window], context.session.tagtypes
+    )
 
 
 @protocol.commands.add("findadd")
@@ -457,7 +476,7 @@ def search(context: MpdContext, *args: str) -> protocol.Result:
     """
     *musicpd.org, music database section:*
 
-        ``search {TYPE} {WHAT} [...]``
+        ``search {TYPE} {WHAT} [...] [window START:END]``
 
         Searches for any song that contains ``WHAT``. Parameters have the same
         meaning as for ``find``, except that search is not case sensitive.
@@ -478,8 +497,9 @@ def search(context: MpdContext, *args: str) -> protocol.Result:
     - also uses the search type "date".
     - uses "file" instead of "filename".
     """
+    params, window = _split_window(args)
     try:
-        query = _query_for_search(args)
+        query = _query_for_search(params)
     except ValueError:
         return None
     results = context.core.library.search(query).get()
@@ -494,7 +514,7 @@ def search(context: MpdContext, *args: str) -> protocol.Result:
     ]
     tracks = _get_tracks(results)
     return translator.tracks_to_mpd_format(
-        artists + albums + tracks, context.session.tagtypes
+        (artists + albums + tracks)[window], context.session.tagtypes
     )
 
 
