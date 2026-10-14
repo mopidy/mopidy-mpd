@@ -271,14 +271,23 @@ def playlistsearch(context: MpdContext, tag: str, needle: str) -> protocol.Resul
     raise exceptions.MpdNotImplementedError  # TODO
 
 
-@protocol.commands.add("plchanges", version=protocol.INT)
-def plchanges(context: MpdContext, version: int) -> protocol.Result:
+DEFAULT_PLCHANGES_RANGE = slice(0, None)
+
+
+@protocol.commands.add("plchanges", version=protocol.INT, songrange=protocol.RANGE)
+def plchanges(
+    context: MpdContext,
+    version: int,
+    songrange: slice = DEFAULT_PLCHANGES_RANGE,
+) -> protocol.Result:
     """
     *musicpd.org, current playlist section:*
 
-        ``plchanges {VERSION}``
+        ``plchanges {VERSION} [START:END]``
 
         Displays changed songs currently in the playlist since ``VERSION``.
+        Start and end positions may be given to limit the output to changes in
+        the given range.
 
         To detect songs that were deleted at the end of the playlist, use
         ``playlistlength`` returned by status command.
@@ -291,9 +300,10 @@ def plchanges(context: MpdContext, version: int) -> protocol.Result:
     tracklist_version = context.core.tracklist.get_version().get()
 
     if version < tracklist_version:
+        tl_tracks = context.core.tracklist.get_tl_tracks().get()
+        start, end, _ = songrange.indices(len(tl_tracks))
         return translator.tracks_to_mpd_format(
-            context.core.tracklist.get_tl_tracks().get(),
-            context.session.tagtypes,
+            tl_tracks, context.session.tagtypes, start=start, end=end
         )
 
     if version == tracklist_version:
@@ -305,7 +315,12 @@ def plchanges(context: MpdContext, version: int) -> protocol.Result:
 
         tl_track = context.core.playback.get_current_tl_track().get()
         position = context.core.tracklist.index(tl_track).get()
-        if tl_track is not None and position is not None:
+        if (
+            tl_track is not None
+            and position is not None
+            and songrange.start <= position
+            and (songrange.stop is None or position < songrange.stop)
+        ):
             return translator.track_to_mpd_format(
                 tl_track,
                 context.session.tagtypes,
@@ -316,16 +331,22 @@ def plchanges(context: MpdContext, version: int) -> protocol.Result:
     return None
 
 
-@protocol.commands.add("plchangesposid", version=protocol.INT)
-def plchangesposid(context: MpdContext, version: int) -> protocol.Result:
+@protocol.commands.add("plchangesposid", version=protocol.INT, songrange=protocol.RANGE)
+def plchangesposid(
+    context: MpdContext,
+    version: int,
+    songrange: slice = DEFAULT_PLCHANGES_RANGE,
+) -> protocol.Result:
     """
     *musicpd.org, current playlist section:*
 
-        ``plchangesposid {VERSION}``
+        ``plchangesposid {VERSION} [START:END]``
 
         Displays changed songs currently in the playlist since ``VERSION``.
         This function only returns the position and the id of the changed
         song, not the complete metadata. This is more bandwidth efficient.
+        Start and end positions may be given to limit the output to changes in
+        the given range.
 
         To detect songs that were deleted at the end of the playlist, use
         ``playlistlength`` returned by status command.
@@ -333,8 +354,9 @@ def plchangesposid(context: MpdContext, version: int) -> protocol.Result:
     # TODO: Naive implementation that returns all tracks as changed
     if int(version) != context.core.tracklist.get_version().get():
         result = []
+        tl_tracks = context.core.tracklist.get_tl_tracks().get()
         for position, (tlid, _) in enumerate(
-            context.core.tracklist.get_tl_tracks().get()
+            tl_tracks[songrange], start=songrange.start
         ):
             result.append(("cpos", position))
             result.append(("Id", tlid))
