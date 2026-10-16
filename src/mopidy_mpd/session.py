@@ -56,7 +56,7 @@ class MpdSession(network.LineProtocol):
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
 
     def update_binary_limit(self, binary_limit: int) -> None:
-        logger.info("Binary limit set to %s", binary_limit)
+        logger.debug("Binary limit set to %s", binary_limit)
         self._binarylimit = binary_limit
 
     def on_start(self) -> None:
