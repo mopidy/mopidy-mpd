@@ -147,3 +147,10 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
         self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
+
+    def test_outputset(self):
+        self.send_request('outputset "0" foo bar')
+
+        self.assertInResponse(
+            "ACK [50@0] {outputset} Setting attributes is not supported"
+        )

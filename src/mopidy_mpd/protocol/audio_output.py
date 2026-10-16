@@ -76,3 +76,16 @@ def outputs(context: MpdContext) -> protocol.Result:
         ("outputname", "Mute"),
         ("outputenabled", muted),
     ]
+
+@protocol.commands.add("outputset", outputid=protocol.UINT)
+def outputset(
+    context: MpdContext, outputid: int, name: str, value: str) -> protocol.Result:
+    """
+    *musicpd.org, audio output section:*
+
+        ``outputset``
+
+        Set a runtime attribute. These are specific to the output plugin, and supported
+        values are usually printed in the outputs response.
+    """
+    raise exceptions.MpdNoExistError("Setting attributes is not supported")
