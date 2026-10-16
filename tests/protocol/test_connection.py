@@ -1,6 +1,7 @@
 from unittest.mock import patch
 
 from mopidy_mpd.protocol import tagtype_list
+from mopidy_mpd.protocol.connection import MAX_BINARY_LIMIT, MIN_BINARY_LIMIT
 from tests import protocol
 
 
@@ -149,3 +150,43 @@ class ConnectionHandlerTest(protocol.BaseTestCase):
     def test_tagtypes_bogus(self):
         self.send_request("tagtypes bogus")
         self.assertEqualResponse("ACK [2@0] {tagtypes} Unknown sub command")
+
+    def test_binarylimit_default(self):
+        assert self.session._binarylimit == 8192
+
+    def test_binarylimit(self):
+        self.send_request("binarylimit 16384")
+        self.assertEqualResponse("OK")
+        assert self.session._binarylimit == 16384
+
+    def test_binarylimit_min(self):
+        self.send_request(f"binarylimit {MIN_BINARY_LIMIT}")
+        self.assertEqualResponse("OK")
+        assert self.session._binarylimit == MIN_BINARY_LIMIT
+
+    def test_binarylimit_max(self):
+        self.send_request(f"binarylimit {MAX_BINARY_LIMIT}")
+        self.assertEqualResponse("OK")
+        assert self.session._binarylimit == MAX_BINARY_LIMIT
+
+    def test_binarylimit_too_small(self):
+        self.send_request(f"binarylimit {MIN_BINARY_LIMIT - 1}")
+        self.assertEqualResponse(
+            f"ACK [2@0] {{binarylimit}} 'size' must be at least {MIN_BINARY_LIMIT}"
+        )
+        assert self.session._binarylimit == 8192
+
+    def test_binarylimit_too_large(self):
+        self.send_request(f"binarylimit {MAX_BINARY_LIMIT + 1}")
+        self.assertEqualResponse(
+            f"ACK [2@0] {{binarylimit}} 'size' must be at most {MAX_BINARY_LIMIT}"
+        )
+        assert self.session._binarylimit == 8192
+
+    def test_binarylimit_not_a_number(self):
+        self.send_request("binarylimit abc")
+        self.assertEqualResponse("ACK [2@0] {binarylimit} incorrect arguments")
+
+        self.send_request("binarylimit -1")
+        self.assertEqualResponse("ACK [2@0] {binarylimit} incorrect arguments")
+        assert self.session._binarylimit == 8192

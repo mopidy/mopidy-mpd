@@ -32,6 +32,11 @@ class MpdSession(network.LineProtocol):
 
     terminator = protocol.LINE_TERMINATOR
     encoding = protocol.ENCODING
+    # TODO: Nothing uses binarylimit today as we do not send binary responses.
+    # However clients such as rmpc expect this to exist, and we can use this in
+    # the future.
+    # Defaults to 8192 in MPD
+    _binarylimit: int = 8192
 
     def __init__(
         self,
@@ -49,6 +54,10 @@ class MpdSession(network.LineProtocol):
             session=self,
         )
         self.tagtypes = tagtype_list.TAGTYPE_LIST.copy()
+
+    def update_binary_limit(self, binary_limit: int) -> None:
+        logger.info("Binary limit set to %s", binary_limit)
+        self._binarylimit = binary_limit
 
     def on_start(self) -> None:
         logger.info("New MPD connection from %s", self.connection)
