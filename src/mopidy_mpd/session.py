@@ -58,7 +58,7 @@ class MpdSession(network.LineProtocol):
 
     def update_binary_limit(self, binary_limit: int) -> None:
         logger.debug("Binary limit set to %s", binary_limit)
-        self._binarylimit = binary_limit
+        self.binary_limit = binary_limit
 
     def on_start(self) -> None:
         logger.info("New MPD connection from %s", self.connection)
