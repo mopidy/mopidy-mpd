@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
+def track_to_mpd_format(  # noqa: C901, PLR0912
     obj: Track | TlTrack,
     tagtypes: set[str],
     *,
@@ -62,10 +62,8 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
     if track.date:
         result.append(("Date", track.date))
 
-    if track.album is not None and track.album.num_tracks is not None:
-        result.append(("Track", f"{track.track_no or 0}/{track.album.num_tracks}"))
-    else:
-        result.append(("Track", track.track_no or 0))
+    if track.track_no:
+        result.append(("Track", track.track_no))
     if position is not None and tlid is not None:
         result.append(("Pos", position))
         result.append(("Id", tlid))

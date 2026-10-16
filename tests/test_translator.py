@@ -138,7 +138,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert ("Performer", "a performer") in result
         assert ("Performer", "another performer") in result
         assert ("Genre", "a genre") in result
-        assert ("Track", "7/13") in result
+        assert ("Track", 7) in result
         assert ("Date", "1977-01-01") in result
         assert ("Disc", 1) in result
         assert ("Pos", 9) in result
@@ -257,7 +257,7 @@ class TrackMpdFormatTest(unittest.TestCase):
         assert ("Title", "a nàme") in result
         assert ("Album", "an album") in result
         assert ("Genre", "a genre") in result
-        assert ("Track", "7/13") in result
+        assert ("Track", 7) in result
         assert ("Pos", 9) in result
         assert ("Id", 122) in result
         assert len(result) == 11
