@@ -292,7 +292,7 @@ class TestCommands(unittest.TestCase):
 
         self.commands.add("foo")(func1)
         self.commands.add("bar", list_command=False)(func2)
-        context = mock.Mock()
+        context = mock.sentinel.context
 
         assert self.commands.handlers["foo"].is_listed(context) is True
         assert self.commands.handlers["bar"].is_listed(context) is False
@@ -303,7 +303,7 @@ class TestCommands(unittest.TestCase):
 
         list_command = mock.Mock(return_value=False)
         self.commands.add("foo", list_command=list_command)(func)
-        context = mock.Mock()
+        context = mock.sentinel.context
 
         assert self.commands.handlers["foo"].is_listed(context) is False
         list_command.assert_called_once_with(context)
