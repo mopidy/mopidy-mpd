@@ -72,6 +72,7 @@ def outputs(context: MpdContext) -> protocol.Result:
     muted = 1 if context.core.mixer.get_mute().get() else 0
     return [
         ("outputid", 0),
+        ("plugin", "mute"),
         ("outputname", "Mute"),
         ("outputenabled", muted),
     ]

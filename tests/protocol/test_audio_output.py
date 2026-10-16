@@ -35,6 +35,7 @@ class AudioOutputHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
 
@@ -45,6 +46,7 @@ class AudioOutputHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 1")
         self.assertInResponse("OK")
 
@@ -56,6 +58,7 @@ class AudioOutputHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 1")
         self.assertInResponse("OK")
 
@@ -64,6 +67,7 @@ class AudioOutputHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
 
@@ -72,6 +76,7 @@ class AudioOutputHandlerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 1")
         self.assertInResponse("OK")
 
@@ -107,6 +112,7 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
 
@@ -117,6 +123,7 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
 
@@ -128,6 +135,7 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
 
@@ -136,5 +144,6 @@ class AudioOutputHandlerNoneMixerTest(protocol.BaseTestCase):
 
         self.assertInResponse("outputid: 0")
         self.assertInResponse("outputname: Mute")
+        self.assertInResponse("plugin: mute")
         self.assertInResponse("outputenabled: 0")
         self.assertInResponse("OK")
