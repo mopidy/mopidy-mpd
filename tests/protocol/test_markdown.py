@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 import pytest
-from mopidy.models import Track
+from mopidy.models import Album, Artist, Track
 
 from tests.protocol import BaseTestCase
 
@@ -47,9 +47,25 @@ def test_scenario(scenario):
     client = BaseTestCase()
     client.setUp()
     try:
+        artist = Artist(name="Example")
+        album = Album(name="Protocol fixture", artists=frozenset({artist}))
         client.backend.library.dummy_library = [
-            Track(uri="dummy:/a", name="A", length=40000),
-            Track(uri="dummy:/b", name="B", length=50000),
+            Track(
+                uri="dummy:/a",
+                name="A",
+                length=40000,
+                artists=frozenset({artist}),
+                album=album,
+                track_no=1,
+            ),
+            Track(
+                uri="dummy:/b",
+                name="B",
+                length=50000,
+                artists=frozenset({artist}),
+                album=album,
+                track_no=2,
+            ),
         ]
         for number, (commands, expected) in enumerate(scenario_steps, start=1):
             actual = [

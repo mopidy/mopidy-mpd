@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 from urllib.parse import urlparse
 
 from mopidy.types import TracklistId
@@ -8,9 +8,87 @@ from mopidy.types import TracklistId
 from mopidy_mpd import exceptions, protocol, translator
 
 if TYPE_CHECKING:
-    from mopidy.types import Uri
+    from collections.abc import Callable
+
+    from mopidy.models import Track
+    from mopidy.types import TracklistField, Uri
 
     from mopidy_mpd.context import MpdContext
+
+
+# MPD accepts both file and filename; each is the track's URI in Mopidy.
+_PLAYLIST_FIND_FIELDS: dict[str, TracklistField] = {
+    "comment": "comment",
+    "file": "uri",
+    "filename": "uri",
+    "genre": "genre",
+    "musicbrainz_trackid": "musicbrainz_id",
+    "title": "name",
+}
+
+# Compare numeric tags as text: MPD's exact match distinguishes "1" from "01".
+_PLAYLIST_FIND_SCALARS: dict[str, Callable[[Track], str | None]] = {
+    "album": lambda track: track.album.name if track.album else None,
+    "date": lambda track: track.date,
+    "disc": lambda track: str(track.disc_no) if track.disc_no is not None else None,
+    "musicbrainz_albumid": lambda track: (
+        track.album.musicbrainz_id if track.album else None
+    ),
+    "track": lambda track: str(track.track_no) if track.track_no is not None else None,
+}
+
+_PLAYLIST_FIND_ARTISTS: dict[str, Literal["name", "sortname", "musicbrainz_id"]] = {
+    "albumartist": "name",
+    "albumartistsort": "sortname",
+    "artist": "name",
+    "artistsort": "sortname",
+    "composer": "name",
+    "musicbrainz_albumartistid": "musicbrainz_id",
+    "musicbrainz_artistid": "musicbrainz_id",
+    "performer": "name",
+}
+
+_PLAYLIST_FIND_OTHER_TAGS: set[str] = (
+    _PLAYLIST_FIND_SCALARS.keys() | _PLAYLIST_FIND_ARTISTS.keys()
+)
+# MPD's "any" searches metadata, not the file URI.
+_PLAYLIST_FIND_ANY_TAGS: set[str] = (
+    _PLAYLIST_FIND_FIELDS.keys() - {"file", "filename"}
+) | _PLAYLIST_FIND_OTHER_TAGS
+
+
+def _matches_playlist_artist(track: Track, tag: str, needle: str) -> bool:
+    if tag in {"albumartist", "albumartistsort", "musicbrainz_albumartistid"}:
+        artists = track.album.artists if track.album else ()
+    elif tag == "composer":
+        artists = track.composers
+    elif tag == "performer":
+        artists = track.performers
+    else:
+        artists = track.artists
+    return any(
+        getattr(artist, _PLAYLIST_FIND_ARTISTS[tag]) == needle for artist in artists
+    )
+
+
+def _matches_playlist_tag(track: Track, tag: str, needle: str) -> bool:
+    """Match MPD tag values against one queued Mopidy track.
+
+    MPD's Name is distinct from a track's Title; Mopidy has no separate
+    stored Name, so that recognized tag cannot match here.
+    """
+    if tag == "any":
+        return any(
+            _matches_playlist_tag(track, field, needle)
+            for field in _PLAYLIST_FIND_ANY_TAGS
+        )
+    if field := _PLAYLIST_FIND_FIELDS.get(tag):
+        return getattr(track, field) == needle
+    if value_for_tag := _PLAYLIST_FIND_SCALARS.get(tag):
+        return value_for_tag(track) == needle
+    if tag in _PLAYLIST_FIND_ARTISTS:
+        return _matches_playlist_artist(track, tag, needle)
+    return False
 
 
 @protocol.commands.add("add")
@@ -186,15 +264,22 @@ def playlistfind(context: MpdContext, tag: str, needle: str) -> protocol.Result:
 
         Finds songs in the current playlist with strict matching.
     """
-    if tag == "filename":
-        tl_tracks = context.core.tracklist.filter({"uri": [needle]}).get()
-        if not tl_tracks:
-            return None
-        position = context.core.tracklist.index(tl_tracks[0]).get()
-        return translator.track_to_mpd_format(
-            tl_tracks[0], context.session.tagtypes, position=position
-        )
-    raise exceptions.MpdNotImplementedError  # TODO
+    tag = tag.lower()
+    if tag not in _PLAYLIST_FIND_FIELDS and tag not in _PLAYLIST_FIND_OTHER_TAGS | {
+        "any",
+        "name",
+    }:
+        raise exceptions.MpdArgError("incorrect arguments")
+
+    result: protocol.ResultList = []
+    for position, tl_track in enumerate(context.core.tracklist.get_tl_tracks().get()):
+        if _matches_playlist_tag(tl_track.track, tag, needle):
+            result.extend(
+                translator.track_to_mpd_format(
+                    tl_track, context.session.tagtypes, position=position
+                )
+            )
+    return result
 
 
 @protocol.commands.add("playlistid", tlid=protocol.UINT)
