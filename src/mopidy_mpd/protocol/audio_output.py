@@ -83,7 +83,7 @@ def outputset(
     """
     *musicpd.org, audio output section:*
 
-        ``outputset``
+        ``outputset {ID} {NAME} {VALUE}``
 
         Set a runtime attribute. These are specific to the output plugin, and supported
         values are usually printed in the outputs response.
