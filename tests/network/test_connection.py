@@ -588,10 +588,10 @@ class ConnectionTest(unittest.TestCase):
         self.mock.host = "foo"
         self.mock.port = 999
 
-        assert network.Connection.__str__(self.mock) == "[foo]:999"
+        assert network.Connection.__str__(self.mock) == "\\[foo]:999"
 
     def test_str_without_port(self):
         self.mock.host = "foo"
         self.mock.port = None
 
-        assert network.Connection.__str__(self.mock) == "[foo]"
+        assert network.Connection.__str__(self.mock) == "\\[foo]"

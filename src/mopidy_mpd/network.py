@@ -14,6 +14,7 @@ import pykka
 from gi.repository import (
     GLib,  # pyright: ignore[reportAttributeAccessIssue, reportMissingModuleSource]
 )
+from rich.markup import escape
 
 logger = logging.getLogger(__name__)
 
@@ -110,8 +111,8 @@ def format_address(address: SocketAddress) -> str:
     """Format socket address for display."""
     host, port = address[:2]
     if port is not None:
-        return f"[{host}]:{port}"
-    return f"[{host}]"
+        return escape(f"[{host}]:{port}")
+    return escape(f"[{host}]")
 
 
 def format_hostname(hostname: str) -> str:

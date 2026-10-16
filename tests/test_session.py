@@ -34,3 +34,21 @@ def test_on_line_received_logged(caplog):
 
     assert f"Request from {connection}: foobar" in caplog.text
     assert f"Response to {connection}:" in caplog.text
+
+
+def test_on_line_received_escapes_markup_in_log(caplog):
+    caplog.set_level(logging.DEBUG)
+    connection = Mock(spec=network.Connection)
+    mpd_session = session.MpdSession(
+        config=None,
+        core=None,
+        uri_map=None,
+        connection=connection,
+    )
+    mpd_session.dispatcher = Mock(spec=dispatcher.MpdDispatcher)
+    mpd_session.dispatcher.handle_request.return_value = ["Title: [/x]"]
+
+    mpd_session.on_line_received('find title "[/x]"')
+
+    assert f'Request from {connection}: find title "\\[/x]"' in caplog.text
+    assert "Title: \\[/x]" in caplog.text

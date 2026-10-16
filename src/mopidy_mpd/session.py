@@ -3,6 +3,8 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Never, TypedDict
 
+from rich.markup import escape
+
 from mopidy_mpd import dispatcher, formatting, network, protocol, types
 from mopidy_mpd.protocol import tagtype_list
 
@@ -53,7 +55,7 @@ class MpdSession(network.LineProtocol):
         self.send_lines([f"OK MPD {protocol.VERSION}"])
 
     def on_line_received(self, line: str) -> None:
-        logger.debug("Request from %s: %s", self.connection, line)
+        logger.debug("Request from %s: %s", self.connection, escape(line))
 
         # All mpd commands start with a lowercase alphabetic character
         # To prevent CSRF attacks, requests starting with an invalid
@@ -69,7 +71,7 @@ class MpdSession(network.LineProtocol):
         logger.debug(
             "Response to %s: %s",
             self.connection,
-            formatting.indent(self.decode(self.terminator).join(response)),
+            escape(formatting.indent(self.decode(self.terminator).join(response))),
         )
 
         self.send_lines(response)

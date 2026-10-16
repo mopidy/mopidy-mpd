@@ -17,6 +17,7 @@ dependencies = [
     "mopidy >= 4.0.2",
     "pygobject >= 3.50",
     "pykka >= 4.1",
+    "rich >= 13.9",
 ]
 
 [project.urls]
