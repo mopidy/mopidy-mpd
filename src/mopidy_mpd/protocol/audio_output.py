@@ -77,9 +77,11 @@ def outputs(context: MpdContext) -> protocol.Result:
         ("outputenabled", muted),
     ]
 
+
 @protocol.commands.add("outputset", outputid=protocol.UINT)
 def outputset(
-    context: MpdContext, outputid: int, name: str, value: str) -> protocol.Result:
+    context: MpdContext, outputid: int, name: str, value: str
+) -> protocol.Result:
     """
     *musicpd.org, audio output section:*
 
