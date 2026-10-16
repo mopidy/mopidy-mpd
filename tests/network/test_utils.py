@@ -2,6 +2,8 @@ import socket
 import unittest
 from unittest.mock import Mock, patch, sentinel
 
+from rich.text import Text
+
 from mopidy_mpd import network
 
 
@@ -20,16 +22,25 @@ class FormatHostnameTest(unittest.TestCase):
 
 class FormatAddressTest(unittest.TestCase):
     def test_format_address_ipv4(self):
-        address = (sentinel.host, sentinel.port)
-        assert network.format_address(address) == f"[{sentinel.host}]:{sentinel.port}"
+        address = ("127.0.0.1", 6600)
+        assert network.format_address(address) == "[127.0.0.1]:6600"
 
     def test_format_address_ipv6(self):
-        address = (sentinel.host, sentinel.port, sentinel.flow, sentinel.scope)
-        assert network.format_address(address) == f"[{sentinel.host}]:{sentinel.port}"
+        address = ("::1", 6600, 0, 0)
+        assert network.format_address(address) == "[::1]:6600"
+
+    def test_format_address_hostname(self):
+        address = ("localhost", 6600)
+        assert network.format_address(address) == "\\[localhost]:6600"
 
     def test_format_address_unix(self):
-        address = (sentinel.path, None)
-        assert network.format_address(address) == f"[{sentinel.path}]"
+        address = ("/run/mopidy.sock", None)
+        assert network.format_address(address) == "\\[/run/mopidy.sock]"
+
+    def test_format_address_unix_renders_as_rich_markup(self):
+        address = ("/run/mopidy.sock", None)
+        text = Text.from_markup(network.format_address(address))
+        assert text.plain == "[/run/mopidy.sock]"
 
 
 class GetSocketAddress(unittest.TestCase):
