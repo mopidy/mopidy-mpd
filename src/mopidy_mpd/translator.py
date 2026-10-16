@@ -49,6 +49,9 @@ def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
         ("Album", (track.album and track.album.name) or ""),
     ]
 
+    if track.length is not None:
+        result.append(("duration", f"{track.length / 1000:.3f}"))
+
     if stream_title is not None:
         result.append(("Title", stream_title))
         if track.name:

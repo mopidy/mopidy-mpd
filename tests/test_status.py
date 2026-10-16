@@ -202,6 +202,19 @@ class StatusHandlerTest(unittest.TestCase):
         total = int(total)
         assert position <= total
 
+    def test_status_method_when_playing_contains_duration(self):
+        self.set_tracklist([Track(uri="dummy:/a", length=60123)])
+        self.core.playback.play().get()
+        result = dict(status.status(self.context))
+        assert "duration" in result
+        assert result["duration"] == "60.123"
+
+    def test_status_method_when_playing_with_no_length_has_no_duration(self):
+        self.set_tracklist([Track(uri="dummy:/a", length=None)])
+        self.core.playback.play().get()
+        result = dict(status.status(self.context))
+        assert "duration" not in result
+
     def test_status_method_when_playing_contains_elapsed(self):
         self.set_tracklist([Track(uri="dummy:/a", length=60000)])
         self.core.playback.play().get()
