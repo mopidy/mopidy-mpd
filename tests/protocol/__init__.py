@@ -25,6 +25,9 @@ class MockConnection(mock.Mock):
 class BaseTestCase(unittest.TestCase):
     enable_mixer = True
 
+    def create_backend(self):
+        return dummy_backend.create_proxy(audio=self.audio)
+
     def get_config(self):
         return {
             "core": {"max_tracklist_length": 10000},
@@ -41,7 +44,7 @@ class BaseTestCase(unittest.TestCase):
         else:
             self.mixer = None
         self.audio = dummy_audio.create_proxy()
-        self.backend = dummy_backend.create_proxy(audio=self.audio)
+        self.backend = self.create_backend()
 
         self.core = cast(
             "core.CoreProxy",
