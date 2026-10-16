@@ -252,7 +252,7 @@ def status(context: MpdContext) -> protocol.Result:
     ):
         result.append(("time", _status_time(playback_time_position, current_track)))
         if current_track.length is not None:
-            result.append(("duration", _status_duration(current_track)))
+            result.append(("duration", f"{current_track.length / 1000:.3f}"))
         result.append(("elapsed", _status_time_elapsed(playback_time_position)))
         result.append(("bitrate", current_track.bitrate or 0))
     return result
@@ -272,11 +272,6 @@ def _status_time(playback_time_position: DurationMs, current_track: Track) -> st
     position = playback_time_position // 1000
     total = (current_track.length or 0) // 1000
     return f"{position:d}:{total:d}"
-
-
-def _status_duration(current_track: Track) -> str:
-
-    return f"{(current_track.length or 0) / 1000:.3f}"
 
 
 def _status_time_elapsed(playback_time_position: DurationMs) -> str:
