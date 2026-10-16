@@ -38,6 +38,11 @@ class AuthenticationActiveTest(protocol.BaseTestCase):
         assert not self.dispatcher.authenticated
         self.assertInResponse("OK")
 
+    def test_binarylimit_is_allowed_without_authentication(self):
+        self.send_request("binarylimit 16384")
+        assert not self.dispatcher.authenticated
+        self.assertEqualResponse("OK")
+
     def test_notcommands_is_allowed_without_authentication(self):
         self.send_request("notcommands")
         assert not self.dispatcher.authenticated

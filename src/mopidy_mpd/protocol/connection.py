@@ -9,6 +9,10 @@ if TYPE_CHECKING:
     from mopidy_mpd.context import MpdContext
 
 
+MIN_BINARY_LIMIT = 4096  # 4KB (default minimum for MPD)
+MAX_BINARY_LIMIT = 8384512  # 8MB (default maximum for MPD)
+
+
 @protocol.commands.add("close", auth_required=False)
 def close(context: MpdContext) -> None:
     """
@@ -103,6 +107,27 @@ def tagtypes(context: MpdContext, *args: str) -> protocol.Result:
                 raise exceptions.MpdArgError("Unknown sub command")
         return None
     return [("tagtype", tagtype) for tagtype in context.session.tagtypes]
+
+
+@protocol.commands.add("binarylimit", auth_required=False, size=protocol.UINT)
+def binarylimit(context: MpdContext, size: int) -> None:
+    """
+    *musicpd.org, connection section:*
+
+        ``binarylimit SIZE``
+
+        Set the maximum binary response size for the current connection to the
+        specified number of bytes.
+
+        A bigger value means less overhead for transmitting large entities, but it also
+        means that the connection is blocked for a longer time.
+    """
+    if size < MIN_BINARY_LIMIT:
+        raise exceptions.MpdArgError(f"'size' must be at least {MIN_BINARY_LIMIT}")
+    if size > MAX_BINARY_LIMIT:
+        raise exceptions.MpdArgError(f"'size' must be at most {MAX_BINARY_LIMIT}")
+
+    context.session.update_binary_limit(size)
 
 
 def _validate_tagtypes(parameters: list[str]) -> None:
