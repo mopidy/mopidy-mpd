@@ -26,6 +26,23 @@ class QueryForSearchTest(unittest.TestCase):
     # TODO Test more mappings
 
 
+class SplitWindowTest(unittest.TestCase):
+    def test_without_window(self):
+        args, window = music_db._split_window(("artist", "foo"))
+        assert list(args) == ["artist", "foo"]
+        assert window == slice(None)
+
+    def test_with_window(self):
+        args, window = music_db._split_window(("artist", "foo", "window", "1:3"))
+        assert list(args) == ["artist", "foo"]
+        assert window == slice(1, 3)
+
+    def test_window_as_search_value_is_not_split(self):
+        args, window = music_db._split_window(("artist", "window"))
+        assert list(args) == ["artist", "window"]
+        assert window == slice(None)
+
+
 class QueryFromMpdListFormatTest(unittest.TestCase):
     pass  # TODO
 
@@ -538,6 +555,33 @@ class MusicDatabaseFindTest(protocol.BaseTestCase):
         self.assertInResponse("Title: C")
 
         self.assertInResponse("OK")
+
+    def test_find_with_window(self):
+        self.backend.library.dummy_find_exact_result = SearchResult(
+            albums=[Album(uri="dummy:album:a", name="A")],
+            artists=[Artist(uri="dummy:artist:b", name="B")],
+            tracks=[Track(uri="dummy:track:c", name="C")],
+        )
+
+        self.send_request('find "any" "foo" window 1:3')
+
+        self.assertNotInResponse("file: dummy:artist:b")
+        self.assertInResponse("file: dummy:album:a")
+        self.assertInResponse("file: dummy:track:c")
+        self.assertInResponse("OK")
+
+    def test_find_with_window_past_end_of_results(self):
+        self.backend.library.dummy_find_exact_result = SearchResult(
+            tracks=[Track(uri="dummy:track:c", name="C")],
+        )
+
+        self.send_request('find "any" "foo" window 5:10')
+
+        self.assertEqualResponse("OK")
+
+    def test_find_with_invalid_window(self):
+        self.send_request('find "any" "foo" window "3:1"')
+        self.assertEqualResponse("ACK [2@0] {find} incorrect arguments")
 
     def test_find_artist_does_not_include_fake_artist_tracks(self):
         self.backend.library.dummy_find_exact_result = SearchResult(
@@ -1216,6 +1260,24 @@ class MusicDatabaseSearchTest(protocol.BaseTestCase):
         self.assertInResponse("Title: C")
 
         self.assertInResponse("OK")
+
+    def test_search_with_window(self):
+        self.backend.library.dummy_search_result = SearchResult(
+            albums=[Album(uri="dummy:album:a", name="A")],
+            artists=[Artist(uri="dummy:artist:b", name="B")],
+            tracks=[Track(uri="dummy:track:c", name="C")],
+        )
+
+        self.send_request('search "any" "foo" window 2')
+
+        self.assertNotInResponse("file: dummy:artist:b")
+        self.assertNotInResponse("file: dummy:album:a")
+        self.assertInResponse("file: dummy:track:c")
+        self.assertInResponse("OK")
+
+    def test_search_with_invalid_window(self):
+        self.send_request('search "any" "foo" window "x"')
+        self.assertEqualResponse("ACK [2@0] {search} incorrect arguments")
 
     def test_search_album(self):
         self.send_request('search "album" "analbum"')
