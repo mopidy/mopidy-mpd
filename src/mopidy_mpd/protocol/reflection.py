@@ -33,7 +33,7 @@ def commands(context: MpdContext) -> protocol.Result:
     """
     command_names = set()
     for name, handler in protocol.commands.handlers.items():
-        if not handler.list_command:
+        if not handler.is_listed(context):
             continue
         if context.dispatcher.authenticated or not handler.auth_required:
             command_names.add(name)
@@ -79,7 +79,7 @@ def notcommands(context: MpdContext) -> protocol.Result:
     """
     command_names = {"config", "kill"}  # No permission to use
     for name, handler in protocol.commands.handlers.items():
-        if not handler.list_command:
+        if not handler.is_listed(context):
             continue
         if not context.dispatcher.authenticated and handler.auth_required:
             command_names.add(name)

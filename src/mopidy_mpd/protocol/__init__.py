@@ -37,6 +37,7 @@ type ResultTuple = tuple[str, ResultValue]
 type ResultList = list[ResultTuple | ResultDict]
 type Result = ResultDict | ResultTuple | ResultList | None
 type HandlerFunc = Callable[..., Result]
+type ListCommand = bool | Callable[[MpdContext], bool]
 
 
 def load_protocol_modules() -> None:
@@ -140,7 +141,7 @@ class Commands:
         name: str,
         *,
         auth_required: bool = True,
-        list_command: bool = True,
+        list_command: ListCommand = True,
         **validators: Callable[[str], Any],
     ) -> Callable[[HandlerFunc], HandlerFunc]:
         """Create a decorator that registers a handler and validation rules.
@@ -160,7 +161,8 @@ class Commands:
 
         :param name: Name of the command being registered.
         :param auth_required: If authorization is required.
-        :param list_command: If command should be listed in reflection.
+        :param list_command: If command should be listed in reflection. May be
+            a callable taking the context, to decide per request.
         """
 
         def wrapper(func: HandlerFunc) -> HandlerFunc:
@@ -210,7 +212,7 @@ class Handler:
         name: str,
         func: HandlerFunc,
         auth_required: bool,
-        list_command: bool,
+        list_command: ListCommand,
         validators: dict[str, Callable[[str], Any]],
     ) -> None:
         self.name = name
@@ -240,6 +242,11 @@ class Handler:
                 strict=False,
             )
         )
+
+    def is_listed(self, context: MpdContext) -> bool:
+        if callable(self.list_command):
+            return self.list_command(context)
+        return self.list_command
 
     def __call__(self, *args: Any, **kwargs: Any) -> Result:
         if self.spec.varargs:

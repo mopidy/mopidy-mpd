@@ -20,6 +20,12 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
+def _playlists_available(context: MpdContext) -> bool:
+    """MPD protocol hides the playlist commands when no playlists are configured.
+    In Mopidy, that's equivalent to having no configured URI schemes."""
+    return bool(context.core.playlists.get_uri_schemes().get())
+
+
 def _check_playlist_name(name: str) -> None:
     if re.search("[/\n\r]", name):
         raise exceptions.MpdInvalidPlaylistNameError
@@ -92,7 +98,7 @@ def listplaylistinfo(context: MpdContext, name: str) -> protocol.Result:
     return translator.playlist_to_mpd_format(playlist, context.session.tagtypes)
 
 
-@protocol.commands.add("listplaylists")
+@protocol.commands.add("listplaylists", list_command=_playlists_available)
 def listplaylists(context: MpdContext) -> protocol.ResultList:
     """
     *musicpd.org, stored playlists section:*
@@ -184,7 +190,7 @@ def load(
     context.core.tracklist.add(uris=track_uris).get()
 
 
-@protocol.commands.add("playlistadd")
+@protocol.commands.add("playlistadd", list_command=_playlists_available)
 def playlistadd(context: MpdContext, name: str, track_uri: Uri) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -249,7 +255,7 @@ def _create_playlist(context: MpdContext, name: str, tracks: Iterable[Track]) ->
         raise exceptions.MpdFailedToSavePlaylistError(uri_scheme)
 
 
-@protocol.commands.add("playlistclear")
+@protocol.commands.add("playlistclear", list_command=_playlists_available)
 def playlistclear(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -276,7 +282,9 @@ def playlistclear(context: MpdContext, name: str) -> None:
         )
 
 
-@protocol.commands.add("playlistdelete", songpos=protocol.UINT)
+@protocol.commands.add(
+    "playlistdelete", list_command=_playlists_available, songpos=protocol.UINT
+)
 def playlistdelete(context: MpdContext, name: str, songpos: int) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -304,7 +312,12 @@ def playlistdelete(context: MpdContext, name: str, songpos: int) -> None:
         )
 
 
-@protocol.commands.add("playlistmove", from_pos=protocol.UINT, to_pos=protocol.UINT)
+@protocol.commands.add(
+    "playlistmove",
+    list_command=_playlists_available,
+    from_pos=protocol.UINT,
+    to_pos=protocol.UINT,
+)
 def playlistmove(context: MpdContext, name: str, from_pos: int, to_pos: int) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -345,7 +358,7 @@ def playlistmove(context: MpdContext, name: str, from_pos: int, to_pos: int) -> 
         )
 
 
-@protocol.commands.add("rename")
+@protocol.commands.add("rename", list_command=_playlists_available)
 def rename(context: MpdContext, old_name: str, new_name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -376,7 +389,7 @@ def rename(context: MpdContext, old_name: str, new_name: str) -> None:
     context.core.playlists.delete(old_playlist.uri).get()
 
 
-@protocol.commands.add("rm")
+@protocol.commands.add("rm", list_command=_playlists_available)
 def rm(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
@@ -392,7 +405,7 @@ def rm(context: MpdContext, name: str) -> None:
     context.core.playlists.delete(uri).get()
 
 
-@protocol.commands.add("save")
+@protocol.commands.add("save", list_command=_playlists_available)
 def save(context: MpdContext, name: str) -> None:
     """
     *musicpd.org, stored playlists section:*
