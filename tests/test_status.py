@@ -4,15 +4,10 @@ from typing import cast
 import pykka
 from mopidy import core
 from mopidy.models import Track
-from mopidy.types import PlaybackState
 
 from mopidy_mpd import dispatcher, uri_mapper
 from mopidy_mpd.protocol import status
 from tests import dummy_audio, dummy_backend, dummy_mixer
-
-PAUSED = PlaybackState.PAUSED
-PLAYING = PlaybackState.PLAYING
-STOPPED = PlaybackState.STOPPED
 
 # TODO: migrate to using protocol.BaseTestCase instead of status.stats directly?
 
@@ -136,20 +131,21 @@ class StatusHandlerTest(unittest.TestCase):
         assert int(result["xfade"]) >= 0
 
     def test_status_method_contains_state_is_play(self):
-        self.core.playback.set_state(PLAYING)
+        self.set_tracklist([Track(uri="dummy:/a")])
+        self.core.playback.play().get()
         result = dict(status.status(self.context))
         assert "state" in result
         assert result["state"] == "play"
 
     def test_status_method_contains_state_is_stop(self):
-        self.core.playback.set_state(STOPPED)
         result = dict(status.status(self.context))
         assert "state" in result
         assert result["state"] == "stop"
 
     def test_status_method_contains_state_is_pause(self):
-        self.core.playback.set_state(PLAYING)
-        self.core.playback.set_state(PAUSED)
+        self.set_tracklist([Track(uri="dummy:/a")])
+        self.core.playback.play().get()
+        self.core.playback.pause().get()
         result = dict(status.status(self.context))
         assert "state" in result
         assert result["state"] == "pause"
