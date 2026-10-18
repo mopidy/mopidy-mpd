@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-def track_to_mpd_format(  # noqa: C901, PLR0912
+def track_to_mpd_format(  # noqa: C901, PLR0912, PLR0915
     obj: Track | TlTrack,
     tagtypes: set[str],
     *,
