@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 
 
 # MPD accepts both file and filename; each is the track's URI in Mopidy.
-_PLAYLIST_FIND_FIELDS: dict[str, TracklistField] = {
+_PLAYLIST_TAG_FIELDS: dict[str, TracklistField] = {
     "comment": "comment",
     "file": "uri",
     "filename": "uri",
@@ -27,7 +27,7 @@ _PLAYLIST_FIND_FIELDS: dict[str, TracklistField] = {
 }
 
 # Compare numeric tags as text: MPD's exact match distinguishes "1" from "01".
-_PLAYLIST_FIND_SCALARS: dict[str, Callable[[Track], str | None]] = {
+_PLAYLIST_TAG_SCALARS: dict[str, Callable[[Track], str | None]] = {
     "album": lambda track: track.album.name if track.album else None,
     "date": lambda track: track.date,
     "disc": lambda track: str(track.disc_no) if track.disc_no is not None else None,
@@ -37,7 +37,7 @@ _PLAYLIST_FIND_SCALARS: dict[str, Callable[[Track], str | None]] = {
     "track": lambda track: str(track.track_no) if track.track_no is not None else None,
 }
 
-_PLAYLIST_FIND_ARTISTS: dict[str, Literal["name", "sortname", "musicbrainz_id"]] = {
+_PLAYLIST_TAG_ARTISTS: dict[str, Literal["name", "sortname", "musicbrainz_id"]] = {
     "albumartist": "name",
     "albumartistsort": "sortname",
     "artist": "name",
@@ -48,16 +48,24 @@ _PLAYLIST_FIND_ARTISTS: dict[str, Literal["name", "sortname", "musicbrainz_id"]]
     "performer": "name",
 }
 
-_PLAYLIST_FIND_OTHER_TAGS: set[str] = (
-    _PLAYLIST_FIND_SCALARS.keys() | _PLAYLIST_FIND_ARTISTS.keys()
+_PLAYLIST_OTHER_TAGS: set[str] = (
+    _PLAYLIST_TAG_SCALARS.keys() | _PLAYLIST_TAG_ARTISTS.keys()
 )
 # MPD's "any" searches metadata, not the file URI.
-_PLAYLIST_FIND_ANY_TAGS: set[str] = (
-    _PLAYLIST_FIND_FIELDS.keys() - {"file", "filename"}
-) | _PLAYLIST_FIND_OTHER_TAGS
+_PLAYLIST_ANY_TAGS: set[str] = (
+    _PLAYLIST_TAG_FIELDS.keys() - {"file", "filename"}
+) | _PLAYLIST_OTHER_TAGS
 
 
-def _matches_playlist_artist(track: Track, tag: str, needle: str) -> bool:
+def _matches_playlist_value(value: str | None, needle: str, *, search: bool) -> bool:
+    if value is None:
+        return False
+    return needle.casefold() in value.casefold() if search else value == needle
+
+
+def _matches_playlist_artist(
+    track: Track, tag: str, needle: str, *, search: bool
+) -> bool:
     if tag in {"albumartist", "albumartistsort", "musicbrainz_albumartistid"}:
         artists = track.album.artists if track.album else ()
     elif tag == "composer":
@@ -67,11 +75,14 @@ def _matches_playlist_artist(track: Track, tag: str, needle: str) -> bool:
     else:
         artists = track.artists
     return any(
-        getattr(artist, _PLAYLIST_FIND_ARTISTS[tag]) == needle for artist in artists
+        _matches_playlist_value(
+            getattr(artist, _PLAYLIST_TAG_ARTISTS[tag]), needle, search=search
+        )
+        for artist in artists
     )
 
 
-def _matches_playlist_tag(track: Track, tag: str, needle: str) -> bool:
+def _matches_playlist_tag(track: Track, tag: str, needle: str, *, search: bool) -> bool:
     """Match MPD tag values against one queued Mopidy track.
 
     MPD's Name is distinct from a track's Title; Mopidy has no separate
@@ -79,16 +90,47 @@ def _matches_playlist_tag(track: Track, tag: str, needle: str) -> bool:
     """
     if tag == "any":
         return any(
-            _matches_playlist_tag(track, field, needle)
-            for field in _PLAYLIST_FIND_ANY_TAGS
+            _matches_playlist_tag(track, field, needle, search=search)
+            for field in _PLAYLIST_ANY_TAGS
         )
-    if field := _PLAYLIST_FIND_FIELDS.get(tag):
-        return getattr(track, field) == needle
-    if value_for_tag := _PLAYLIST_FIND_SCALARS.get(tag):
-        return value_for_tag(track) == needle
-    if tag in _PLAYLIST_FIND_ARTISTS:
-        return _matches_playlist_artist(track, tag, needle)
+    if field := _PLAYLIST_TAG_FIELDS.get(tag):
+        return _matches_playlist_value(getattr(track, field), needle, search=search)
+    if value_for_tag := _PLAYLIST_TAG_SCALARS.get(tag):
+        return _matches_playlist_value(value_for_tag(track), needle, search=search)
+    if tag in _PLAYLIST_TAG_ARTISTS:
+        return _matches_playlist_artist(track, tag, needle, search=search)
     return False
+
+
+def _playlist_query(
+    context: MpdContext, tag: str, needle: str, *, search: bool
+) -> protocol.Result:
+    """Query queued entries rather than the library's search index.
+
+    Library results cannot recover repeated queue entries or their positions
+    and IDs. Mopidy's tracklist filter handles only exact matches on a few
+    fields; until core provides queue-aware metadata search, scanning is needed
+    for partial and nested-tag queries. This avoids an index to keep in sync
+    with queue edits, but each request examines the queue (and potentially
+    several metadata values per entry for `any` and artist tags). The response
+    holds all matches.
+    """
+    tag = tag.lower()
+    if tag not in _PLAYLIST_TAG_FIELDS and tag not in _PLAYLIST_OTHER_TAGS | {
+        "any",
+        "name",
+    }:
+        raise exceptions.MpdArgError("incorrect arguments")
+
+    result: protocol.ResultList = []
+    for position, tl_track in enumerate(context.core.tracklist.get_tl_tracks().get()):
+        if _matches_playlist_tag(tl_track.track, tag, needle, search=search):
+            result.extend(
+                translator.track_to_mpd_format(
+                    tl_track, context.session.tagtypes, position=position
+                )
+            )
+    return result
 
 
 @protocol.commands.add("add")
@@ -264,22 +306,7 @@ def playlistfind(context: MpdContext, tag: str, needle: str) -> protocol.Result:
 
         Finds songs in the current playlist with strict matching.
     """
-    tag = tag.lower()
-    if tag not in _PLAYLIST_FIND_FIELDS and tag not in _PLAYLIST_FIND_OTHER_TAGS | {
-        "any",
-        "name",
-    }:
-        raise exceptions.MpdArgError("incorrect arguments")
-
-    result: protocol.ResultList = []
-    for position, tl_track in enumerate(context.core.tracklist.get_tl_tracks().get()):
-        if _matches_playlist_tag(tl_track.track, tag, needle):
-            result.extend(
-                translator.track_to_mpd_format(
-                    tl_track, context.session.tagtypes, position=position
-                )
-            )
-    return result
+    return _playlist_query(context, tag, needle, search=False)
 
 
 @protocol.commands.add("playlistid", tlid=protocol.UINT)
@@ -346,14 +373,14 @@ def playlistsearch(context: MpdContext, tag: str, needle: str) -> protocol.Resul
 
         ``playlistsearch {TAG} {NEEDLE}``
 
-        Searches case-sensitively for partial matches in the current
+        Searches case-insensitively for partial matches in the current
         playlist.
 
     *GMPC:*
 
     - uses ``filename`` and ``any`` as tags
     """
-    raise exceptions.MpdNotImplementedError  # TODO
+    return _playlist_query(context, tag, needle, search=True)
 
 
 @protocol.commands.add("plchanges", version=protocol.INT)
