@@ -1,0 +1,37 @@
+name: Live MPD reference
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      record:
+        description: Upload the live reference responses for inspection
+        type: boolean
+        default: false
+
+permissions: {}
+
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
+      - name: Enable record refresh
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.record }}
+        run: echo "MPD_REFERENCE_RECORD_DIR=tests/protocol/reference/records" >> "$GITHUB_ENV"
+      - name: Compare live protocol responses
+        run: nix run ./tests/protocol/reference
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.record }}
+        with:
+          name: mpd-reference-responses
+          path: tests/protocol/reference/records/
+          if-no-files-found: error
