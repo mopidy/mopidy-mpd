@@ -2,8 +2,24 @@ from unittest import mock
 
 from tests import protocol
 
+CHANNEL_REQUESTS = {
+    "subscribe": 'subscribe "topic"',
+    "unsubscribe": 'unsubscribe "topic"',
+    "channels": "channels",
+    "readmessages": "readmessages",
+    "sendmessage": 'sendmessage "topic" "message"',
+}
+
 
 class ReflectionHandlerTest(protocol.BaseTestCase):
+    def test_unimplemented_channels_are_not_advertised(self):
+        for request in ("commands", "notcommands"):
+            self.send_request(request)
+            for name in CHANNEL_REQUESTS:
+                with self.subTest(request=request, command=name):
+                    self.assertNotInResponse(f"command: {name}")
+            self.assertInResponse("OK")
+
     def test_config_is_not_allowed_across_the_network(self):
         self.send_request("config")
         self.assertEqualResponse(
@@ -74,6 +90,41 @@ class ReflectionWhenNotAuthedTest(protocol.BaseTestCase):
         config = super().get_config()
         config["mpd"]["password"] = "topsecret"  # noqa: S105
         return config
+
+    def test_unimplemented_channels_are_not_advertised_before_or_after_login(self):
+        for authenticated in (False, True):
+            if authenticated:
+                self.send_request('password "topsecret"')
+                self.assertEqualResponse("OK")
+            for request in ("commands", "notcommands"):
+                self.send_request(request)
+                for name in CHANNEL_REQUESTS:
+                    with self.subTest(
+                        authenticated=authenticated, request=request, command=name
+                    ):
+                        self.assertNotInResponse(f"command: {name}")
+                self.assertInResponse("OK")
+                if (request == "commands") == authenticated:
+                    self.assertInResponse("command: play")
+                    self.assertInResponse("command: status")
+
+    def test_unlisted_channels_keep_their_authentication_and_error_responses(self):
+        for authenticated in (False, True):
+            if authenticated:
+                self.send_request('password "topsecret"')
+                self.assertEqualResponse("OK")
+            for name, request in CHANNEL_REQUESTS.items():
+                with self.subTest(authenticated=authenticated, command=name):
+                    self.send_request(request)
+                    if authenticated:
+                        self.assertEqualResponse(
+                            f"ACK [0@0] {{{name}}} Not implemented"
+                        )
+                    else:
+                        self.assertEqualResponse(
+                            f"ACK [4@0] {{{name}}} "
+                            f'you don\'t have permission for "{name}"'
+                        )
 
     def test_commands_show_less_if_auth_required_and_not_authed(self):
         self.send_request("commands")

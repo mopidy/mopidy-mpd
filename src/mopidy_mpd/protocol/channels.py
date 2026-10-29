@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from mopidy_mpd.context import MpdContext
 
 
-@protocol.commands.add("subscribe")
+@protocol.commands.add("subscribe", list_command=False)
 def subscribe(context: MpdContext, channel: str) -> Never:
     """
     *musicpd.org, client to client section:*
@@ -23,7 +23,7 @@ def subscribe(context: MpdContext, channel: str) -> Never:
     raise exceptions.MpdNotImplementedError  # TODO
 
 
-@protocol.commands.add("unsubscribe")
+@protocol.commands.add("unsubscribe", list_command=False)
 def unsubscribe(context: MpdContext, channel: str) -> Never:
     """
     *musicpd.org, client to client section:*
@@ -36,7 +36,7 @@ def unsubscribe(context: MpdContext, channel: str) -> Never:
     raise exceptions.MpdNotImplementedError  # TODO
 
 
-@protocol.commands.add("channels")
+@protocol.commands.add("channels", list_command=False)
 def channels(context: MpdContext) -> Never:
     """
     *musicpd.org, client to client section:*
@@ -49,7 +49,7 @@ def channels(context: MpdContext) -> Never:
     raise exceptions.MpdNotImplementedError  # TODO
 
 
-@protocol.commands.add("readmessages")
+@protocol.commands.add("readmessages", list_command=False)
 def readmessages(context: MpdContext) -> Never:
     """
     *musicpd.org, client to client section:*
@@ -62,7 +62,7 @@ def readmessages(context: MpdContext) -> Never:
     raise exceptions.MpdNotImplementedError  # TODO
 
 
-@protocol.commands.add("sendmessage")
+@protocol.commands.add("sendmessage", list_command=False)
 def sendmessage(context: MpdContext, channel: str, text: str) -> Never:
     """
     *musicpd.org, client to client section:*
