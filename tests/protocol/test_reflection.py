@@ -4,6 +4,20 @@ from tests import protocol
 
 
 class ReflectionHandlerTest(protocol.BaseTestCase):
+    def test_unimplemented_channels_are_not_advertised(self):
+        for request in ("commands", "notcommands"):
+            self.send_request(request)
+            for name in (
+                "subscribe",
+                "unsubscribe",
+                "channels",
+                "readmessages",
+                "sendmessage",
+            ):
+                with self.subTest(request=request, command=name):
+                    self.assertNotInResponse(f"command: {name}")
+            self.assertInResponse("OK")
+
     def test_config_is_not_allowed_across_the_network(self):
         self.send_request("config")
         self.assertEqualResponse(
