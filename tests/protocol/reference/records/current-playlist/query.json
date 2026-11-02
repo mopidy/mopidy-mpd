@@ -68,6 +68,222 @@
     {
       "step": 5,
       "commands": [
+        "playlistfind TiTle A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 6,
+      "commands": [
+        "playlistfind file a.flac"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 7,
+      "commands": [
+        "playlistfind Artist Example"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 8,
+      "commands": [
+        "playlistfind Album \"Protocol fixture\""
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 9,
+      "commands": [
+        "playlistfind AlbumArtist Example"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 10,
+      "commands": [
+        "playlistfind Track 1"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 11,
+      "commands": [
+        "playlistfind any Example"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 0",
+        "Id: 1",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "Pos: 1",
+        "Id: 2",
+        "OK"
+      ]
+    },
+    {
+      "step": 12,
+      "commands": [
+        "playlistfind any a.flac"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 13,
+      "commands": [
+        "playlistfind Name A"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 14,
+      "commands": [
+        "playlistfind bogus Example"
+      ],
+      "mpd": [
+        "ACK [2@0] {playlistfind} incorrect arguments"
+      ]
+    },
+    {
+      "step": 15,
+      "commands": [
+        "playlistfind Genre Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 16,
+      "commands": [
+        "playlistfind Comment Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 17,
+      "commands": [
+        "playlistfind MUSICBRAINZ_TRACKID Example"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 18,
+      "commands": [
         "playlistsearch Title B"
       ],
       "mpd": [
@@ -84,7 +300,7 @@
       ]
     },
     {
-      "step": 6,
+      "step": 19,
       "commands": [
         "delete 0",
         "status"
@@ -100,6 +316,71 @@
         "playlistlength: 1",
         "mixrampdb: 0.000000",
         "state: stop",
+        "OK"
+      ]
+    },
+    {
+      "step": 20,
+      "commands": [
+        "add a.flac",
+        "add a.flac"
+      ],
+      "mpd": [
+        "OK",
+        "OK"
+      ]
+    },
+    {
+      "step": 21,
+      "commands": [
+        "playlistfind Title A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 1",
+        "Id: 3",
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 2",
+        "Id: 4",
+        "OK"
+      ]
+    },
+    {
+      "step": 22,
+      "commands": [
+        "playlistfind filename a.flac"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 1",
+        "Id: 3",
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "Pos: 2",
+        "Id: 4",
         "OK"
       ]
     }

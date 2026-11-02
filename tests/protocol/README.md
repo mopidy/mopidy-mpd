@@ -13,9 +13,11 @@ matchers. Put dependent commands in successive steps so their effects remain
 visible; a block may contain multiple commands when they belong to one step.
 
 The tests use the existing in-process MPD session and dummy Mopidy backend.
-The library can look up `dummy:/a` and `dummy:/b`, but its search index and
-browse tree are empty. The pytest ID is the scenario's path; a failure shows
-the step number, commands, expectations, and actual response.
+The library can look up tagged `dummy:/a` and `dummy:/b` tracks, but its search
+index and browse tree are empty. The dummy tracks have the same title, artist,
+album, track number, and length as the pinned audio files. The pytest ID is the
+scenario's path; a failure shows the step number, commands, expectations, and
+actual response.
 
 Run the baseline with `pytest tests/protocol/test_markdown.py` in the project
 development environment.
