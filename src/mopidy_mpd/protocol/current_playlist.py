@@ -355,9 +355,7 @@ def plchangesposid(
     if int(version) != context.core.tracklist.get_version().get():
         result = []
         tl_tracks = context.core.tracklist.get_tl_tracks().get()
-        for position, (tlid, _) in enumerate(
-            tl_tracks[songrange], start=songrange.start
-        ):
+        for position, (tlid, _) in list(enumerate(tl_tracks))[songrange]:
             result.append(("cpos", position))
             result.append(("Id", tlid))
         return result
