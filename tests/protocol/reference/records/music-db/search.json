@@ -1,0 +1,76 @@
+{
+  "scenario": "tests/protocol/0.19/music-db/search.md",
+  "daemon": "Music Player Daemon 0.19.21",
+  "greeting": "OK MPD 0.19.0",
+  "media_sha256": {
+    "a.flac": "03f370f721b7682dfdf6f5564e7122dd03402bef41334134f7b8043ac4b07458",
+    "b.flac": "f55b937ca656cc7e89a79be1f4e5ca46eba7037d4acb4a755ebf23104e6756c8"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "commands": [
+        "count title A"
+      ],
+      "mpd": [
+        "songs: 1",
+        "playtime: 40",
+        "OK"
+      ]
+    },
+    {
+      "step": 2,
+      "commands": [
+        "find title A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Time: 40",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 3,
+      "commands": [
+        "search title A"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Time: 40",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "OK"
+      ]
+    },
+    {
+      "step": 4,
+      "commands": [
+        "findadd title A",
+        "searchadd title A",
+        "status"
+      ],
+      "mpd": [
+        "OK",
+        "OK",
+        "volume: -1",
+        "repeat: 0",
+        "random: 0",
+        "single: 0",
+        "consume: 0",
+        "playlist: <revision>",
+        "playlistlength: 2",
+        "mixrampdb: 0.000000",
+        "state: stop",
+        "OK"
+      ]
+    }
+  ]
+}

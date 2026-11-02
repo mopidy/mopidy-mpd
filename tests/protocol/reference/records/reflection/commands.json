@@ -1,0 +1,192 @@
+{
+  "scenario": "tests/protocol/0.19/reflection/commands.md",
+  "daemon": "Music Player Daemon 0.19.21",
+  "greeting": "OK MPD 0.19.0",
+  "media_sha256": {
+    "a.flac": "03f370f721b7682dfdf6f5564e7122dd03402bef41334134f7b8043ac4b07458",
+    "b.flac": "f55b937ca656cc7e89a79be1f4e5ca46eba7037d4acb4a755ebf23104e6756c8"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "commands": [
+        "commands"
+      ],
+      "mpd": [
+        "command: add",
+        "command: addid",
+        "command: addtagid",
+        "command: channels",
+        "command: clear",
+        "command: clearerror",
+        "command: cleartagid",
+        "command: close",
+        "command: commands",
+        "command: config",
+        "command: consume",
+        "command: count",
+        "command: crossfade",
+        "command: currentsong",
+        "command: decoders",
+        "command: delete",
+        "command: deleteid",
+        "command: disableoutput",
+        "command: enableoutput",
+        "command: find",
+        "command: findadd",
+        "command: idle",
+        "command: kill",
+        "command: list",
+        "command: listall",
+        "command: listallinfo",
+        "command: listfiles",
+        "command: listmounts",
+        "command: listplaylist",
+        "command: listplaylistinfo",
+        "command: listplaylists",
+        "command: load",
+        "command: lsinfo",
+        "command: mixrampdb",
+        "command: mixrampdelay",
+        "command: mount",
+        "command: move",
+        "command: moveid",
+        "command: next",
+        "command: notcommands",
+        "command: outputs",
+        "command: password",
+        "command: pause",
+        "command: ping",
+        "command: play",
+        "command: playid",
+        "command: playlist",
+        "command: playlistadd",
+        "command: playlistclear",
+        "command: playlistdelete",
+        "command: playlistfind",
+        "command: playlistid",
+        "command: playlistinfo",
+        "command: playlistmove",
+        "command: playlistsearch",
+        "command: plchanges",
+        "command: plchangesposid",
+        "command: previous",
+        "command: prio",
+        "command: prioid",
+        "command: random",
+        "command: rangeid",
+        "command: readcomments",
+        "command: readmessages",
+        "command: rename",
+        "command: repeat",
+        "command: replay_gain_mode",
+        "command: replay_gain_status",
+        "command: rescan",
+        "command: rm",
+        "command: save",
+        "command: search",
+        "command: searchadd",
+        "command: searchaddpl",
+        "command: seek",
+        "command: seekcur",
+        "command: seekid",
+        "command: sendmessage",
+        "command: setvol",
+        "command: shuffle",
+        "command: single",
+        "command: stats",
+        "command: status",
+        "command: stop",
+        "command: subscribe",
+        "command: swap",
+        "command: swapid",
+        "command: tagtypes",
+        "command: toggleoutput",
+        "command: unmount",
+        "command: unsubscribe",
+        "command: update",
+        "command: urlhandlers",
+        "command: volume",
+        "OK"
+      ]
+    },
+    {
+      "step": 2,
+      "commands": [
+        "notcommands"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 3,
+      "commands": [
+        "urlhandlers"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 4,
+      "commands": [
+        "decoders"
+      ],
+      "mpd": [
+        "plugin: oggflac",
+        "suffix: ogg",
+        "suffix: oga",
+        "mime_type: application/ogg",
+        "mime_type: application/x-ogg",
+        "mime_type: audio/ogg",
+        "mime_type: audio/x-flac+ogg",
+        "mime_type: audio/x-ogg",
+        "plugin: flac",
+        "suffix: flac",
+        "mime_type: application/flac",
+        "mime_type: application/x-flac",
+        "mime_type: audio/flac",
+        "mime_type: audio/x-flac",
+        "plugin: sndfile",
+        "suffix: wav",
+        "suffix: aiff",
+        "suffix: aif",
+        "suffix: au",
+        "suffix: snd",
+        "suffix: paf",
+        "suffix: iff",
+        "suffix: svx",
+        "suffix: sf",
+        "suffix: voc",
+        "suffix: w64",
+        "suffix: pvf",
+        "suffix: xi",
+        "suffix: htk",
+        "suffix: caf",
+        "suffix: sd2",
+        "mime_type: audio/x-wav",
+        "mime_type: audio/x-aiff",
+        "plugin: dsdiff",
+        "suffix: dff",
+        "mime_type: application/x-dff",
+        "plugin: dsf",
+        "suffix: dsf",
+        "mime_type: application/x-dsf",
+        "plugin: pcm",
+        "mime_type: audio/x-mpd-cdda-pcm",
+        "mime_type: audio/x-mpd-cdda-pcm-reverse",
+        "OK"
+      ]
+    },
+    {
+      "step": 5,
+      "commands": [
+        "config"
+      ],
+      "mpd": [
+        "ACK [4@0] {config} Command only permitted to local clients"
+      ]
+    }
+  ]
+}

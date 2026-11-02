@@ -1,0 +1,64 @@
+{
+  "nodes": {
+    "mpd": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1481622844,
+        "narHash": "sha256-NaWQwUUc+KrLeNqHaR8OOeAvMXUSuFNkxRarIGXT524=",
+        "ref": "refs/heads/master",
+        "rev": "3bbcda917ce7cb2fa6dcc90d6c38333ca855c941",
+        "revCount": 9819,
+        "type": "git",
+        "url": "https://github.com/MusicPlayerDaemon/MPD.git"
+      },
+      "original": {
+        "rev": "3bbcda917ce7cb2fa6dcc90d6c38333ca855c941",
+        "type": "git",
+        "url": "https://github.com/MusicPlayerDaemon/MPD.git"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1789684949,
+        "narHash": "sha256-ZKhUe/2IJUq1JhKxKMu8rbkgSGmPP2ZCqlIPn40aGCM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "e554fab72f81915600f3f449b786fd9af40439a5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "mpd": "mpd",
+        "workspace": "workspace"
+      }
+    },
+    "workspace": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1790231757,
+        "narHash": "sha256-bRf/ffTS9TDUNhFl8EGi+RJ6PDnyciOmh45DjTdtVcQ=",
+        "ref": "refs/heads/main",
+        "rev": "edde6834ee771f87407898513c5feba74f566256",
+        "revCount": 38,
+        "type": "git",
+        "url": "https://github.com/mopidy/workspace.git"
+      },
+      "original": {
+        "rev": "edde6834ee771f87407898513c5feba74f566256",
+        "type": "git",
+        "url": "https://github.com/mopidy/workspace.git"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

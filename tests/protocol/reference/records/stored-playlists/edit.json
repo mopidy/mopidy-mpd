@@ -1,0 +1,90 @@
+{
+  "scenario": "tests/protocol/0.19/stored-playlists/edit.md",
+  "daemon": "Music Player Daemon 0.19.21",
+  "greeting": "OK MPD 0.19.0",
+  "media_sha256": {
+    "a.flac": "03f370f721b7682dfdf6f5564e7122dd03402bef41334134f7b8043ac4b07458",
+    "b.flac": "f55b937ca656cc7e89a79be1f4e5ca46eba7037d4acb4a755ebf23104e6756c8"
+  },
+  "steps": [
+    {
+      "step": 1,
+      "commands": [
+        "playlistadd example a.flac",
+        "playlistadd example b.flac"
+      ],
+      "mpd": [
+        "OK",
+        "OK"
+      ]
+    },
+    {
+      "step": 2,
+      "commands": [
+        "listplaylistinfo example"
+      ],
+      "mpd": [
+        "file: a.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: A",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 1",
+        "Time: 40",
+        "file: b.flac",
+        "Last-Modified: <fixture mtime>",
+        "Title: B",
+        "Artist: Example",
+        "Album: Protocol fixture",
+        "Track: 2",
+        "Time: 50",
+        "OK"
+      ]
+    },
+    {
+      "step": 3,
+      "commands": [
+        "playlistmove example 1 0",
+        "listplaylist example"
+      ],
+      "mpd": [
+        "OK",
+        "file: b.flac",
+        "file: a.flac",
+        "OK"
+      ]
+    },
+    {
+      "step": 4,
+      "commands": [
+        "playlistdelete example 1",
+        "listplaylist example"
+      ],
+      "mpd": [
+        "OK",
+        "file: b.flac",
+        "OK"
+      ]
+    },
+    {
+      "step": 5,
+      "commands": [
+        "rename example renamed"
+      ],
+      "mpd": [
+        "OK"
+      ]
+    },
+    {
+      "step": 6,
+      "commands": [
+        "playlistclear renamed",
+        "listplaylist renamed"
+      ],
+      "mpd": [
+        "OK",
+        "OK"
+      ]
+    }
+  ]
+}
