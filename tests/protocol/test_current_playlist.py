@@ -373,6 +373,56 @@ class PlChangeCommandTest(BasePopulatedTracklistTestCase):
         self.assertInResponse("Title: c")
         self.assertInResponse("OK")
 
+    def test_plchanges_with_range(self):
+        self.send_request('plchanges "0" "1:3"')
+        self.assertNotInResponse("Title: a")
+        self.assertInResponse("Title: b")
+        self.assertInResponse("Pos: 1")
+        self.assertInResponse("Title: c")
+        self.assertInResponse("Pos: 2")
+        self.assertNotInResponse("Title: d")
+        self.assertInResponse("OK")
+
+    def test_plchanges_with_single_position_range(self):
+        self.send_request('plchanges "0" "4"')
+        self.assertNotInResponse("Title: d")
+        self.assertInResponse("Title: e")
+        self.assertInResponse("Pos: 4")
+        self.assertNotInResponse("Title: ǂ")
+        self.assertInResponse("OK")
+
+    def test_plchanges_with_open_ended_range(self):
+        self.send_request('plchanges "0" "4:"')
+        self.assertNotInResponse("Title: d")
+        self.assertInResponse("Title: e")
+        self.assertInResponse("Title: ǂ")
+        self.assertInResponse("OK")
+
+    def test_plchanges_with_range_past_end_returns_nothing(self):
+        self.send_request('plchanges "0" "10:12"')
+        self.assertEqualResponse("OK")
+
+    def test_plchanges_with_invalid_range(self):
+        self.send_request('plchanges "0" "3:1"')
+        self.assertEqualResponse("ACK [2@0] {plchanges} incorrect arguments")
+
+    def _play_with_stream_title(self, title):
+        self.core.playback.play().get()
+        self.audio.trigger_fake_tags_changed({"title": [title]}).get()
+        assert self.core.playback.get_stream_title().get() == title
+
+    def test_plchanges_with_equal_version_and_range_including_stream(self):
+        self._play_with_stream_title("foo")
+        self.send_request('plchanges "1" "0:1"')
+        self.assertInResponse("Title: foo")
+        self.assertInResponse("Pos: 0")
+        self.assertInResponse("OK")
+
+    def test_plchanges_with_equal_version_and_range_excluding_stream(self):
+        self._play_with_stream_title("foo")
+        self.send_request('plchanges "1" "1:"')
+        self.assertEqualResponse("OK")
+
     def test_plchangesposid(self):
         self.send_request('plchangesposid "0"')
         tl_tracks = self.core.tracklist.get_tl_tracks().get()
@@ -383,6 +433,21 @@ class PlChangeCommandTest(BasePopulatedTracklistTestCase):
         self.assertInResponse("cpos: 2")
         self.assertInResponse(f"Id: {tl_tracks[2].tlid:d}")
         self.assertInResponse("OK")
+
+    def test_plchangesposid_with_range(self):
+        self.send_request('plchangesposid "0" "1:3"')
+        tl_tracks = self.core.tracklist.get_tl_tracks().get()
+        self.assertNotInResponse("cpos: 0")
+        self.assertInResponse("cpos: 1")
+        self.assertInResponse(f"Id: {tl_tracks[1].tlid:d}")
+        self.assertInResponse("cpos: 2")
+        self.assertInResponse(f"Id: {tl_tracks[2].tlid:d}")
+        self.assertNotInResponse("cpos: 3")
+        self.assertInResponse("OK")
+
+    def test_plchangesposid_with_range_past_end_returns_nothing(self):
+        self.send_request('plchangesposid "0" "10:12"')
+        self.assertEqualResponse("OK")
 
 
 class PrioCommandTest(protocol.BaseTestCase):
